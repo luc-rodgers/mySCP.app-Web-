@@ -1,0 +1,333 @@
+"use client";
+
+import { useState, useEffect, useRef, useCallback } from "react";
+import { TimeEntry, Employee, Project, SubActivity } from "@/lib/types";
+import { TimeSheetHeader } from "@/components/TimeSheetHeader";
+import { TimeEntryList } from "@/components/TimeEntryList";
+import { WeeklySummary } from "@/components/WeeklySummary";
+import { createClient } from "@/lib/supabase/client";
+
+type SupabaseEmployee = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  title: string;
+  role: string;
+  email?: string;
+  phone?: string;
+} | null;
+
+type Props = {
+  supabaseEmployee: SupabaseEmployee;
+  userEmail: string;
+};
+
+export default function TimesheetClient({ supabaseEmployee, userEmail }: Props) {
+  const [entries, setEntries] = useState<TimeEntry[]>([]);
+  const [currentPage, setCurrentPage] = useState<"timesheet" | "weeklysummary">("timesheet");
+  const [nextTimeCardNumber, setNextTimeCardNumber] = useState<number>(1);
+  const [timeCardYear, setTimeCardYear] = useState<string>(
+    new Date().getFullYear().toString().slice(-2)
+  );
+  const [loaded, setLoaded] = useState(false);
+
+  const employeeDbId = supabaseEmployee?.id ?? null;
+
+  const mockEmployee: Employee = {
+    id: employeeDbId ?? "local",
+    name: supabaseEmployee
+      ? `${supabaseEmployee.first_name} ${supabaseEmployee.last_name}`
+      : userEmail.split("@")[0],
+    email: supabaseEmployee?.email ?? userEmail,
+    department: "Operations",
+    classification: supabaseEmployee?.title ?? supabaseEmployee?.role ?? "Employee",
+    phone: supabaseEmployee?.phone ?? "",
+    startDate: "",
+    workStatus: "Permanent",
+  };
+
+  // ── Load entries from Supabase on mount ──────────────────────
+  useEffect(() => {
+    if (!employeeDbId) { setLoaded(true); return; }
+
+    const supabase = createClient();
+    supabase
+      .from("time_entries")
+      .select("id, date, status, data")
+      .eq("employee_id", employeeDbId)
+      .order("date", { ascending: false })
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          const loaded: TimeEntry[] = data.map((row) => ({
+            ...(row.data as Partial<TimeEntry>),
+            id: row.id,
+            date: row.date,
+            status: row.status as TimeEntry["status"],
+            employeeName: mockEmployee.name,
+          }));
+          setEntries(loaded);
+        }
+        setLoaded(true);
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [employeeDbId]);
+
+  // ── Supabase helpers ─────────────────────────────────────────
+  const upsertEntry = useCallback(async (entry: TimeEntry) => {
+    if (!employeeDbId) return null;
+    if (entry.id.startsWith("placeholder-")) return null;
+
+    const supabase = createClient();
+    const isNew = entry.id.startsWith("entry");
+
+    if (isNew) {
+      const { data, error } = await supabase
+        .from("time_entries")
+        .insert({
+          employee_id: employeeDbId,
+          date: entry.date,
+          status: entry.status,
+          data: entry,
+        })
+        .select("id")
+        .single();
+      if (!error && data) return data.id as string;
+    } else {
+      await supabase
+        .from("time_entries")
+        .upsert({
+          id: entry.id,
+          employee_id: employeeDbId,
+          date: entry.date,
+          status: entry.status,
+          data: entry,
+        });
+    }
+    return null;
+  }, [employeeDbId]);
+
+  const deleteEntryFromDB = useCallback(async (id: string) => {
+    if (!employeeDbId || id.startsWith("entry") || id.startsWith("placeholder-")) return;
+    const supabase = createClient();
+    await supabase.from("time_entries").delete().eq("id", id);
+  }, [employeeDbId]);
+
+  // ── Calculations ─────────────────────────────────────────────
+  const roundToQuarterHour = (hours: number) => Math.floor(hours * 4) / 4;
+
+  const calculateTotalHours = (entry: TimeEntry) => {
+    let effectiveStart = entry.depotStart;
+    if (!effectiveStart) {
+      const allStartTimes: string[] = [];
+      entry.projects.forEach((p) => {
+        if (p.siteStart) allStartTimes.push(p.siteStart);
+        if (p.weather && p.weatherStart) allStartTimes.push(p.weatherStart);
+      });
+      if (allStartTimes.length > 0) effectiveStart = allStartTimes.sort()[0];
+    }
+    let effectiveFinish = entry.depotFinish;
+    if (!effectiveFinish) {
+      const allFinishTimes: string[] = [];
+      entry.projects.forEach((p) => {
+        if (p.siteFinish) allFinishTimes.push(p.siteFinish);
+        if (p.weather && p.weatherEnd) allFinishTimes.push(p.weatherEnd);
+      });
+      if (allFinishTimes.length > 0)
+        effectiveFinish = allFinishTimes.sort().reverse()[0];
+    }
+    if (!effectiveStart || !effectiveFinish) return 0;
+    const [sh, sm] = effectiveStart.split(":").map(Number);
+    const [fh, fm] = effectiveFinish.split(":").map(Number);
+    const hours = (fh * 60 + fm - sh * 60 - sm) / 60;
+    const hasLunch = entry.projects.some((p) => p.lunch);
+    return roundToQuarterHour(Math.max(0, hours - (hasLunch ? 0.5 : 0)));
+  };
+
+  const today = new Date();
+
+  const todayHours = entries
+    .filter((e) => new Date(e.date).toDateString() === today.toDateString())
+    .reduce((sum, e) => sum + calculateTotalHours(e), 0);
+
+  const weekHours = entries
+    .filter((e) => {
+      const d = new Date(e.date);
+      d.setHours(0, 0, 0, 0);
+      const cur = today.getDay();
+      const toMon = cur === 0 ? 6 : cur - 1;
+      const ws = new Date(today);
+      ws.setDate(today.getDate() - toMon);
+      ws.setHours(0, 0, 0, 0);
+      return d >= ws;
+    })
+    .reduce((sum, e) => sum + calculateTotalHours(e), 0);
+
+  // ── Handlers ─────────────────────────────────────────────────
+  const handleAddEntry = (entry: Omit<TimeEntry, "id">) => {
+    const newEntry = { ...entry, id: Date.now().toString(), employeeName: mockEmployee.name };
+    setEntries([newEntry, ...entries]);
+    upsertEntry(newEntry).then((dbId) => {
+      if (dbId) setEntries((prev) => prev.map((e) => e.id === newEntry.id ? { ...e, id: dbId } : e));
+    });
+  };
+
+  const handleDeleteEntry = (id: string) => {
+    setEntries(entries.filter((e) => e.id !== id));
+    deleteEntryFromDB(id);
+  };
+
+  const handleStatusChange = (id: string, status: TimeEntry["status"]) => {
+    setEntries((prev) => {
+      const updated = prev.map((e) => {
+        if (e.id !== id) return e;
+        if (status === "submitted" && !e.timeCardNumber) {
+          const yr = new Date().getFullYear().toString().slice(-2);
+          if (yr !== timeCardYear) { setTimeCardYear(yr); setNextTimeCardNumber(1); }
+          const num = `TS-${yr}-${nextTimeCardNumber.toString().padStart(5, "0")}`;
+          setNextTimeCardNumber((n) => n + 1);
+          const updated = { ...e, status, timeCardNumber: num };
+          upsertEntry(updated);
+          return updated;
+        }
+        const updated = { ...e, status };
+        upsertEntry(updated);
+        return updated;
+      });
+      return updated;
+    });
+  };
+
+  const handleAddProject = (entryId: string, type: "project" | "yardwork" | "leave" = "project") => {
+    const newProject: Project = {
+      id: `p${Date.now()}`, type, project: "", siteStart: "", siteFinish: "",
+      subActivities: [], weather: false, lunch: false, lunchPenalty: false, pumpClean: false,
+    };
+    if (entryId.startsWith("placeholder-")) {
+      const date = entryId.replace("placeholder-", "");
+      const newEntry: TimeEntry = {
+        id: `entry${Date.now()}`, date, status: "draft",
+        depotStart: "", depotFinish: "", projects: [newProject],
+        employeeName: mockEmployee.name,
+      };
+      setEntries([...entries, newEntry]);
+      upsertEntry(newEntry).then((dbId) => {
+        if (dbId) setEntries((prev) => prev.map((e) => e.id === newEntry.id ? { ...e, id: dbId } : e));
+      });
+    } else {
+      setEntries((prev) => {
+        const updated = prev.map((e) => {
+          if (e.id !== entryId) return e;
+          const upd = { ...e, projects: [...e.projects, newProject] };
+          upsertEntry(upd);
+          return upd;
+        });
+        return updated;
+      });
+    }
+  };
+
+  const handleDeleteProject = (entryId: string, projectId: string) => {
+    setEntries((prev) => prev.map((e) => {
+      if (e.id !== entryId) return e;
+      const upd = { ...e, projects: e.projects.filter((p) => p.id !== projectId) };
+      upsertEntry(upd);
+      return upd;
+    }));
+  };
+
+  const handleUpdateProject = (entryId: string, projectId: string, updated: Partial<Project>) => {
+    setEntries((prev) => prev.map((e) => {
+      if (e.id !== entryId) return e;
+      const upd = { ...e, projects: e.projects.map((p) => p.id === projectId ? { ...p, ...updated } : p) };
+      upsertEntry(upd);
+      return upd;
+    }));
+  };
+
+  const handleUpdateEntry = (entryId: string, updated: Partial<TimeEntry>) => {
+    if (entryId.startsWith("placeholder-")) {
+      const date = entryId.replace("placeholder-", "");
+      const newEntry: TimeEntry = {
+        id: `entry${Date.now()}`, date, status: "draft",
+        depotStart: updated.depotStart ?? "", depotFinish: updated.depotFinish ?? "",
+        projects: [], employeeName: mockEmployee.name,
+      };
+      setEntries([...entries, newEntry]);
+      upsertEntry(newEntry).then((dbId) => {
+        if (dbId) setEntries((prev) => prev.map((e) => e.id === newEntry.id ? { ...e, id: dbId } : e));
+      });
+    } else {
+      setEntries((prev) => prev.map((e) => {
+        if (e.id !== entryId) return e;
+        const upd = { ...e, ...updated };
+        upsertEntry(upd);
+        return upd;
+      }));
+    }
+  };
+
+  const handleAddSubActivity = (entryId: string, projectId: string, type: string) => {
+    const sa: SubActivity = { id: `sa${Date.now()}`, type, activityType: "", start: "", finish: "" };
+    setEntries((prev) => prev.map((e) => {
+      if (e.id !== entryId) return e;
+      const upd = { ...e, projects: e.projects.map((p) => p.id === projectId ? { ...p, subActivities: [...p.subActivities, sa] } : p) };
+      upsertEntry(upd);
+      return upd;
+    }));
+  };
+
+  const handleUpdateSubActivity = (entryId: string, projectId: string, saId: string, updated: Partial<SubActivity>) => {
+    setEntries((prev) => prev.map((e) => {
+      if (e.id !== entryId) return e;
+      const upd = { ...e, projects: e.projects.map((p) => p.id === projectId ? { ...p, subActivities: p.subActivities.map((sa) => sa.id === saId ? { ...sa, ...updated } : sa) } : p) };
+      upsertEntry(upd);
+      return upd;
+    }));
+  };
+
+  const handleDeleteSubActivity = (entryId: string, projectId: string, saId: string) => {
+    setEntries((prev) => prev.map((e) => {
+      if (e.id !== entryId) return e;
+      const upd = { ...e, projects: e.projects.map((p) => p.id === projectId ? { ...p, subActivities: p.subActivities.filter((sa) => sa.id !== saId) } : p) };
+      upsertEntry(upd);
+      return upd;
+    }));
+  };
+
+  if (!loaded) {
+    return (
+      <div className="flex items-center justify-center h-48 text-gray-400 text-sm">
+        Loading timesheet...
+      </div>
+    );
+  }
+
+  if (currentPage === "weeklysummary") {
+    return (
+      <WeeklySummary
+        entries={entries}
+        employee={mockEmployee}
+        onBack={() => setCurrentPage("timesheet")}
+      />
+    );
+  }
+
+  return (
+    <>
+      <TimeSheetHeader todayHours={todayHours} weekHours={weekHours} />
+      <TimeEntryList
+        entries={entries}
+        onDelete={handleDeleteEntry}
+        onStatusChange={handleStatusChange}
+        onAddProject={handleAddProject}
+        onDeleteProject={handleDeleteProject}
+        onUpdateProject={handleUpdateProject}
+        onUpdateEntry={handleUpdateEntry}
+        onViewWeeklySummary={() => setCurrentPage("weeklysummary")}
+        onAddSubActivity={handleAddSubActivity}
+        onUpdateSubActivity={handleUpdateSubActivity}
+        onDeleteSubActivity={handleDeleteSubActivity}
+      />
+    </>
+  );
+}
