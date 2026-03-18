@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { Profile } from "@/components/Profile";
+import { ProfileEditButton } from "@/components/ProfileEditButton";
 import { Employee } from "@/lib/types";
 
 export default async function ProfilePage() {
@@ -20,8 +21,27 @@ export default async function ProfilePage() {
     classification: emp?.title ?? emp?.role ?? "Employee",
     phone: emp?.phone ?? "",
     startDate: emp?.created_at ?? "",
-    workStatus: "Permanent",
+    workStatus: emp?.employment_type ?? "Casual",
   };
 
-  return <Profile employee={employee} entries={[]} />;
+  const isAdmin = emp?.role === "admin";
+
+  return (
+    <div>
+      {/* Edit button — floats above the Profile component */}
+      <div className="flex justify-end px-4 pt-4">
+        <ProfileEditButton
+          employeeId={emp?.id ?? ""}
+          firstName={emp?.first_name ?? ""}
+          lastName={emp?.last_name ?? ""}
+          phone={emp?.phone ?? ""}
+          classification={emp?.title ?? ""}
+          employmentType={emp?.employment_type ?? "Casual"}
+          role={emp?.role ?? "user"}
+          isAdmin={isAdmin}
+        />
+      </div>
+      <Profile employee={employee} entries={[]} />
+    </div>
+  );
 }

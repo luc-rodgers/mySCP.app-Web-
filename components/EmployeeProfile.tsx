@@ -1,8 +1,9 @@
 "use client"
-import { ArrowLeft, Mail, Phone, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Clock, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { useState } from 'react';
+import { EditEmployeeModal } from './EditEmployeeModal';
 
 interface Employee {
   id: string;
@@ -12,6 +13,7 @@ interface Employee {
   email: string;
   phone: string;
   hoursThisWeek: number;
+  status?: string;
 }
 
 interface TimeEntry {
@@ -29,6 +31,13 @@ interface EmployeeProfileProps {
 }
 
 export function EmployeeProfile({ employee, onBack }: EmployeeProfileProps) {
+  const [showEdit, setShowEdit] = useState(false);
+
+  // Split name into first/last for the edit modal
+  const nameParts = employee.name.split(" ");
+  const firstName = nameParts[0] ?? "";
+  const lastName = nameParts.slice(1).join(" ") ?? "";
+
   // Sample time entries for the employee
   const timeEntries: TimeEntry[] = [];
 
@@ -58,6 +67,23 @@ export function EmployeeProfile({ employee, onBack }: EmployeeProfileProps) {
 
   return (
     <div className="p-4 pb-24">
+      {showEdit && (
+        <EditEmployeeModal
+          employee={{
+            id: employee.id,
+            firstName,
+            lastName,
+            phone: employee.phone,
+            classification: employee.classification,
+            employmentType: employee.employmentType,
+            role: "user",
+            activeStatus: employee.status ?? "active",
+          }}
+          isAdmin={true}
+          onClose={() => setShowEdit(false)}
+        />
+      )}
+
       {/* Back Button */}
       <Button
         variant="ghost"
@@ -77,7 +103,7 @@ export function EmployeeProfile({ employee, onBack }: EmployeeProfileProps) {
               <h1 className="text-gray-900">{employee.name}</h1>
             </div>
             <p className="text-sm text-gray-500 mb-1">{employee.classification}</p>
-            <p className="text-sm text-gray-500 mb-4">Permanent</p>
+            <p className="text-sm text-gray-500 mb-4">{employee.employmentType}</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div className="flex items-center gap-2 text-gray-600">
@@ -90,6 +116,13 @@ export function EmployeeProfile({ employee, onBack }: EmployeeProfileProps) {
               </div>
             </div>
           </div>
+          <button
+            onClick={() => setShowEdit(true)}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            <Pencil className="w-4 h-4" />
+            Edit
+          </button>
         </div>
 
         {/* Summary Cards */}
