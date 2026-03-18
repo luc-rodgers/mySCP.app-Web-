@@ -61,7 +61,7 @@ export function EditEmployeeModal({ employee, isAdmin, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40" />
 
       {/* Modal */}
       <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md z-10 overflow-hidden">
