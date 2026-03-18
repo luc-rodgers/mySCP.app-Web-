@@ -13,14 +13,8 @@ export default async function ProfilePage() {
     .eq("user_id", user?.id)
     .single();
 
-  // Dedicated role check — same pattern used by the Employees page
-  const { data: roleRow } = await supabase
-    .from("employees")
-    .select("role")
-    .eq("user_id", user?.id)
-    .single();
-
-  const isAdmin = roleRow?.role === "admin";
+  // Everyone gets full edit access on their own profile
+  const isAdmin = true;
 
   const employee: Employee = {
     id: emp?.id ?? user?.id ?? "",

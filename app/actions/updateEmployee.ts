@@ -40,6 +40,11 @@ export async function updateEmployee(
     return { success: false, error: "First name and last name are required." };
   }
 
+  const title = (formData.get("title") as string)?.trim() || null;
+  const employmentType = formData.get("employmentType") as string;
+  const role = formData.get("role") as string;
+  const activeStatus = formData.get("activeStatus") as string;
+
   const updates: Record<string, unknown> = {
     first_name: firstName,
     last_name: lastName,
@@ -47,17 +52,16 @@ export async function updateEmployee(
     phone,
   };
 
-  // Admin-only fields
-  if (isAdmin) {
-    const title = (formData.get("title") as string)?.trim() || null;
-    const employmentType = formData.get("employmentType") as string;
-    const role = formData.get("role") as string;
-    const activeStatus = formData.get("activeStatus") as string;
-
+  // Classification, employment type and status: own profile OR admin
+  if (isOwnProfile || isAdmin) {
     updates.title = title;
     updates.employment_type = employmentType || "Casual";
-    updates.role = role || "user";
     updates.active_status = activeStatus || "active";
+  }
+
+  // Role change: admin only (prevents users from promoting themselves)
+  if (isAdmin) {
+    updates.role = role || "user";
   }
 
   const admin = createAdminClient();
