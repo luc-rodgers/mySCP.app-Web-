@@ -18,8 +18,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 const menuItems = [
-  { id: "timesheet", label: "Timesheet", icon: Clock, href: "/timesheet" },
   { id: "profile", label: "Profile", icon: User, href: "/profile" },
+  { id: "timesheet", label: "Timesheet", icon: Clock, href: "/timesheet" },
   { id: "employees", label: "Employees", icon: Users, href: "/employees" },
   { id: "projects", label: "Projects", icon: Briefcase, href: "/projects" },
   { id: "equipment", label: "Equipment", icon: Wrench, href: "/equipment" },
