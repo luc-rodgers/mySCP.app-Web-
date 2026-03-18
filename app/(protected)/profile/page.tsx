@@ -34,6 +34,7 @@ export default async function ProfilePage() {
           employeeId={emp?.id ?? ""}
           firstName={emp?.first_name ?? ""}
           lastName={emp?.last_name ?? ""}
+          email={emp?.email ?? user?.email ?? ""}
           phone={emp?.phone ?? ""}
           classification={emp?.title ?? ""}
           employmentType={emp?.employment_type ?? "Casual"}

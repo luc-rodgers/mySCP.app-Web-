@@ -8,6 +8,7 @@ interface Props {
   employeeId: string;
   firstName: string;
   lastName: string;
+  email: string;
   phone: string;
   classification: string;
   employmentType: string;
@@ -19,6 +20,7 @@ export function ProfileEditButton({
   employeeId,
   firstName,
   lastName,
+  email,
   phone,
   classification,
   employmentType,
@@ -43,6 +45,7 @@ export function ProfileEditButton({
             id: employeeId,
             firstName,
             lastName,
+            email,
             phone,
             classification,
             employmentType,

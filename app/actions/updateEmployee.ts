@@ -33,6 +33,7 @@ export async function updateEmployee(
 
   const firstName = (formData.get("firstName") as string)?.trim();
   const lastName = (formData.get("lastName") as string)?.trim();
+  const email = (formData.get("email") as string)?.trim().toLowerCase() || null;
   const phone = (formData.get("phone") as string)?.trim() || null;
 
   if (!firstName || !lastName) {
@@ -42,6 +43,7 @@ export async function updateEmployee(
   const updates: Record<string, unknown> = {
     first_name: firstName,
     last_name: lastName,
+    email,
     phone,
   };
 

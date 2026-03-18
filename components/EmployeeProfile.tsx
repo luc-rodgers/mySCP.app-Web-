@@ -73,6 +73,7 @@ export function EmployeeProfile({ employee, onBack }: EmployeeProfileProps) {
             id: employee.id,
             firstName,
             lastName,
+            email: employee.email,
             phone: employee.phone,
             classification: employee.classification,
             employmentType: employee.employmentType,

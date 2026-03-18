@@ -20,6 +20,7 @@ interface EmployeeData {
   id: string;
   firstName: string;
   lastName: string;
+  email: string;
   phone: string;
   classification: string;
   employmentType: string;
@@ -99,6 +100,18 @@ export function EditEmployeeModal({ employee, isAdmin, onClose }: Props) {
             </div>
           </div>
 
+          {/* Email */}
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Email</label>
+            <input
+              name="email"
+              type="email"
+              defaultValue={employee.email}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
+              placeholder="name@example.com.au"
+            />
+          </div>
+
           {/* Phone */}
           <div>
             <label className="block text-xs text-gray-600 mb-1">Phone</label>
@@ -107,7 +120,7 @@ export function EditEmployeeModal({ employee, isAdmin, onClose }: Props) {
               type="tel"
               defaultValue={employee.phone}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
-              placeholder="0400 000 000"
+              placeholder="04XX XXX XXX"
             />
           </div>
 
