@@ -1,147 +1,133 @@
 "use client"
-import { Building2, Plus } from 'lucide-react';
-import { Button } from './ui/button';
-import { useState } from 'react';
+import { Settings } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 import { ClientProfile } from './ClientProfile';
+import { AddClientModal } from './AddClientModal';
 
 interface Client {
   id: string;
   name: string;
   contact: string;
+  email: string;
+  phone: string;
   address: string;
-  projectValue: string;
   activeProjects: number;
 }
 
 interface ClientsProps {
-  initialClients?: Client[];
+  initialClients: Client[];
+  isAdmin?: boolean;
 }
 
-export function Clients({ initialClients }: ClientsProps) {
+export function Clients({ initialClients = [], isAdmin = false }: ClientsProps) {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  const defaultClients: Client[] = [
-    {
-      id: '1',
-      name: 'ABC Construction Corp',
-      contact: 'Michael Roberts',
-      address: '123 Industrial Way, City, State 12345',
-      projectValue: '$2,500,000',
-      activeProjects: 3,
-    },
-    {
-      id: '2',
-      name: 'Metro Development Group',
-      contact: 'Jennifer Lee',
-      address: '456 Commerce Blvd, City, State 12346',
-      projectValue: '$1,800,000',
-      activeProjects: 2,
-    },
-    {
-      id: '3',
-      name: 'Greenfield Properties',
-      contact: 'Robert Chang',
-      address: '789 Business Park Dr, City, State 12347',
-      projectValue: '$3,200,000',
-      activeProjects: 4,
-    },
-    {
-      id: '4',
-      name: 'Summit Builders LLC',
-      contact: 'Lisa Anderson',
-      address: '321 Enterprise Ave, City, State 12348',
-      projectValue: '$950,000',
-      activeProjects: 0,
-    },
-    {
-      id: '5',
-      name: 'Urban Renewal Inc',
-      contact: 'David Martinez',
-      address: '654 Development St, City, State 12349',
-      projectValue: '$4,100,000',
-      activeProjects: 5,
-    },
-  ];
+  const clients = initialClients;
 
-  const clients = initialClients ?? defaultClients;
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const totalClients = clients.length;
   const activeClients = clients.filter(c => c.activeProjects > 0).length;
-  const totalProjects = clients.reduce((sum, client) => sum + client.activeProjects, 0);
+  const totalProjects = clients.reduce((sum, c) => sum + c.activeProjects, 0);
 
-  // If a client is selected, show the client profile
   if (selectedClient) {
-    return <ClientProfile client={selectedClient} onBack={() => setSelectedClient(null)} />;
+    return <ClientProfile client={selectedClient} onBack={() => setSelectedClient(null)} isAdmin={isAdmin} />;
   }
 
   return (
     <div className="p-4 pb-24">
+      {showAddModal && <AddClientModal onClose={() => setShowAddModal(false)} />}
+
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-4">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-lg bg-gray-800 flex items-center justify-center">
-              <Building2 className="w-6 h-6 text-white" />
+          <h1 className="text-gray-900 font-bold">Clients</h1>
+
+          {isAdmin && (
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+
+              {showMenu && (
+                <div className="absolute right-0 top-10 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20">
+                  <button
+                    onClick={() => { setShowAddModal(true); setShowMenu(false); }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    Add Client
+                  </button>
+                </div>
+              )}
             </div>
-            <div>
-              <h1 className="text-gray-900">Clients</h1>
-            </div>
-          </div>
-          <Button size="sm" className="gap-2">
-            <Plus className="w-4 h-4" />
-            Add Client
-          </Button>
+          )}
         </div>
 
-        {/* Summary Cards */}
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Overview</p>
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-            <div className="text-gray-600 text-xs mb-1">Total Clients</div>
-            <div className="text-gray-900 text-lg">{totalClients}</div>
+          <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
+            <div className="text-[#374151] text-xl font-bold">{totalClients}</div>
+            <div className="text-gray-500 text-xs mt-0.5">Total</div>
           </div>
-          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-            <div className="text-gray-600 text-xs mb-1">Active</div>
-            <div className="text-green-600 text-lg">{activeClients}</div>
+          <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
+            <div className="text-[#374151] text-xl font-bold">{activeClients}</div>
+            <div className="text-gray-500 text-xs mt-0.5">With Projects</div>
           </div>
-          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-            <div className="text-gray-600 text-xs mb-1">Total Projects</div>
-            <div className="text-gray-900 text-lg">{totalProjects}</div>
+          <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
+            <div className="text-[#374151] text-xl font-bold">{totalProjects}</div>
+            <div className="text-gray-500 text-xs mt-0.5">Projects</div>
           </div>
         </div>
       </div>
 
       {/* Clients Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        {clients.length === 0 && (
+          <div className="px-4 py-10 text-center text-sm text-gray-500">
+            No clients yet
+          </div>
+        )}
+
         {/* Mobile Layout */}
-        <div className="md:hidden divide-y divide-gray-200">
+        <div className="md:hidden divide-y divide-gray-100">
           {clients.map((client) => (
             <button
               key={client.id}
               onClick={() => setSelectedClient(client)}
               className="w-full p-4 text-left hover:bg-gray-50 transition-colors cursor-pointer"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  <h3 className="text-gray-900 mb-1">{client.name}</h3>
-                  <p className="text-sm text-gray-600">{client.contact}</p>
-                </div>
+              <div className="flex-1">
+                <h3 className="text-gray-900 mb-0.5">{client.name}</h3>
+                <p className="text-sm text-gray-500">{client.contact}</p>
               </div>
             </button>
           ))}
         </div>
 
-        {/* Desktop Layout - Table */}
+        {/* Desktop Layout */}
         <div className="hidden md:block">
-          {/* Table Header */}
-          <div className="grid grid-cols-12 gap-4 bg-gray-100 px-4 py-3 border-b border-gray-200 text-xs text-gray-600 uppercase tracking-wider">
+          <div className="grid grid-cols-12 gap-4 bg-gray-50 px-4 py-3 border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
             <div className="col-span-3">Client Name</div>
-            <div className="col-span-3">Contact</div>
-            <div className="col-span-5">Address</div>
+            <div className="col-span-2">Contact</div>
+            <div className="col-span-3">Email</div>
+            <div className="col-span-3">Address</div>
             <div className="col-span-1 text-right">Projects</div>
           </div>
-
-          {/* Table Rows */}
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-gray-100">
             {clients.map((client) => (
               <button
                 key={client.id}
@@ -149,11 +135,10 @@ export function Clients({ initialClients }: ClientsProps) {
                 className="w-full grid grid-cols-12 gap-4 items-center text-sm px-4 py-4 hover:bg-gray-50 transition-colors text-left cursor-pointer"
               >
                 <div className="col-span-3 text-gray-900">{client.name}</div>
-                <div className="col-span-3 text-gray-500">{client.contact}</div>
-                <div className="col-span-5 text-gray-500">{client.address}</div>
-                <div className="col-span-1 text-right text-gray-900">
-                  {client.activeProjects}
-                </div>
+                <div className="col-span-2 text-gray-500">{client.contact || '—'}</div>
+                <div className="col-span-3 text-gray-500">{client.email || '—'}</div>
+                <div className="col-span-3 text-gray-500">{client.address || '—'}</div>
+                <div className="col-span-1 text-right text-gray-900">{client.activeProjects}</div>
               </button>
             ))}
           </div>

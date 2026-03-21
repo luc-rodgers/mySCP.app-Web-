@@ -33,10 +33,10 @@ export async function middleware(request: NextRequest) {
 
   // Allow access to login page
   if (pathname === "/login") {
-    // If already authenticated, redirect to timesheet
+    // If already authenticated, redirect to profile
     if (user) {
       const url = request.nextUrl.clone();
-      url.pathname = "/timesheet";
+      url.pathname = "/profile";
       return NextResponse.redirect(url);
     }
     return supabaseResponse;

@@ -28,9 +28,10 @@ interface TimeEntry {
 interface EmployeeProfileProps {
   employee: Employee;
   onBack: () => void;
+  isAdmin?: boolean;
 }
 
-export function EmployeeProfile({ employee, onBack }: EmployeeProfileProps) {
+export function EmployeeProfile({ employee, onBack, isAdmin = false }: EmployeeProfileProps) {
   const [showEdit, setShowEdit] = useState(false);
 
   // Split name into first/last for the edit modal
@@ -80,7 +81,7 @@ export function EmployeeProfile({ employee, onBack }: EmployeeProfileProps) {
             role: "user",
             activeStatus: employee.status ?? "active",
           }}
-          isAdmin={true}
+          isAdmin={isAdmin}
           onClose={() => setShowEdit(false)}
         />
       )}
@@ -117,13 +118,15 @@ export function EmployeeProfile({ employee, onBack }: EmployeeProfileProps) {
               </div>
             </div>
           </div>
-          <button
-            onClick={() => setShowEdit(true)}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-          >
-            <Pencil className="w-4 h-4" />
-            Edit
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setShowEdit(true)}
+              className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+            >
+              <Pencil className="w-4 h-4" />
+              Edit
+            </button>
+          )}
         </div>
 
         {/* Summary Cards */}

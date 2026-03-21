@@ -7,6 +7,7 @@ import { useState } from 'react';
 
 interface TimeEntryListProps {
   entries: TimeEntry[];
+  activeProjects: string[];
   onDelete: (id: string) => void;
   onStatusChange: (id: string, status: TimeEntry['status']) => void;
   onAddProject: (entryId: string, type?: 'project' | 'yardwork' | 'leave') => void;
@@ -19,7 +20,7 @@ interface TimeEntryListProps {
   onDeleteSubActivity: (entryId: string, projectId: string, subActivityId: string) => void;
 }
 
-export function TimeEntryList({ entries, onDelete, onStatusChange, onAddProject, onDeleteProject, onUpdateProject, onUpdateEntry, onViewWeeklySummary, onAddSubActivity, onUpdateSubActivity, onDeleteSubActivity }: TimeEntryListProps) {
+export function TimeEntryList({ entries, activeProjects, onDelete, onStatusChange, onAddProject, onDeleteProject, onUpdateProject, onUpdateEntry, onViewWeeklySummary, onAddSubActivity, onUpdateSubActivity, onDeleteSubActivity }: TimeEntryListProps) {
   // Track week offset (0 = current week, -1 = previous week, +1 = next week, etc.)
   const [weekOffset, setWeekOffset] = useState(0);
 
@@ -76,8 +77,8 @@ export function TimeEntryList({ entries, onDelete, onStatusChange, onAddProject,
   };
 
   return (
-    <div className="p-4 pb-24">
-      <div className="flex items-center justify-center gap-3 mb-4">
+    <div className="mx-4 pb-24">
+      <div className="flex items-center justify-center gap-3 mb-4 bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-3">
         <Button
           variant="ghost"
           size="icon"
@@ -86,7 +87,7 @@ export function TimeEntryList({ entries, onDelete, onStatusChange, onAddProject,
         >
           <ChevronLeft className="w-5 h-5" />
         </Button>
-        <p className="text-gray-600 text-sm text-center min-w-[200px]">{formatWeekRange()}</p>
+        <p className="text-gray-700 text-sm font-medium text-center min-w-[200px]">{formatWeekRange()}</p>
         <Button
           variant="ghost"
           size="icon"
@@ -109,6 +110,7 @@ export function TimeEntryList({ entries, onDelete, onStatusChange, onAddProject,
                   <TimeEntryCard
                     key={`${day.dateString}-${entry.id}`}
                     entry={entry}
+                    activeProjects={activeProjects}
                     onDelete={onDelete}
                     onStatusChange={onStatusChange}
                     onAddProject={onAddProject}
@@ -138,6 +140,7 @@ export function TimeEntryList({ entries, onDelete, onStatusChange, onAddProject,
             <div key={day.dateString}>
               <TimeEntryCard
                 entry={newEntry}
+                activeProjects={activeProjects}
                 onDelete={onDelete}
                 onStatusChange={onStatusChange}
                 onAddProject={onAddProject}

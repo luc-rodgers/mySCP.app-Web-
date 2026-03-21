@@ -20,9 +20,10 @@ type SupabaseEmployee = {
 type Props = {
   supabaseEmployee: SupabaseEmployee;
   userEmail: string;
+  activeProjects: string[];
 };
 
-export default function TimesheetClient({ supabaseEmployee, userEmail }: Props) {
+export default function TimesheetClient({ supabaseEmployee, userEmail, activeProjects }: Props) {
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [currentPage, setCurrentPage] = useState<"timesheet" | "weeklysummary">("timesheet");
   const [nextTimeCardNumber, setNextTimeCardNumber] = useState<number>(1);
@@ -58,14 +59,22 @@ export default function TimesheetClient({ supabaseEmployee, userEmail }: Props) 
       .order("date", { ascending: false })
       .then(({ data }) => {
         if (data && data.length > 0) {
-          const loaded: TimeEntry[] = data.map((row) => ({
+          const mapped: TimeEntry[] = data.map((row) => ({
             ...(row.data as Partial<TimeEntry>),
             id: row.id,
             date: row.date,
             status: row.status as TimeEntry["status"],
             employeeName: mockEmployee.name,
           }));
-          setEntries(loaded);
+          // Deduplicate by date — keep first occurrence (rows ordered by date desc,
+          // so first = most recently updated for any duplicate dates)
+          const seen = new Set<string>();
+          const deduped = mapped.filter((e) => {
+            if (seen.has(e.date)) return false;
+            seen.add(e.date);
+            return true;
+          });
+          setEntries(deduped);
         }
         setLoaded(true);
       });
@@ -144,20 +153,25 @@ export default function TimesheetClient({ supabaseEmployee, userEmail }: Props) 
   };
 
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Parse YYYY-MM-DD as local date (avoids UTC timezone shift)
+  const parseLocalDate = (dateStr: string) => {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  };
 
   const todayHours = entries
-    .filter((e) => new Date(e.date).toDateString() === today.toDateString())
+    .filter((e) => parseLocalDate(e.date).getTime() === today.getTime())
     .reduce((sum, e) => sum + calculateTotalHours(e), 0);
 
   const weekHours = entries
     .filter((e) => {
-      const d = new Date(e.date);
-      d.setHours(0, 0, 0, 0);
+      const d = parseLocalDate(e.date);
       const cur = today.getDay();
       const toMon = cur === 0 ? 6 : cur - 1;
       const ws = new Date(today);
       ws.setDate(today.getDate() - toMon);
-      ws.setHours(0, 0, 0, 0);
       return d >= ws;
     })
     .reduce((sum, e) => sum + calculateTotalHours(e), 0);
@@ -204,12 +218,19 @@ export default function TimesheetClient({ supabaseEmployee, userEmail }: Props) 
     };
     if (entryId.startsWith("placeholder-")) {
       const date = entryId.replace("placeholder-", "");
+      const existingForDate = entries.find((e) => e.date === date);
+      if (existingForDate) {
+        const upd = { ...existingForDate, projects: [...existingForDate.projects, newProject] };
+        setEntries((prev) => prev.map((e) => e.id === existingForDate.id ? upd : e));
+        upsertEntry(upd);
+        return;
+      }
       const newEntry: TimeEntry = {
         id: `entry${Date.now()}`, date, status: "draft",
         depotStart: "", depotFinish: "", projects: [newProject],
         employeeName: mockEmployee.name,
       };
-      setEntries([...entries, newEntry]);
+      setEntries((prev) => prev.some((e) => e.date === date) ? prev : [...prev, newEntry]);
       upsertEntry(newEntry).then((dbId) => {
         if (dbId) setEntries((prev) => prev.map((e) => e.id === newEntry.id ? { ...e, id: dbId } : e));
       });
@@ -247,12 +268,19 @@ export default function TimesheetClient({ supabaseEmployee, userEmail }: Props) 
   const handleUpdateEntry = (entryId: string, updated: Partial<TimeEntry>) => {
     if (entryId.startsWith("placeholder-")) {
       const date = entryId.replace("placeholder-", "");
+      const existingForDate = entries.find((e) => e.date === date);
+      if (existingForDate) {
+        const upd = { ...existingForDate, ...updated };
+        setEntries((prev) => prev.map((e) => e.id === existingForDate.id ? upd : e));
+        upsertEntry(upd);
+        return;
+      }
       const newEntry: TimeEntry = {
         id: `entry${Date.now()}`, date, status: "draft",
         depotStart: updated.depotStart ?? "", depotFinish: updated.depotFinish ?? "",
         projects: [], employeeName: mockEmployee.name,
       };
-      setEntries([...entries, newEntry]);
+      setEntries((prev) => prev.some((e) => e.date === date) ? prev : [...prev, newEntry]);
       upsertEntry(newEntry).then((dbId) => {
         if (dbId) setEntries((prev) => prev.map((e) => e.id === newEntry.id ? { ...e, id: dbId } : e));
       });
@@ -314,9 +342,15 @@ export default function TimesheetClient({ supabaseEmployee, userEmail }: Props) 
 
   return (
     <>
-      <TimeSheetHeader todayHours={todayHours} weekHours={weekHours} />
+      <TimeSheetHeader
+        todayHours={todayHours}
+        weekHours={weekHours}
+        employeeName={mockEmployee.name}
+        employeeTitle={mockEmployee.classification}
+      />
       <TimeEntryList
         entries={entries}
+        activeProjects={activeProjects}
         onDelete={handleDeleteEntry}
         onStatusChange={handleStatusChange}
         onAddProject={handleAddProject}

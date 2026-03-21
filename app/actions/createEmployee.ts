@@ -30,27 +30,33 @@ export async function createEmployee(
   const firstName = (formData.get("firstName") as string)?.trim();
   const lastName = (formData.get("lastName") as string)?.trim();
   const email = (formData.get("email") as string)?.trim().toLowerCase();
-  const password = formData.get("password") as string;
   const role = (formData.get("role") as string) || "operator";
   const title = (formData.get("title") as string)?.trim() || null;
   const employmentType = (formData.get("employmentType") as string) || "Casual";
   const phone = (formData.get("phone") as string)?.trim() || null;
 
-  if (!firstName || !lastName || !email || !password) {
-    return { success: false, error: "First name, last name, email, and password are required." };
+  if (!firstName || !lastName || !email) {
+    return { success: false, error: "First name, last name, and email are required." };
   }
 
-  if (password.length < 6) {
-    return { success: false, error: "Password must be at least 6 characters." };
+  // Check for duplicate email before touching Auth
+  const { data: existing } = await supabase
+    .from("employees")
+    .select("id")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (existing) {
+    return { success: false, error: "An employee with this email already exists." };
   }
 
   const admin = createAdminClient();
 
-  // Create the Supabase Auth user
-  const { data: authData, error: authError } = await admin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(".supabase.co", "") ?? "http://localhost:3000";
+
+  // Invite the user — Supabase emails them a set-password link
+  const { data: authData, error: authError } = await admin.auth.admin.inviteUserByEmail(email, {
+    redirectTo: `${siteUrl}/auth/callback`,
   });
 
   if (authError) {

@@ -1,20 +1,20 @@
 import { createClient } from "@/lib/supabase/server";
 import { Profile } from "@/components/Profile";
-import { ProfileEditButton } from "@/components/ProfileEditButton";
-import { Employee } from "@/lib/types";
+import { ClaimAdminButton } from "@/components/ClaimAdminButton";
+import { Employee, TimeEntry } from "@/lib/types";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const { data: emp } = await supabase
-    .from("employees")
-    .select("*")
-    .eq("user_id", user?.id)
-    .single();
+  // Parallel: employee record + admin count
+  const [{ data: emp }, { count: adminCount }] = await Promise.all([
+    supabase.from("employees").select("*").eq("user_id", user?.id ?? "").single(),
+    supabase.from("employees").select("id", { count: "exact", head: true }).eq("role", "admin"),
+  ]);
 
-  // Everyone gets full edit access on their own profile
-  const isAdmin = true;
+  const isUserAdmin = emp?.role?.toLowerCase() === "admin";
+  const showClaimAdmin = !isUserAdmin && (!adminCount || adminCount === 0);
 
   const employee: Employee = {
     id: emp?.id ?? user?.id ?? "",
@@ -27,23 +27,49 @@ export default async function ProfilePage() {
     workStatus: emp?.employment_type ?? "Casual",
   };
 
+  // Fetch time entries only if we have an employee record
+  const entries: TimeEntry[] = [];
+  if (emp?.id) {
+    const { data: rows } = await supabase
+      .from("time_entries")
+      .select("id, date, status, data")
+      .eq("employee_id", emp.id)
+      .order("date", { ascending: false });
+
+    if (rows) {
+      const seen = new Set<string>();
+      for (const row of rows) {
+        if (seen.has(row.date)) continue;
+        seen.add(row.date);
+        entries.push({
+          ...(row.data as Partial<TimeEntry>),
+          id: row.id,
+          date: row.date,
+          status: row.status as TimeEntry["status"],
+          employeeName: employee.name,
+        } as TimeEntry);
+      }
+    }
+  }
+
   return (
     <div>
-      {/* Edit button — floats above the Profile component */}
-      <div className="flex justify-end px-4 pt-4">
-        <ProfileEditButton
-          employeeId={emp?.id ?? ""}
-          firstName={emp?.first_name ?? ""}
-          lastName={emp?.last_name ?? ""}
-          email={emp?.email ?? user?.email ?? ""}
-          phone={emp?.phone ?? ""}
-          classification={emp?.title ?? ""}
-          employmentType={emp?.employment_type ?? "Casual"}
-          role={emp?.role ?? "user"}
-          isAdmin={isAdmin}
-        />
-      </div>
-      <Profile employee={employee} entries={[]} />
+      {showClaimAdmin && (
+        <div className="flex justify-end px-4 pt-4">
+          <ClaimAdminButton />
+        </div>
+      )}
+      <Profile
+        employee={employee}
+        entries={entries}
+        employeeId={emp?.id ?? ""}
+        firstName={emp?.first_name ?? ""}
+        lastName={emp?.last_name ?? ""}
+        classification={emp?.title ?? ""}
+        employmentType={emp?.employment_type ?? "Casual"}
+        role={emp?.role ?? "operator"}
+        showClaimAdmin={showClaimAdmin}
+      />
     </div>
   );
 }

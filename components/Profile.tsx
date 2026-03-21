@@ -1,207 +1,244 @@
 "use client"
-import { Mail, Phone, ChevronDown, ChevronUp } from 'lucide-react';
+import { Mail, Phone, Clock, Settings } from 'lucide-react';
 import { Employee, TimeEntry } from '@/lib/types';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { TimeCardSummaryModal } from './TimeCardSummaryModal';
+import { EditEmployeeModal } from './EditEmployeeModal';
 
 interface ProfileProps {
   employee: Employee;
   entries?: TimeEntry[];
+  employeeId: string;
+  firstName: string;
+  lastName: string;
+  classification: string;
+  employmentType: string;
+  role: string;
+  showClaimAdmin?: boolean;
 }
 
-export function Profile({ employee, entries = [] }: ProfileProps) {
-  const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
+export function Profile({
+  employee,
+  entries = [],
+  employeeId,
+  firstName,
+  lastName,
+  classification,
+  employmentType,
+  role,
+}: ProfileProps) {
+  const [showEdit, setShowEdit] = useState(false);
   const [selectedTimeCard, setSelectedTimeCard] = useState<TimeEntry | null>(null);
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  const toggleEntry = (entryId: string) => {
-    const newExpanded = new Set(expandedEntries);
-    if (newExpanded.has(entryId)) {
-      newExpanded.delete(entryId);
-    } else {
-      newExpanded.add(entryId);
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
     }
-    setExpandedEntries(newExpanded);
-  };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-  // Filter submitted and approved time cards
+  const initials = `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase() || '?';
+
   const submittedTimeCards = entries
-    .filter(entry => entry.status === 'submitted' || entry.status === 'approved')
+    .filter(e => e.status === 'submitted' || e.status === 'approved')
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  // Calculate total hours for a time card
   const calculateTotalHours = (entry: TimeEntry) => {
     if (!entry.depotStart || !entry.depotFinish) return 0;
-    const [startHour, startMin] = entry.depotStart.split(':').map(Number);
-    const [finishHour, finishMin] = entry.depotFinish.split(':').map(Number);
-    const hours = (finishHour * 60 + finishMin - startHour * 60 - startMin) / 60;
-    const hasLunch = entry.projects.some(project => project.lunch);
+    const [sh, sm] = entry.depotStart.split(':').map(Number);
+    const [fh, fm] = entry.depotFinish.split(':').map(Number);
+    const hours = (fh * 60 + fm - sh * 60 - sm) / 60;
+    const hasLunch = entry.projects.some(p => p.lunch);
     return Math.max(0, hours - (hasLunch ? 0.5 : 0));
   };
 
-  const formatDate = (dateString: string) => {
-    // Parse date string as local date to avoid timezone issues
-    const [year, month, day] = dateString.split('-').map(Number);
-    const date = new Date(year, month - 1, day);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
+  const formatDate = (dateStr: string) => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString('en-AU', {
+      day: 'numeric', month: 'short', year: 'numeric',
     });
   };
 
   const totalTimeCards = submittedTimeCards.length;
-  const totalHours = submittedTimeCards.reduce((sum, entry) => sum + calculateTotalHours(entry), 0);
+  const totalHours = submittedTimeCards.reduce((sum, e) => sum + calculateTotalHours(e), 0);
   const avgHoursPerCard = totalTimeCards > 0 ? (totalHours / totalTimeCards).toFixed(1) : '0.0';
 
   return (
-    <div className="p-4 pb-24">
-      {/* Employee Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-gray-900">{employee.name}</h1>
-            </div>
-            <p className="text-sm text-gray-500 mb-1">{employee.classification}</p>
-            <p className="text-sm text-gray-500 mb-4">Permanent</p>
+    <div className="min-h-screen bg-[#f3f3f5] pb-24 pt-4">
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-              <div className="flex items-center gap-2 text-gray-600">
-                <Mail className="w-4 h-4" />
-                <span>{employee.email}</span>
-              </div>
-              <div className="flex items-center gap-2 text-gray-600">
-                <Phone className="w-4 h-4" />
-                <span>{employee.phone}</span>
-              </div>
+      {/* Profile card */}
+      <div className="mx-4 mb-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+
+          {/* Gear menu */}
+          <div className="flex justify-end mb-2" ref={menuRef}>
+            <div className="relative">
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+              {showMenu && (
+                <div className="absolute right-0 top-10 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20">
+                  <button
+                    onClick={() => { setShowEdit(true); setShowMenu(false); }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    Edit Profile
+                  </button>
+                </div>
+              )}
             </div>
           </div>
-        </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-            <div className="text-gray-600 text-xs mb-1">Submitted Time Cards</div>
-            <div className="text-blue-600 text-lg">{totalTimeCards}</div>
+          {/* Avatar + name */}
+          <div className="flex flex-col items-center text-center mb-5">
+            <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-3 ring-4 ring-gray-50">
+              <span className="text-2xl font-bold text-gray-700">{initials}</span>
+            </div>
+            <h1 className="text-gray-900 font-bold text-xl mb-2">{employee.name}</h1>
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              {classification && (
+                <span className="bg-gray-100 text-gray-500 text-xs font-medium px-3 py-1 rounded-full">
+                  {classification}
+                </span>
+              )}
+              {employmentType && (
+                <span className="bg-gray-100 text-gray-500 text-xs font-medium px-3 py-1 rounded-full">
+                  {employmentType}
+                </span>
+              )}
+            </div>
           </div>
-          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-            <div className="text-gray-600 text-xs mb-1">Avg Hrs/Day</div>
-            <div className="text-blue-600 text-lg">{avgHoursPerCard}</div>
-          </div>
-          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-            <div className="text-gray-600 text-xs mb-1">Total Hours</div>
-            <div className="text-blue-600 text-lg">{totalHours.toFixed(0)}</div>
+
+          {/* Divider */}
+          <div className="border-t border-gray-100 mb-4" />
+
+          {/* Contact details */}
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+            Contact Details
+          </p>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center shrink-0">
+                <Mail className="w-4 h-4 text-gray-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-gray-400">Email</p>
+                <p className="text-sm text-gray-800 truncate">{employee.email || '—'}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center shrink-0">
+                <Phone className="w-4 h-4 text-gray-400" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-400">Phone</p>
+                <p className="text-sm text-gray-800">{employee.phone || '—'}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Work History Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
-          <h2 className="text-gray-900">Work History</h2>
-        </div>
-
-        {submittedTimeCards.length === 0 ? (
-          <div className="p-8 text-center">
-            <p className="text-gray-500">No work history yet</p>
+      {/* Stats */}
+      <div className="mx-4 mb-4">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+          Statistics
+        </p>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
+            <p className="text-2xl font-bold text-gray-800">{totalTimeCards}</p>
+            <p className="text-xs text-gray-400 mt-1 leading-tight">Time Cards</p>
           </div>
-        ) : (
-          <>
-            {/* Mobile Layout */}
-            <div className="md:hidden divide-y divide-gray-200">
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
+            <p className="text-2xl font-bold text-gray-800">{avgHoursPerCard}</p>
+            <p className="text-xs text-gray-400 mt-1 leading-tight">Avg Hrs/Day</p>
+          </div>
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
+            <p className="text-2xl font-bold text-gray-800">{totalHours.toFixed(0)}</p>
+            <p className="text-xs text-gray-400 mt-1 leading-tight">Total Hours</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Work History */}
+      <div className="mx-4">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+          Work History
+        </p>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          {submittedTimeCards.length === 0 ? (
+            <div className="py-10 text-center">
+              <Clock className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+              <p className="text-sm text-gray-400">No work history yet</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
               {submittedTimeCards.map((entry) => {
-                const totalHours = calculateTotalHours(entry);
+                const hrs = calculateTotalHours(entry);
                 return (
                   <button
                     key={entry.id}
                     onClick={() => setSelectedTimeCard(entry)}
-                    className="w-full p-4 text-left hover:bg-gray-50 transition-colors cursor-pointer"
+                    className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors cursor-pointer text-left"
                   >
-                    {/* Simplified View */}
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex-1">
-                        <div className="text-sm text-gray-500">{formatDate(entry.date)}</div>
-                        <h3 className="text-gray-900 text-xs">{entry.timeCardNumber || 'N/A'}</h3>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-blue-600">{totalHours.toFixed(2)} hrs</span>
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          entry.status === 'approved' 
-                            ? 'bg-green-100 text-green-700' 
-                            : 'bg-yellow-100 text-yellow-700'
-                        }`}>
-                          {entry.status === 'approved' ? 'Approved' : 'Pending'}
-                        </span>
-                      </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{formatDate(entry.date)}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{entry.timeCardNumber || 'N/A'}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-semibold text-gray-800">
+                        {hrs.toFixed(2)} hrs
+                      </span>
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                        entry.status === 'approved'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {entry.status === 'approved' ? 'Approved' : 'Pending'}
+                      </span>
                     </div>
                   </button>
                 );
               })}
             </div>
-
-            {/* Desktop Layout - Table */}
-            <div className="hidden md:block overflow-x-auto">
-              {/* Table Header */}
-              <div className="grid grid-cols-[1fr_2fr_1fr_1fr_1fr_1fr_1fr] gap-4 bg-gray-100 px-4 py-3 border-b border-gray-200 text-xs text-gray-600 uppercase tracking-wider">
-                <div>Date</div>
-                <div>Employee</div>
-                <div>Sign On</div>
-                <div>Sign Off</div>
-                <div className="text-right">Time</div>
-                <div className="text-center">Status</div>
-                <div className="text-right">TC Number</div>
-              </div>
-
-              {/* Table Rows */}
-              <div className="divide-y divide-gray-200">
-                {submittedTimeCards.map((entry) => {
-                  const totalHours = calculateTotalHours(entry);
-                  return (
-                    <button
-                      key={entry.id}
-                      onClick={() => setSelectedTimeCard(entry)}
-                      className="w-full grid grid-cols-[1fr_2fr_1fr_1fr_1fr_1fr_1fr] gap-4 items-center text-sm px-4 py-4 hover:bg-gray-50 transition-colors cursor-pointer text-left"
-                    >
-                      <div className="text-gray-500">{formatDate(entry.date)}</div>
-                      <div className="text-gray-900">{entry.employeeName || employee.name}</div>
-                      <div className="text-gray-500">{entry.depotStart || '--:--'}</div>
-                      <div className="text-gray-500">{entry.depotFinish || '--:--'}</div>
-                      <div className="text-right text-blue-600">
-                        {totalHours.toFixed(2)}
-                      </div>
-                      <div className="flex justify-center">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          entry.status === 'approved' 
-                            ? 'bg-green-100 text-green-700' 
-                            : 'bg-yellow-100 text-yellow-700'
-                        }`}>
-                          {entry.status === 'approved' ? 'Approved' : 'Pending'}
-                        </span>
-                      </div>
-                      <div className="text-right text-gray-500 text-xs">
-                        {entry.timeCardNumber || 'N/A'}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* Time Card Summary Modal */}
+      {/* Modals */}
+      {showEdit && (
+        <EditEmployeeModal
+          employee={{
+            id: employeeId,
+            firstName,
+            lastName,
+            email: employee.email,
+            phone: employee.phone,
+            classification,
+            employmentType,
+            role,
+            activeStatus: 'active',
+          }}
+          isAdmin={true}
+          onClose={() => setShowEdit(false)}
+        />
+      )}
+
       {selectedTimeCard && (
         <TimeCardSummaryModal
           entry={selectedTimeCard}
           isOpen={true}
-          onClose={() => {
-            setSelectedTimeCard(null);
-            setIsEditMode(false);
-          }}
-          viewOnly={!isEditMode}
-          onEdit={() => setIsEditMode(true)}
+          onClose={() => setSelectedTimeCard(null)}
+          viewOnly={true}
+          onEdit={() => {}}
         />
       )}
     </div>

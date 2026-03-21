@@ -1,9 +1,9 @@
 "use client"
-import { Briefcase, Plus } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { Badge } from './ui/badge';
-import { Button } from './ui/button';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ProjectProfile } from './ProjectProfile';
+import { AddProjectModal } from './AddProjectModal';
 
 interface Project {
   id: string;
@@ -17,432 +17,122 @@ interface Project {
   projectValue?: string;
 }
 
-interface ProjectsProps {
-  initialProjects?: Project[];
+interface Client {
+  id: string;
+  name: string;
 }
 
-export function Projects({ initialProjects }: ProjectsProps) {
-  const [viewStatus, setViewStatus] = useState<'active' | 'retired'>('active');
+interface ProjectsProps {
+  initialProjects: Project[];
+  isAdmin?: boolean;
+  clients?: Client[];
+}
+
+export function Projects({ initialProjects = [], isAdmin = false, clients = [] }: ProjectsProps) {
+  const [showCompleted, setShowCompleted] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  const defaultProjects: Project[] = [
-    {
-      id: '1',
-      name: 'Queens St, Southport',
-      client: 'TBD',
-      address: 'Southport, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$100m-$200m',
-    },
-    {
-      id: '2',
-      name: 'West Village - Calista',
-      client: 'TBD',
-      address: 'West End, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$80m-$100m',
-    },
-    {
-      id: '3',
-      name: 'West Village - Allere',
-      client: 'TBD',
-      address: 'West End, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$80m-$100m',
-    },
-    {
-      id: '4',
-      name: 'Cross River Rail',
-      client: 'TBD',
-      address: 'Brisbane, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$1b+',
-    },
-    {
-      id: '5',
-      name: 'Logan Hospital',
-      client: 'TBD',
-      address: 'Logan, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$200m-$500m',
-    },
-    {
-      id: '6',
-      name: 'Kallangur Hospital',
-      client: 'TBD',
-      address: 'Kallangur, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$100m-$200m',
-    },
-    {
-      id: '7',
-      name: 'Brooke St, Palm Beach',
-      client: 'TBD',
-      address: 'Palm Beach, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$50m-$80m',
-    },
-    {
-      id: '8',
-      name: 'Gatton Prison',
-      client: 'TBD',
-      address: 'Gatton, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$200m-$500m',
-    },
-    {
-      id: '9',
-      name: 'Placecrete - Kanagroo Point',
-      client: 'Placecrete',
-      address: 'Kangaroo Point, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$50m-$80m',
-    },
-    {
-      id: '10',
-      name: 'HB - Social Housing',
-      client: 'Hutchinson Builders',
-      address: 'Brisbane, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$100m-$200m',
-    },
-    {
-      id: '11',
-      name: 'QPS Brisbane Grammar',
-      client: 'QPS',
-      address: 'Brisbane, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$80m-$100m',
-    },
-    {
-      id: '12',
-      name: 'ZED - Bond Uni Robina',
-      client: 'ZED',
-      address: 'Robina, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$100m-$200m',
-    },
-    {
-      id: '13',
-      name: 'BUILT St Lucia',
-      client: 'BUILT',
-      address: 'St Lucia, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$80m-$100m',
-    },
-    {
-      id: '14',
-      name: 'General Beton - Meriton',
-      client: 'General Beton',
-      address: 'Brisbane, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$200m-$500m',
-    },
-    {
-      id: '15',
-      name: 'HB - Wharf St',
-      client: 'Hutchinson Builders',
-      address: 'Brisbane, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$100m-$200m',
-    },
-    {
-      id: '16',
-      name: 'Keybuild - Torbanlea',
-      client: 'Keybuild',
-      address: 'Torbanlea, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$50m-$80m',
-    },
-    {
-      id: '17',
-      name: 'ECCC - Coomeram Hospital',
-      client: 'ECCC',
-      address: 'Coomera, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$500m-$1b',
-    },
-    {
-      id: '18',
-      name: 'ECCC - Gold Coast University',
-      client: 'ECCC',
-      address: 'Gold Coast, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$200m-$500m',
-    },
-    {
-      id: '19',
-      name: 'McNab - Toowoomba',
-      client: 'McNab',
-      address: 'Toowoomba, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$80m-$100m',
-    },
-    {
-      id: '20',
-      name: 'HB - Quay Street',
-      client: 'Hutchinson Builders',
-      address: 'Brisbane, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$100m-$200m',
-    },
-    {
-      id: '21',
-      name: 'ECCC - Esprit',
-      client: 'ECCC',
-      address: 'Gold Coast, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$100m-$200m',
-    },
-    {
-      id: '22',
-      name: 'Monarch Toowong',
-      client: 'Monarch',
-      address: 'Toowong, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$80m-$100m',
-    },
-    {
-      id: '23',
-      name: 'Exhibition Quarter',
-      client: 'TBD',
-      address: 'Brisbane, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$500m-$1b',
-    },
-    {
-      id: '24',
-      name: 'Queens Wharf T5/6',
-      client: 'TBD',
-      address: 'Brisbane, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$1b+',
-    },
-    {
-      id: '25',
-      name: 'ECCC - Toowoomba Hospital',
-      client: 'ECCC',
-      address: 'Toowoomba, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$200m-$500m',
-    },
-    {
-      id: '26',
-      name: 'RDX Southport',
-      client: 'RDX',
-      address: 'Southport, QLD',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      hoursLogged: 0,
-      projectValue: '>$100m-$200m',
-    },
-    {
-      id: '27',
-      name: 'Brisbane Square',
-      client: 'Multiplex',
-      address: 'Brisbane, QLD',
-      status: 'completed',
-      startDate: '2023-01-01',
-      endDate: '2024-06-30',
-      hoursLogged: 1245.5,
-      projectValue: '>$500m-$1b',
-    },
-    {
-      id: '28',
-      name: 'Sunshine Coast Hospital',
-      client: 'Lendlease',
-      address: 'Sunshine Coast, QLD',
-      status: 'completed',
-      startDate: '2022-06-01',
-      endDate: '2024-03-31',
-      hoursLogged: 2156.0,
-      projectValue: '>$1b+',
-    },
-    {
-      id: '29',
-      name: 'Victoria Bridge Upgrade',
-      client: 'BMD',
-      address: 'Brisbane, QLD',
-      status: 'completed',
-      startDate: '2023-03-01',
-      endDate: '2024-09-30',
-      hoursLogged: 987.5,
-      projectValue: '>$200m-$500m',
-    },
-  ];
+  const projects = initialProjects;
 
-  const projects = initialProjects ?? defaultProjects;
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-  // Filter projects based on selected status
-  const filteredProjects = projects.filter(project => project.status === viewStatus);
+  const filteredProjects = projects.filter(p => p.status === (showCompleted ? 'completed' : 'active'));
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'completed':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'active': return 'bg-green-100 text-green-800 border-green-200';
+      case 'completed': return 'bg-blue-100 text-blue-800 border-blue-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
-    });
-  };
-
-  const totalHours = filteredProjects.reduce((sum, project) => sum + project.hoursLogged, 0);
   const activeProjects = projects.filter(p => p.status === 'active').length;
   const completedProjects = projects.filter(p => p.status === 'completed').length;
 
-  // If a project is selected, show the project profile
   if (selectedProject) {
-    return <ProjectProfile project={selectedProject} onBack={() => setSelectedProject(null)} />;
+    return <ProjectProfile project={selectedProject} onBack={() => setSelectedProject(null)} isAdmin={isAdmin} />;
   }
 
   return (
     <div className="p-4 pb-24">
+      {showAddModal && (
+        <AddProjectModal clients={clients} onClose={() => setShowAddModal(false)} />
+      )}
+
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-4">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-lg bg-gray-800 flex items-center justify-center">
-              <Briefcase className="w-6 h-6 text-white" />
+          <h1 className="text-gray-900 font-bold">
+            {showCompleted ? 'Completed Projects' : 'Projects'}
+          </h1>
+
+          {isAdmin && (
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+
+              {showMenu && (
+                <div className="absolute right-0 top-10 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20">
+                  <button
+                    onClick={() => { setShowAddModal(true); setShowMenu(false); }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    Add Project
+                  </button>
+                  <button
+                    onClick={() => { setShowCompleted(!showCompleted); setShowMenu(false); }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    {showCompleted ? 'Show Active Projects' : 'Show Completed Projects'}
+                  </button>
+                </div>
+              )}
             </div>
-            <div>
-              <h1 className="text-gray-900">Projects</h1>
-            </div>
-          </div>
-          <Button size="sm" className="gap-2">
-            <Plus className="w-4 h-4" />
-            Add Project
-          </Button>
+          )}
         </div>
 
-        {/* Summary Cards */}
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Overview</p>
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-            <div className="text-gray-600 text-xs mb-1">Total Projects</div>
-            <div className="text-gray-900 text-lg">{projects.length}</div>
+          <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
+            <div className="text-[#374151] text-xl font-bold">{projects.length}</div>
+            <div className="text-gray-500 text-xs mt-0.5">Total</div>
           </div>
-          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-            <div className="text-gray-600 text-xs mb-1">Active</div>
-            <div className="text-green-600 text-lg">{activeProjects}</div>
+          <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
+            <div className="text-[#374151] text-xl font-bold">{activeProjects}</div>
+            <div className="text-gray-500 text-xs mt-0.5">Active</div>
           </div>
-          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-            <div className="text-gray-600 text-xs mb-1">Completed</div>
-            <div className="text-blue-600 text-lg">{completedProjects}</div>
+          <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
+            <div className="text-[#374151] text-xl font-bold">{completedProjects}</div>
+            <div className="text-gray-500 text-xs mt-0.5">Completed</div>
           </div>
         </div>
       </div>
 
       {/* Projects Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        {/* Status Toggle */}
-        <div className="flex border-b border-gray-200">
-          <button
-            onClick={() => setViewStatus('active')}
-            className={`flex-1 px-4 py-3 text-sm transition-colors cursor-pointer ${
-              viewStatus === 'active'
-                ? 'bg-white text-gray-900 border-b-2 border-red-600'
-                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            Active
-          </button>
-          <button
-            onClick={() => setViewStatus('retired')}
-            className={`flex-1 px-4 py-3 text-sm transition-colors cursor-pointer ${
-              viewStatus === 'retired'
-                ? 'bg-white text-gray-900 border-b-2 border-red-600'
-                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            Retired
-          </button>
-        </div>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        {filteredProjects.length === 0 && (
+          <div className="px-4 py-10 text-center text-sm text-gray-500">
+            No {showCompleted ? 'completed' : 'active'} projects
+          </div>
+        )}
+
         {/* Mobile Layout */}
-        <div className="md:hidden divide-y divide-gray-200">
+        <div className="md:hidden divide-y divide-gray-100">
           {filteredProjects.map((project) => (
             <button
               key={project.id}
@@ -452,9 +142,9 @@ export function Projects({ initialProjects }: ProjectsProps) {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
                   <h3 className="text-gray-900 mb-1">{project.name}</h3>
-                  <p className="text-sm text-gray-600">{project.client}</p>
+                  <p className="text-sm text-gray-500">{project.client}</p>
                 </div>
-                <Badge variant="outline" className={`${getStatusColor(project.status)} text-xs capitalize`}>
+                <Badge variant="outline" className={`${getStatusColor(project.status)} text-xs capitalize shrink-0`}>
                   {project.status}
                 </Badge>
               </div>
@@ -462,20 +152,17 @@ export function Projects({ initialProjects }: ProjectsProps) {
           ))}
         </div>
 
-        {/* Desktop Layout - Table */}
+        {/* Desktop Layout */}
         <div className="hidden md:block">
-          {/* Table Header */}
-          <div className="grid grid-cols-12 gap-4 bg-gray-100 px-4 py-3 border-b border-gray-200 text-xs text-gray-600 uppercase tracking-wider">
+          <div className="grid grid-cols-12 gap-4 bg-gray-50 px-4 py-3 border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
             <div className="col-span-3">Project Name</div>
             <div className="col-span-2">Client</div>
             <div className="col-span-2">Location</div>
             <div className="col-span-2">$ Value</div>
-            <div className="col-span-2">Date Range</div>
+            <div className="col-span-2">Status</div>
             <div className="col-span-1 text-right">Hrs</div>
           </div>
-
-          {/* Table Rows */}
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-gray-100">
             {filteredProjects.map((project) => (
               <button
                 key={project.id}
@@ -485,12 +172,13 @@ export function Projects({ initialProjects }: ProjectsProps) {
                 <div className="col-span-3 text-gray-900">{project.name}</div>
                 <div className="col-span-2 text-gray-500">{project.client}</div>
                 <div className="col-span-2 text-gray-500">{project.address}</div>
-                <div className="col-span-2 text-gray-500">{project.projectValue || '-'}</div>
-                <div className="col-span-2 text-gray-500">
-                  <div>{formatDate(project.startDate)} -</div>
-                  <div>{formatDate(project.endDate)}</div>
+                <div className="col-span-2 text-gray-500">{project.projectValue || '—'}</div>
+                <div className="col-span-2">
+                  <Badge variant="outline" className={`${getStatusColor(project.status)} text-xs capitalize`}>
+                    {project.status}
+                  </Badge>
                 </div>
-                <div className="col-span-1 text-right text-gray-900">
+                <div className="col-span-1 text-right text-gray-500">
                   {project.hoursLogged.toFixed(1)}
                 </div>
               </button>

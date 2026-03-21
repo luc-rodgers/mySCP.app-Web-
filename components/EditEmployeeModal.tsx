@@ -6,14 +6,16 @@ import { updateEmployee } from "@/app/actions/updateEmployee";
 import { useRouter } from "next/navigation";
 
 const CLASSIFICATIONS = [
-  "CW4 Pump Operator",
-  "CW3 Pump Operator",
-  "CW2 Line Hand",
-  "CW1 Line Hand",
+  "CW1 - Line Hand",
+  "CW2 - Line Hand",
+  "CW3 - Pump Operator",
+  "CW3 - Rigger",
+  "CW4 - Pump Operator",
+  "CW4 - Rigger",
+  "Administration",
+  "Management",
   "Site Manager",
   "Trainee",
-  "Administration",
-  "Other",
 ];
 
 interface EmployeeData {
@@ -127,9 +129,9 @@ export function EditEmployeeModal({ employee, isAdmin, onClose }: Props) {
           {/* Admin-only fields */}
           {isAdmin && (
             <>
-              {/* Classification */}
+              {/* Position */}
               <div>
-                <label className="block text-xs text-gray-600 mb-1">Classification</label>
+                <label className="block text-xs text-gray-600 mb-1">Position</label>
                 <select
                   name="title"
                   defaultValue={employee.classification}
@@ -155,7 +157,7 @@ export function EditEmployeeModal({ employee, isAdmin, onClose }: Props) {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-600 mb-1">App Role</label>
+                  <label className="block text-xs text-gray-600 mb-1">App Access</label>
                   <select
                     name="role"
                     defaultValue={employee.role}

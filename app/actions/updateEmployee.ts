@@ -1,6 +1,5 @@
 "use server";
 
-import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
@@ -64,8 +63,7 @@ export async function updateEmployee(
     updates.role = role || "user";
   }
 
-  const admin = createAdminClient();
-  const { error } = await admin
+  const { error } = await supabase
     .from("employees")
     .update(updates)
     .eq("id", employeeId);

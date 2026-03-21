@@ -6,14 +6,16 @@ import { createEmployee } from "@/app/actions/createEmployee";
 import { useRouter } from "next/navigation";
 
 const CLASSIFICATIONS = [
-  "CW4 Pump Operator",
-  "CW3 Pump Operator",
-  "CW2 Line Hand",
-  "CW1 Line Hand",
+  "CW1 - Line Hand",
+  "CW2 - Line Hand",
+  "CW3 - Pump Operator",
+  "CW3 - Rigger",
+  "CW4 - Pump Operator",
+  "CW4 - Rigger",
+  "Administration",
+  "Management",
   "Site Manager",
   "Trainee",
-  "Administration",
-  "Other",
 ];
 
 interface Props {
@@ -73,7 +75,7 @@ export function AddEmployeeModal({ onClose }: Props) {
                 name="firstName"
                 required
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
-                placeholder="Aaron"
+                placeholder="First name"
               />
             </div>
             <div>
@@ -82,7 +84,7 @@ export function AddEmployeeModal({ onClose }: Props) {
                 name="lastName"
                 required
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
-                placeholder="Smith"
+                placeholder="Last name"
               />
             </div>
           </div>
@@ -95,30 +97,19 @@ export function AddEmployeeModal({ onClose }: Props) {
               type="email"
               required
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
-              placeholder="aaron.smith@scpumping.com.au"
+              placeholder="email@example.com"
             />
           </div>
 
-          {/* Temporary password */}
+          {/* Position */}
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Temporary Password *</label>
-            <input
-              name="password"
-              type="text"
-              required
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 font-mono"
-              placeholder="Min. 6 characters"
-            />
-            <p className="text-xs text-gray-400 mt-1">Share this with the employee so they can log in for the first time.</p>
-          </div>
-
-          {/* Classification */}
-          <div>
-            <label className="block text-xs text-gray-600 mb-1">Classification</label>
+            <label className="block text-xs text-gray-600 mb-1">Position</label>
             <select
               name="title"
+              defaultValue=""
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
             >
+              <option value="">Select classification</option>
               {CLASSIFICATIONS.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
@@ -131,20 +122,23 @@ export function AddEmployeeModal({ onClose }: Props) {
               <label className="block text-xs text-gray-600 mb-1">Employment Type</label>
               <select
                 name="employmentType"
+                defaultValue=""
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
               >
+                <option value="">Select type</option>
                 <option value="Casual">Casual</option>
                 <option value="Permanent">Permanent</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">App Role</label>
+              <label className="block text-xs text-gray-600 mb-1">App Access</label>
               <select
                 name="role"
+                defaultValue="admin"
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
               >
-                <option value="user">User</option>
                 <option value="admin">Admin</option>
+                <option value="operator">Operator</option>
               </select>
             </div>
           </div>
@@ -181,7 +175,7 @@ export function AddEmployeeModal({ onClose }: Props) {
               disabled={loading}
               className="flex-1 bg-gray-900 text-white rounded-lg px-4 py-2 text-sm hover:bg-gray-700 transition-colors disabled:opacity-50 cursor-pointer"
             >
-              {loading ? "Creating…" : "Create Account"}
+              {loading ? "Sending invite…" : "Send Invite"}
             </button>
           </div>
         </form>

@@ -8,7 +8,6 @@ import {
   User,
   Users,
   Briefcase,
-  Wrench,
   Building2,
   LogOut,
   X,
@@ -22,7 +21,6 @@ const menuItems = [
   { id: "timesheet", label: "Timesheet", icon: Clock, href: "/timesheet" },
   { id: "employees", label: "Employees", icon: Users, href: "/employees" },
   { id: "projects", label: "Projects", icon: Briefcase, href: "/projects" },
-  { id: "equipment", label: "Equipment", icon: Wrench, href: "/equipment" },
   { id: "clients", label: "Clients", icon: Building2, href: "/clients" },
 ];
 
@@ -42,7 +40,7 @@ function SCPLogo() {
   );
 }
 
-export default function Sidebar() {
+export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -70,9 +68,9 @@ export default function Sidebar() {
               key={id}
               href={href}
               onClick={() => setIsOpen(false)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                 isActive
-                  ? "bg-gray-100 text-gray-900 shadow-sm"
+                  ? "bg-gray-100 text-gray-900"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
               }`}
             >
