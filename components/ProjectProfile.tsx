@@ -116,6 +116,7 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
         .filter('data', 'cs', JSON.stringify({ projects: [{ project: editedProject.name }] }))
         .order('date', { ascending: false });
 
+      console.log('[ProjectProfile] work history query:', { project: editedProject.name, rowCount: data?.length, error });
       if (error || !data) { setLoadingHistory(false); return; }
 
       function subHours(siteStart: string, siteFinish: string): number {
