@@ -6,7 +6,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react';
-// logo replaced — use text logo below
+import Image from 'next/image';
 
 interface TimeCardSummaryModalProps {
   entry: TimeEntry;
@@ -249,13 +249,16 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="px-6 pt-1 pb-0 border-b-0">
+        <DialogHeader className="px-6 pt-4 pb-0 border-b-0">
           <DialogTitle className="flex justify-center items-center">
-            <div className="h-20 overflow-hidden">
-              <div className="h-14 flex items-center justify-center bg-[#030213] rounded-lg px-4">
-                <span className="text-white font-bold text-lg"><span className="text-red-500">S</span>CP</span>
-              </div>
-            </div>
+            <Image
+              src="/scplogo.png"
+              alt="Specialised Concrete Pumping"
+              width={140}
+              height={56}
+              className="object-contain"
+              priority
+            />
           </DialogTitle>
         </DialogHeader>
 

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 const menuItems = [
   { id: "profile", label: "Profile", icon: User, href: "/profile" },
@@ -26,16 +27,15 @@ const menuItems = [
 
 function SCPLogo() {
   return (
-    <div className="flex items-center gap-2.5">
-      <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-[#030213]">
-        <span className="text-white font-bold text-sm leading-none">
-          <span className="text-red-500">S</span>CP
-        </span>
-      </div>
-      <div className="flex flex-col leading-tight">
-        <span className="text-[13px] font-semibold text-[#030213]">MySCP</span>
-        <span className="text-[10px] text-[#717182]">Concrete Pumping</span>
-      </div>
+    <div className="flex items-center">
+      <Image
+        src="/scplogo.png"
+        alt="Specialised Concrete Pumping"
+        width={120}
+        height={48}
+        className="object-contain"
+        priority
+      />
     </div>
   );
 }

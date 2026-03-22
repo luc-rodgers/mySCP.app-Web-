@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Suspense } from "react";
+import Image from "next/image";
 
 function LoginForm() {
   const router = useRouter();
@@ -43,15 +44,14 @@ function LoginForm() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-[#030213] mb-4 shadow-md">
-            <span className="text-white font-bold text-xl leading-none">
-              <span className="text-red-500">S</span>CP
-            </span>
-          </div>
-          <h1 className="text-2xl font-semibold text-[#030213]">MySCP</h1>
-          <p className="text-sm text-[#717182] mt-1">
-            Specialised Concrete Pumping
-          </p>
+          <Image
+            src="/scplogo.png"
+            alt="Specialised Concrete Pumping"
+            width={160}
+            height={64}
+            className="object-contain mb-2"
+            priority
+          />
         </div>
 
         {/* Card */}
