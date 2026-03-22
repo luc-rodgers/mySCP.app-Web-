@@ -33,6 +33,7 @@ export function Profile({
   employmentType,
   role,
 }: ProfileProps) {
+  const [localEntries, setLocalEntries] = useState<TimeEntry[]>(entries);
   const [showEdit, setShowEdit] = useState(false);
   const [selectedTimeCard, setSelectedTimeCard] = useState<TimeEntry | null>(null);
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
@@ -52,7 +53,7 @@ export function Profile({
 
   const initials = `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase() || '?';
 
-  const submittedTimeCards = entries
+  const submittedTimeCards = localEntries
     .filter(e => e.status === 'submitted' || e.status === 'approved')
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -296,7 +297,7 @@ export function Profile({
           {/* Heatmap */}
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Activity</p>
-            <WorkHeatmap entries={entries} calculateHours={calculateTotalHours} />
+            <WorkHeatmap entries={localEntries} calculateHours={calculateTotalHours} />
           </div>
         </div>
       )}
@@ -340,7 +341,10 @@ export function Profile({
           employeeDbId={employeeDbId}
           activeProjects={activeProjects}
           onClose={() => setEditingEntry(null)}
-          onDeleted={() => setEditingEntry(null)}
+          onDeleted={() => {
+            setLocalEntries(prev => prev.filter(e => e.id !== editingEntry?.id));
+            setEditingEntry(null);
+          }}
         />
       )}
     </div>
