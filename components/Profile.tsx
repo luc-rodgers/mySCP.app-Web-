@@ -31,6 +31,7 @@ export function Profile({
   const [showEdit, setShowEdit] = useState(false);
   const [selectedTimeCard, setSelectedTimeCard] = useState<TimeEntry | null>(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [activeTab, setActiveTab] = useState<'history' | 'stats'>('history');
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -166,112 +167,133 @@ export function Profile({
         </div>
       </div>
 
-      {/* Stats */}
+      {/* Tab toggle */}
       <div className="mx-4 mb-4">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-          Statistics
-        </p>
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
-            <p className="text-2xl font-bold text-gray-800">{totalTimeCards}</p>
-            <p className="text-xs text-gray-400 mt-1 leading-tight">Days Worked</p>
-          </div>
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
-            <p className="text-2xl font-bold text-gray-800">{avgHoursPerCard}</p>
-            <p className="text-xs text-gray-400 mt-1 leading-tight">Avg Hrs/Day</p>
-          </div>
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
-            <p className="text-2xl font-bold text-gray-800">{totalHours.toFixed(0)}</p>
-            <p className="text-xs text-gray-400 mt-1 leading-tight">Total Hours</p>
-          </div>
+        <div className="flex bg-gray-200 rounded-xl p-1 gap-1">
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors cursor-pointer ${
+              activeTab === 'history'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Work History
+          </button>
+          <button
+            onClick={() => setActiveTab('stats')}
+            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors cursor-pointer ${
+              activeTab === 'stats'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Statistics
+          </button>
         </div>
       </div>
 
-      {/* Work Heatmap — desktop only */}
-      <div className="hidden md:block mx-4 mb-4">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-          Activity
-        </p>
-        <WorkHeatmap entries={entries} calculateHours={calculateTotalHours} />
-      </div>
+      {/* Work History tab */}
+      {activeTab === 'history' && (
+        <div className="mx-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            {sortedWeekKeys.length === 0 ? (
+              <div className="py-10 text-center">
+                <Clock className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+                <p className="text-sm text-gray-400">No work history yet</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {sortedWeekKeys.map((weekKey) => {
+                  const weekEntries = weekGroups[weekKey];
+                  const weekTotal = weekEntries.reduce((sum, e) => sum + calculateTotalHours(e), 0);
+                  const isOpen = expandedWeeks.has(weekKey);
 
-      {/* Work History */}
-      <div className="mx-4">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-          Work History
-        </p>
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          {sortedWeekKeys.length === 0 ? (
-            <div className="py-10 text-center">
-              <Clock className="w-8 h-8 text-gray-200 mx-auto mb-2" />
-              <p className="text-sm text-gray-400">No work history yet</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-100">
-              {sortedWeekKeys.map((weekKey) => {
-                const weekEntries = weekGroups[weekKey];
-                const weekTotal = weekEntries.reduce((sum, e) => sum + calculateTotalHours(e), 0);
-                const isOpen = expandedWeeks.has(weekKey);
+                  return (
+                    <div key={weekKey}>
+                      <button
+                        onClick={() => toggleWeek(weekKey)}
+                        className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors cursor-pointer text-left"
+                      >
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">{formatWeekRange(weekKey)}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {weekEntries.length} {weekEntries.length === 1 ? 'day' : 'days'} worked
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-semibold text-gray-800">{weekTotal.toFixed(2)} hrs</span>
+                          {isOpen
+                            ? <ChevronUp className="w-4 h-4 text-gray-400" />
+                            : <ChevronDown className="w-4 h-4 text-gray-400" />
+                          }
+                        </div>
+                      </button>
 
-                return (
-                  <div key={weekKey}>
-                    {/* Week header row */}
-                    <button
-                      onClick={() => toggleWeek(weekKey)}
-                      className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors cursor-pointer text-left"
-                    >
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">{formatWeekRange(weekKey)}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          {weekEntries.length} {weekEntries.length === 1 ? 'day' : 'days'} worked
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-semibold text-gray-800">{weekTotal.toFixed(2)} hrs</span>
-                        {isOpen
-                          ? <ChevronUp className="w-4 h-4 text-gray-400" />
-                          : <ChevronDown className="w-4 h-4 text-gray-400" />
-                        }
-                      </div>
-                    </button>
-
-                    {/* Expanded day cards */}
-                    {isOpen && (
-                      <div className="border-t border-gray-100 bg-gray-50 divide-y divide-gray-100">
-                        {weekEntries.map((entry) => {
-                          const hrs = calculateTotalHours(entry);
-                          return (
-                            <button
-                              key={entry.id}
-                              onClick={() => setSelectedTimeCard(entry)}
-                              className="w-full flex items-center justify-between pl-8 pr-5 py-3 hover:bg-gray-100 transition-colors cursor-pointer text-left"
-                            >
-                              <div>
-                                <p className="text-sm font-medium text-gray-900">{formatDate(entry.date)}</p>
-                                <p className="text-xs text-gray-400 mt-0.5">{entry.timeCardNumber || 'No TC #'}</p>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <span className="text-sm text-gray-700">{hrs.toFixed(2)} hrs</span>
-                                <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                                  entry.status === 'approved'
-                                    ? 'bg-green-100 text-green-700'
-                                    : 'bg-amber-100 text-amber-700'
-                                }`}>
-                                  {entry.status === 'approved' ? 'Approved' : 'Pending'}
-                                </span>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                      {isOpen && (
+                        <div className="border-t border-gray-100 bg-gray-50 divide-y divide-gray-100">
+                          {weekEntries.map((entry) => {
+                            const hrs = calculateTotalHours(entry);
+                            return (
+                              <button
+                                key={entry.id}
+                                onClick={() => setSelectedTimeCard(entry)}
+                                className="w-full flex items-center justify-between pl-8 pr-5 py-3 hover:bg-gray-100 transition-colors cursor-pointer text-left"
+                              >
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">{formatDate(entry.date)}</p>
+                                  <p className="text-xs text-gray-400 mt-0.5">{entry.timeCardNumber || 'No TC #'}</p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-sm text-gray-700">{hrs.toFixed(2)} hrs</span>
+                                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                                    entry.status === 'approved'
+                                      ? 'bg-green-100 text-green-700'
+                                      : 'bg-amber-100 text-amber-700'
+                                  }`}>
+                                    {entry.status === 'approved' ? 'Approved' : 'Pending'}
+                                  </span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Statistics tab */}
+      {activeTab === 'stats' && (
+        <div className="mx-4 space-y-4">
+          {/* Stat cards */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
+              <p className="text-2xl font-bold text-gray-800">{totalTimeCards}</p>
+              <p className="text-xs text-gray-400 mt-1 leading-tight">Days Worked</p>
+            </div>
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
+              <p className="text-2xl font-bold text-gray-800">{avgHoursPerCard}</p>
+              <p className="text-xs text-gray-400 mt-1 leading-tight">Avg Hrs/Day</p>
+            </div>
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
+              <p className="text-2xl font-bold text-gray-800">{totalHours.toFixed(0)}</p>
+              <p className="text-xs text-gray-400 mt-1 leading-tight">Total Hours</p>
+            </div>
+          </div>
+
+          {/* Heatmap */}
+          <div>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Activity</p>
+            <WorkHeatmap entries={entries} calculateHours={calculateTotalHours} />
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       {showEdit && (
