@@ -77,7 +77,7 @@ export function TimeEntryList({ entries, activeProjects, onDelete, onStatusChang
   };
 
   return (
-    <div className="mx-4 pb-24">
+    <div className="mx-4 pb-24 md:mx-0 md:pb-6">
       <div className="flex items-center justify-center gap-3 mb-4 bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-3">
         <Button
           variant="ghost"
@@ -98,7 +98,7 @@ export function TimeEntryList({ entries, activeProjects, onDelete, onStatusChang
         </Button>
       </div>
       
-      <div className="space-y-4">
+      <div className="space-y-4 md:grid md:grid-cols-7 md:gap-2 md:space-y-0">
         {weekDays.map((day, dayIndex) => {
           const dayEntries = entriesByDate[day.dateString] || [];
           

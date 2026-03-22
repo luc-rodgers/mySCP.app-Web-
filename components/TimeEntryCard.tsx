@@ -136,12 +136,16 @@ export function TimeEntryCard({ entry, activeProjects, onDelete, onStatusChange,
 
   const getStatusColor = (status: TimeEntry['status']) => {
     switch (status) {
+      case 'draft':
+        return 'bg-gray-400 text-white';
       case 'submitted':
         return 'bg-amber-500 text-white';
       case 'approved':
         return 'bg-green-500 text-white';
     }
   };
+
+  const hasDraftData = entry.status === 'draft' && (!!entry.depotStart || entry.projects.length > 0);
 
   const getStatusLabel = (status: TimeEntry['status']) => {
     if (status === 'submitted') return 'Pending';
@@ -218,36 +222,49 @@ export function TimeEntryCard({ entry, activeProjects, onDelete, onStatusChange,
   const isLocked = entry.status === 'submitted' && !isEditMode;
 
   return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden border-2 border-gray-200">
-      {/* Day Header - Clickable to expand/collapse */}
+    <div className="bg-white rounded-xl shadow-md overflow-hidden border-2 border-gray-200 md:rounded-xl md:flex md:flex-col">
+      {/* Day Header - Clickable to open modal */}
       <div
         onClick={handleToggleExpanded}
-        className="px-4 py-3 flex justify-between items-center w-full transition-colors cursor-pointer bg-gray-200 hover:bg-gray-300"
+        className="transition-colors cursor-pointer bg-gray-200 hover:bg-gray-300
+          /* Mobile: horizontal row */
+          px-4 py-3 flex justify-between items-center
+          /* Desktop: vertical column tile */
+          md:flex-col md:items-center md:justify-between md:px-3 md:py-4 md:min-h-[140px] md:text-center md:flex-1"
       >
-        <div className="flex items-center gap-3">
-          <Clock className="w-5 h-5 text-gray-700" />
-          <div>
-            <div className="text-gray-900">{formatDate(entry.date).split(',')[0]}</div>
-            <div className="text-xs text-gray-600">{formatDate(entry.date).split(',')[1]}</div>
+        {/* Day name + date */}
+        <div className="flex items-center gap-3 md:flex-col md:gap-1 md:items-center">
+          <Clock className="w-5 h-5 text-gray-700 md:hidden" />
+          <div className="md:text-center">
+            <div className="text-gray-900 font-medium md:text-sm">
+              {/* Mobile: full day name. Desktop: 3-letter abbrev */}
+              <span className="md:hidden">{formatDate(entry.date).split(',')[0]}</span>
+              <span className="hidden md:inline">{formatDate(entry.date).split(',')[0].slice(0, 3)}</span>
+            </div>
+            <div className="text-xs text-gray-600">
+              {/* Mobile: "Mar 3, 2026". Desktop: just "3 Mar" */}
+              <span className="md:hidden">{formatDate(entry.date).split(',')[1]}</span>
+              <span className="hidden md:inline">
+                {(() => {
+                  const [y, m, d] = entry.date.split('-').map(Number);
+                  return new Date(y, m - 1, d).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+                })()}
+              </span>
+            </div>
           </div>
         </div>
-        <div className="md:hidden">
-          {(entry.status === 'submitted' || entry.status === 'approved' || entry.projects.length > 0) && entry.status !== 'draft' && (
-            <Badge className={`${getStatusColor(entry.status)} text-xs`}>
-              {getStatusLabel(entry.status)}
-            </Badge>
-          )}
+
+        {/* Hours */}
+        <div className="text-sm text-gray-900 md:text-base md:font-semibold">
+          {totalHours > 0 ? `${totalHours} hrs` : <span className="text-gray-400 text-xs">—</span>}
         </div>
-        <div className="flex items-center gap-3">
-          <div className="hidden md:flex items-center gap-3">
-            {(entry.status === 'submitted' || entry.status === 'approved' || entry.projects.length > 0) && entry.status !== 'draft' && (
-              <Badge className={`${getStatusColor(entry.status)} text-xs`}>
-                {getStatusLabel(entry.status)}
-              </Badge>
-            )}
-          </div>
-          <div className="text-sm text-gray-900">{totalHours} hrs</div>
-        </div>
+
+        {/* Status badge */}
+        {(hasDraftData || entry.status === 'submitted' || entry.status === 'approved') && (
+          <Badge className={`${getStatusColor(entry.status)} text-xs`}>
+            {getStatusLabel(entry.status)}
+          </Badge>
+        )}
       </div>
 
 
