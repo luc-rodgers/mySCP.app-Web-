@@ -9,6 +9,7 @@ interface Project {
   id: string;
   name: string;
   client: string;
+  streetAddress?: string;
   address: string;
   status: 'active' | 'completed';
   startDate: string;

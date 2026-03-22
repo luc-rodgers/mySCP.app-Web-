@@ -27,6 +27,7 @@ interface Project {
   id: string;
   name: string;
   client: string;
+  streetAddress?: string;
   address: string;
   state?: string;
   status: string;
@@ -191,6 +192,7 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
       ...editedProject,
       name: (formData.get('name') as string)?.trim() || editedProject.name,
       client: (formData.get('clientName') as string)?.trim() || editedProject.client,
+      streetAddress: (formData.get('streetAddress') as string)?.trim() || editedProject.streetAddress,
       address: (formData.get('address') as string)?.trim() || editedProject.address,
       state: (formData.get('state') as string) || editedProject.state,
       projectValue: (formData.get('projectValue') as string) || editedProject.projectValue,
@@ -243,17 +245,7 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
                     {editedProject.status}
                   </Badge>
                 </div>
-                <p className="text-sm text-gray-500 mb-4">{editedProject.client || 'No client'}</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                  {(editedProject.address || editedProject.state) && (
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <MapPin className="w-4 h-4" />
-                      <span>
-                        {[editedProject.address, editedProject.state].filter(Boolean).join(', ')}
-                      </span>
-                    </div>
-                  )}
-                </div>
+                <p className="text-sm text-gray-500">{editedProject.client || 'No client'}</p>
               </div>
 
               {isAdmin && (
@@ -277,6 +269,20 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
                 </div>
               )}
             </div>
+
+            {(editedProject.streetAddress || editedProject.address || editedProject.state) && (
+              <div className="pt-4 border-t border-gray-100">
+                <div className="flex items-start gap-2 text-sm text-gray-600">
+                  <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
+                  <div>
+                    {editedProject.streetAddress && (
+                      <p>{editedProject.streetAddress}</p>
+                    )}
+                    <p>{[editedProject.address, editedProject.state].filter(Boolean).join(', ')}</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
           </>
         ) : (
@@ -306,9 +312,16 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
                 placeholder="Client name" />
             </div>
 
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">Street Address</label>
+              <input name="streetAddress" defaultValue={editedProject.streetAddress || ''}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                placeholder="123 Example St" />
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-gray-600 mb-1">Location</label>
+                <label className="block text-xs text-gray-600 mb-1">Suburb</label>
                 <input name="address" defaultValue={editedProject.address}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                   placeholder="Suburb" />
