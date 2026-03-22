@@ -428,20 +428,20 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
                       <HistoryStatusBadge status={row.status} />
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-gray-400 mt-1">
+                  <div className="flex flex-wrap gap-2 text-xs text-gray-400 mt-1">
                     {row.activities.travel > 0 && (
                       <span className="flex items-center gap-1">
-                        <Car className="w-3 h-3" />{row.activities.travel.toFixed(1)}h
+                        <Car className="w-3 h-3" />Travel {row.activities.travel.toFixed(1)}h
                       </span>
                     )}
                     {row.activities.pouring > 0 && (
                       <span className="flex items-center gap-1">
-                        <Droplets className="w-3 h-3" />{row.activities.pouring.toFixed(1)}h
+                        <Droplets className="w-3 h-3" />Pouring {row.activities.pouring.toFixed(1)}h
                       </span>
                     )}
                     {row.activities.nonPouring > 0 && (
                       <span className="flex items-center gap-1">
-                        <Wrench className="w-3 h-3" />{row.activities.nonPouring.toFixed(1)}h
+                        <Wrench className="w-3 h-3" />Non-Pouring {row.activities.nonPouring.toFixed(1)}h
                       </span>
                     )}
                   </div>
@@ -470,20 +470,20 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
                     </div>
                     <div className="col-span-2 text-gray-900">{row.employeeName}</div>
                     <div className="col-span-1 text-gray-400 text-xs">{row.pump}</div>
-                    <div className="col-span-4 flex items-center gap-3 text-xs text-gray-500">
+                    <div className="col-span-4 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500">
                       {row.activities.travel > 0 && (
                         <span className="flex items-center gap-1">
-                          <Car className="w-3 h-3 text-gray-400" />{row.activities.travel.toFixed(1)}h
+                          <Car className="w-3 h-3 text-gray-400" />Travel {row.activities.travel.toFixed(1)}h
                         </span>
                       )}
                       {row.activities.pouring > 0 && (
                         <span className="flex items-center gap-1">
-                          <Droplets className="w-3 h-3 text-gray-400" />{row.activities.pouring.toFixed(1)}h
+                          <Droplets className="w-3 h-3 text-gray-400" />Pouring {row.activities.pouring.toFixed(1)}h
                         </span>
                       )}
                       {row.activities.nonPouring > 0 && (
                         <span className="flex items-center gap-1">
-                          <Wrench className="w-3 h-3 text-gray-400" />{row.activities.nonPouring.toFixed(1)}h
+                          <Wrench className="w-3 h-3 text-gray-400" />Non-Pouring {row.activities.nonPouring.toFixed(1)}h
                         </span>
                       )}
                       {row.activities.travel === 0 && row.activities.pouring === 0 && row.activities.nonPouring === 0 && (
