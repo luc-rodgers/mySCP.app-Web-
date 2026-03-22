@@ -150,9 +150,7 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
     return `${fmtDay(mon)} – ${fmtDayYear(sun)}`;
   };
 
-  const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(
-    () => new Set(sortedWeekKeys.length > 0 ? [sortedWeekKeys[0]] : [])
-  );
+  const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(() => new Set());
   const toggleWeek = (key: string) => {
     setExpandedWeeks(prev => {
       const next = new Set(prev);
@@ -204,11 +202,11 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
           )}
 
           {/* Avatar + name */}
-          <div className="flex items-center gap-4 mb-5">
+          <div className="flex flex-col items-center gap-2 mb-5">
             <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center ring-4 ring-gray-50 shrink-0">
               <span className="text-lg font-bold text-gray-700">{initials}</span>
             </div>
-            <div>
+            <div className="text-center">
               <h1 className="text-gray-900 font-bold text-xl leading-tight">{localEmployee.name}</h1>
               {localEmployee.classification && (
                 <span className="text-sm text-gray-400 mt-0.5 block">

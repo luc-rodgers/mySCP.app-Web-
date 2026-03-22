@@ -19,11 +19,11 @@ export function TimeSheetHeader({ todayHours, weekHours, employeeName, employeeT
     <div className="mx-4 mt-4 mb-4 md:mx-0 md:mt-0 md:mb-4">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-5">
         {/* Avatar + name */}
-        <div className="flex items-center gap-4 mb-4">
-          <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center ring-4 ring-gray-50 shrink-0">
+        <div className="flex flex-col items-center gap-2 mb-4">
+          <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center ring-4 ring-gray-50 shrink-0">
             <span className="text-base font-bold text-gray-700">{initials}</span>
           </div>
-          <div>
+          <div className="text-center">
             <h2 className="text-gray-900 font-bold text-lg leading-tight">{employeeName}</h2>
             <span className="text-sm text-gray-400">{employeeTitle}</span>
           </div>
