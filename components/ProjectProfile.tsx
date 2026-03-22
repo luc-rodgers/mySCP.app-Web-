@@ -8,15 +8,19 @@ import { createClient } from '@/lib/supabase/client';
 import { updateProject } from '@/app/actions/updateProject';
 import { deleteProject } from '@/app/actions/deleteProject';
 import { WorkHeatmap } from './WorkHeatmap';
+import { TimeEntryEditorModal } from './TimeEntryEditorModal';
+import { TimeEntry } from '@/lib/types';
 
 interface WorkHistoryRow {
   id: string;
   date: string;
   status: string;
-  referenceNumber: string | null;
+  pump: string;
   employeeName: string;
+  employeeDbId: string;
   hours: number;
   activities: { travel: number; pouring: number; nonPouring: number };
+  entryData: TimeEntry;
 }
 
 interface Project {
@@ -81,6 +85,7 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
 
   const [workHistory, setWorkHistory] = useState<WorkHistoryRow[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  const [openEntry, setOpenEntry] = useState<WorkHistoryRow | null>(null);
 
   const calculateHours = useCallback((entry: any): number => {
     if (!entry.depotStart || !entry.depotFinish) return 0;
@@ -107,11 +112,18 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
       const supabase = createClient();
       const { data, error } = await supabase
         .from('time_entries')
-        .select('id, date, status, reference_number, data, employees(first_name, last_name)')
+        .select('id, date, status, reference_number, employee_id, data, employees(first_name, last_name)')
         .filter('data', 'cs', JSON.stringify({ projects: [{ project: editedProject.name }] }))
         .order('date', { ascending: false });
 
       if (error || !data) { setLoadingHistory(false); return; }
+
+      function subHours(siteStart: string, siteFinish: string): number {
+        if (!siteStart || !siteFinish) return 0;
+        const [sh, sm] = siteStart.split(':').map(Number);
+        const [fh, fm] = siteFinish.split(':').map(Number);
+        return Math.max(0, (fh * 60 + fm - sh * 60 - sm) / 60);
+      }
 
       const rows: WorkHistoryRow[] = data.map((row: any) => {
         const entry = row.data as any;
@@ -120,18 +132,28 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
           .filter((p: any) => p.project === editedProject.name)
           .flatMap((p: any) => p.subActivities ?? []);
 
+        const travelHrs = projectActivities
+          .filter((a: any) => a.type === 'travel')
+          .reduce((s: number, a: any) => s + subHours(a.siteStart, a.siteFinish), 0);
+        const pouringHrs = projectActivities
+          .filter((a: any) => a.type === 'pouring')
+          .reduce((s: number, a: any) => s + subHours(a.siteStart, a.siteFinish), 0);
+        const nonPouringHrs = projectActivities
+          .filter((a: any) => a.type === 'non-pouring')
+          .reduce((s: number, a: any) => s + subHours(a.siteStart, a.siteFinish), 0);
+
         return {
           id: row.id,
           date: row.date,
           status: row.status,
-          referenceNumber: row.reference_number ?? null,
+          pump: '-',
           employeeName: emp ? `${emp.first_name} ${emp.last_name}` : 'Unknown',
+          employeeDbId: row.employee_id,
           hours: calculateHours(entry),
-          activities: {
-            travel: projectActivities.filter((a: any) => a.type === 'travel').length,
-            pouring: projectActivities.filter((a: any) => a.type === 'pouring').length,
-            nonPouring: projectActivities.filter((a: any) => a.type === 'non-pouring').length,
-          },
+          activities: { travel: travelHrs, pouring: pouringHrs, nonPouring: nonPouringHrs },
+          entryData: { ...entry, id: row.id, date: row.date, status: row.status,
+            referenceNumber: row.reference_number ?? undefined,
+            employeeName: emp ? `${emp.first_name} ${emp.last_name}` : 'Unknown' } as TimeEntry,
         };
       });
 
@@ -188,6 +210,18 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
 
   return (
     <div className="p-4 pb-24">
+      {openEntry && (
+        <TimeEntryEditorModal
+          initialEntry={openEntry.entryData}
+          employeeDbId={openEntry.employeeDbId}
+          activeProjects={[]}
+          onClose={() => setOpenEntry(null)}
+          onDeleted={() => {
+            setWorkHistory(prev => prev.filter(r => r.id !== openEntry.id));
+            setOpenEntry(null);
+          }}
+        />
+      )}
       <Button variant="ghost" size="sm" onClick={onBack} className="mb-4 gap-2 cursor-pointer">
         <ArrowLeft className="w-4 h-4" />
         Back to Projects
@@ -377,7 +411,8 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
             {/* Mobile layout */}
             <div className="md:hidden divide-y divide-gray-100">
               {workHistory.map((row) => (
-                <div key={row.id} className="px-4 py-3">
+                <button key={row.id} onClick={() => setOpenEntry(row)}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors cursor-pointer">
                   <div className="flex items-start justify-between gap-3 mb-1">
                     <div>
                       <p className="text-sm font-medium text-gray-900">{row.employeeName}</p>
@@ -393,20 +428,23 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
                     </div>
                   </div>
                   <div className="flex items-center gap-3 text-xs text-gray-400 mt-1">
-                    {row.referenceNumber && (
-                      <span className="font-mono text-gray-500">{row.referenceNumber}</span>
+                    {row.activities.travel > 0 && (
+                      <span className="flex items-center gap-1">
+                        <Car className="w-3 h-3" />{row.activities.travel.toFixed(1)}h
+                      </span>
                     )}
-                    <span className="flex items-center gap-1">
-                      <Car className="w-3 h-3" />{row.activities.travel}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Droplets className="w-3 h-3" />{row.activities.pouring}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Wrench className="w-3 h-3" />{row.activities.nonPouring}
-                    </span>
+                    {row.activities.pouring > 0 && (
+                      <span className="flex items-center gap-1">
+                        <Droplets className="w-3 h-3" />{row.activities.pouring.toFixed(1)}h
+                      </span>
+                    )}
+                    {row.activities.nonPouring > 0 && (
+                      <span className="flex items-center gap-1">
+                        <Wrench className="w-3 h-3" />{row.activities.nonPouring.toFixed(1)}h
+                      </span>
+                    )}
                   </div>
-                </div>
+                </button>
               ))}
             </div>
 
@@ -414,40 +452,48 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
             <div className="hidden md:block">
               <div className="grid grid-cols-12 gap-3 bg-gray-50 px-4 py-2.5 border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
                 <div className="col-span-2">Date</div>
-                <div className="col-span-3">Employee</div>
-                <div className="col-span-2">Ref #</div>
-                <div className="col-span-2">Activities</div>
+                <div className="col-span-2">Employee</div>
+                <div className="col-span-1">Pump</div>
+                <div className="col-span-4">Activities</div>
                 <div className="col-span-1 text-right">Hours</div>
                 <div className="col-span-2 text-right">Status</div>
               </div>
               <div className="divide-y divide-gray-100">
                 {workHistory.map((row) => (
-                  <div key={row.id} className="grid grid-cols-12 gap-3 items-center px-4 py-3 text-sm hover:bg-gray-50">
+                  <button key={row.id} onClick={() => setOpenEntry(row)}
+                    className="w-full grid grid-cols-12 gap-3 items-center px-4 py-3 text-sm hover:bg-gray-50 transition-colors text-left cursor-pointer">
                     <div className="col-span-2 text-gray-600">
                       {new Date(row.date + 'T00:00:00').toLocaleDateString('en-AU', {
                         day: 'numeric', month: 'short', year: 'numeric',
                       })}
                     </div>
-                    <div className="col-span-3 text-gray-900">{row.employeeName}</div>
-                    <div className="col-span-2 font-mono text-xs text-gray-500">
-                      {row.referenceNumber ?? '—'}
-                    </div>
-                    <div className="col-span-2 flex items-center gap-2 text-xs text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <Car className="w-3 h-3 text-gray-400" />{row.activities.travel}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Droplets className="w-3 h-3 text-gray-400" />{row.activities.pouring}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Wrench className="w-3 h-3 text-gray-400" />{row.activities.nonPouring}
-                      </span>
+                    <div className="col-span-2 text-gray-900">{row.employeeName}</div>
+                    <div className="col-span-1 text-gray-400 text-xs">{row.pump}</div>
+                    <div className="col-span-4 flex items-center gap-3 text-xs text-gray-500">
+                      {row.activities.travel > 0 && (
+                        <span className="flex items-center gap-1">
+                          <Car className="w-3 h-3 text-gray-400" />{row.activities.travel.toFixed(1)}h
+                        </span>
+                      )}
+                      {row.activities.pouring > 0 && (
+                        <span className="flex items-center gap-1">
+                          <Droplets className="w-3 h-3 text-gray-400" />{row.activities.pouring.toFixed(1)}h
+                        </span>
+                      )}
+                      {row.activities.nonPouring > 0 && (
+                        <span className="flex items-center gap-1">
+                          <Wrench className="w-3 h-3 text-gray-400" />{row.activities.nonPouring.toFixed(1)}h
+                        </span>
+                      )}
+                      {row.activities.travel === 0 && row.activities.pouring === 0 && row.activities.nonPouring === 0 && (
+                        <span className="text-gray-300">—</span>
+                      )}
                     </div>
                     <div className="col-span-1 text-right text-gray-700">{row.hours.toFixed(1)}</div>
                     <div className="col-span-2 flex justify-end">
                       <HistoryStatusBadge status={row.status} />
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
