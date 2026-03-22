@@ -123,11 +123,7 @@ export function Projects({ initialProjects = [], isAdmin = false, clients = [] }
         </div>
 
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Overview</p>
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
-            <div className="text-[#374151] text-xl font-bold">{projects.length}</div>
-            <div className="text-gray-500 text-xs mt-0.5">Total</div>
-          </div>
+        <div className="grid grid-cols-2 gap-3">
           <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
             <div className="text-[#374151] text-xl font-bold">{activeProjects}</div>
             <div className="text-gray-500 text-xs mt-0.5">Active</div>
