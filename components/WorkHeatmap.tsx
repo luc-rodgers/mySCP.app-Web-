@@ -3,8 +3,9 @@ import { useState } from "react";
 import { TimeEntry } from "@/lib/types";
 
 interface WorkHeatmapProps {
-  entries: TimeEntry[];
-  calculateHours: (entry: TimeEntry) => number;
+  entries?: TimeEntry[];
+  calculateHours?: (entry: TimeEntry) => number;
+  hoursData?: Record<string, number>;
   weeksCount?: number;
 }
 
@@ -30,7 +31,7 @@ function getCellColor(hours: number): string {
 
 const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 
-export function WorkHeatmap({ entries, calculateHours, weeksCount = 52 }: WorkHeatmapProps) {
+export function WorkHeatmap({ entries, calculateHours, hoursData, weeksCount = 52 }: WorkHeatmapProps) {
   const [tooltip, setTooltip] = useState<{
     date: string;
     hours: number;
@@ -38,13 +39,16 @@ export function WorkHeatmap({ entries, calculateHours, weeksCount = 52 }: WorkHe
     y: number;
   } | null>(null);
 
-  // Build date → hours map from submitted/approved entries
-  const hoursMap: Record<string, number> = {};
-  entries.forEach((entry) => {
-    if (entry.status === "submitted" || entry.status === "approved") {
-      hoursMap[entry.date] = calculateHours(entry);
-    }
-  });
+  // Build date → hours map: use pre-built hoursData if provided, otherwise compute from entries
+  const hoursMap: Record<string, number> = hoursData ?? (() => {
+    const map: Record<string, number> = {};
+    (entries ?? []).forEach((entry) => {
+      if (entry.status === "submitted" || entry.status === "approved") {
+        map[entry.date] = (calculateHours ? calculateHours(entry) : 0);
+      }
+    });
+    return map;
+  })();
 
   // Build a 52-week grid ending on the most recent Saturday
   const today = new Date();

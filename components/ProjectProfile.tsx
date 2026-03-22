@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { updateProject } from '@/app/actions/updateProject';
 import { deleteProject } from '@/app/actions/deleteProject';
+import { WorkHeatmap } from './WorkHeatmap';
 
 interface WorkHistoryRow {
   id: string;
@@ -457,26 +458,41 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
 
       {/* Statistics tab */}
       {activeTab === 'stats' && (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Overview</p>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
-              <div className="text-[#374151] text-xl font-bold">{workHistory.length}</div>
-              <div className="text-gray-500 text-xs mt-0.5">Total Entries</div>
-            </div>
-            <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
-              <div className="text-[#374151] text-xl font-bold">
-                {new Set(workHistory.map(r => r.employeeName)).size}
+        <div className="space-y-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Overview</p>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
+                <div className="text-[#374151] text-xl font-bold">{workHistory.length}</div>
+                <div className="text-gray-500 text-xs mt-0.5">Total Entries</div>
               </div>
-              <div className="text-gray-500 text-xs mt-0.5">Employees</div>
-            </div>
-            <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
-              <div className="text-[#374151] text-xl font-bold">
-                {workHistory.reduce((s, r) => s + r.hours, 0).toFixed(1)}
+              <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
+                <div className="text-[#374151] text-xl font-bold">
+                  {new Set(workHistory.map(r => r.employeeName)).size}
+                </div>
+                <div className="text-gray-500 text-xs mt-0.5">Employees</div>
               </div>
-              <div className="text-gray-500 text-xs mt-0.5">Total Hours</div>
+              <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
+                <div className="text-[#374151] text-xl font-bold">
+                  {workHistory.reduce((s, r) => s + r.hours, 0).toFixed(1)}
+                </div>
+                <div className="text-gray-500 text-xs mt-0.5">Total Hours</div>
+              </div>
             </div>
           </div>
+
+          <WorkHeatmap
+            hoursData={(() => {
+              const map: Record<string, number> = {};
+              workHistory.forEach(r => {
+                if (r.status === 'submitted' || r.status === 'approved') {
+                  map[r.date] = (map[r.date] ?? 0) + r.hours;
+                }
+              });
+              return map;
+            })()}
+            weeksCount={52}
+          />
         </div>
       )}
     </div>
