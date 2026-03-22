@@ -59,8 +59,8 @@ export function Projects({ initialProjects = [], isAdmin = false, clients = [] }
     }
   };
 
-  const activeProjects = stateProjects.filter(p => p.status === 'active').length;
-  const completedProjects = stateProjects.filter(p => p.status === 'completed').length;
+  const activeProjects = projects.filter(p => p.status === 'active').length;
+  const completedProjects = projects.filter(p => p.status === 'completed').length;
 
   if (selectedProject) {
     return (
@@ -125,7 +125,7 @@ export function Projects({ initialProjects = [], isAdmin = false, clients = [] }
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Overview</p>
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
-            <div className="text-[#374151] text-xl font-bold">{stateProjects.length}</div>
+            <div className="text-[#374151] text-xl font-bold">{projects.length}</div>
             <div className="text-gray-500 text-xs mt-0.5">Total</div>
           </div>
           <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
