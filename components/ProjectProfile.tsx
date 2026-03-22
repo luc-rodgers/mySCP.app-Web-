@@ -1,8 +1,8 @@
 "use client"
-import { ArrowLeft, MapPin, DollarSign, Edit2, X, Check, Trash2, Car, Droplets, Wrench, Loader2 } from 'lucide-react';
+import { ArrowLeft, MapPin, DollarSign, Edit2, X, Check, Trash2, Car, Droplets, Wrench, Loader2, Settings } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { updateProject } from '@/app/actions/updateProject';
@@ -69,6 +69,8 @@ function HistoryStatusBadge({ status }: { status: string }) {
 export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onDeleted }: ProjectProfileProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -85,6 +87,16 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
     const hours = (fh * 60 + fm - sh * 60 - sm) / 60;
     const hasLunch = (entry.projects ?? []).some((p: any) => p.lunch);
     return Math.max(0, hours - (hasLunch ? 0.5 : 0));
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   useEffect(() => {
@@ -210,10 +222,24 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
               </div>
 
               {isAdmin && (
-                <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="gap-2 cursor-pointer">
-                  <Edit2 className="w-4 h-4" />
-                  Edit
-                </Button>
+                <div className="relative" ref={menuRef}>
+                  <button
+                    onClick={() => setShowMenu(!showMenu)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
+                  >
+                    <Settings className="w-4 h-4" />
+                  </button>
+                  {showMenu && (
+                    <div className="absolute right-0 top-10 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20">
+                      <button
+                        onClick={() => { setIsEditing(true); setShowMenu(false); }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                      >
+                        Edit Profile
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
