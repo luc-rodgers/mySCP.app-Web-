@@ -12,6 +12,7 @@ interface Project {
   name: string;
   client: string;
   address: string;
+  state?: string;
   status: string;
   startDate: string;
   endDate: string;
@@ -67,6 +68,7 @@ export function ProjectProfile({ project, onBack, isAdmin = false }: ProjectProf
       name: (formData.get('name') as string)?.trim() || prev.name,
       client: (formData.get('clientName') as string)?.trim() || prev.client,
       address: (formData.get('address') as string)?.trim() || prev.address,
+      state: (formData.get('state') as string) || prev.state,
       projectValue: (formData.get('projectValue') as string) || prev.projectValue,
       status: (formData.get('status') as string) || prev.status,
     }));
@@ -103,10 +105,12 @@ export function ProjectProfile({ project, onBack, isAdmin = false }: ProjectProf
                 </div>
                 <p className="text-sm text-gray-500 mb-4">{editedProject.client || 'No client'}</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                  {editedProject.address && (
+                  {(editedProject.address || editedProject.state) && (
                     <div className="flex items-center gap-2 text-gray-600">
                       <MapPin className="w-4 h-4" />
-                      <span>{editedProject.address}</span>
+                      <span>
+                        {[editedProject.address, editedProject.state].filter(Boolean).join(', ')}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -168,11 +172,22 @@ export function ProjectProfile({ project, onBack, isAdmin = false }: ProjectProf
                 placeholder="Client name" />
             </div>
 
-            <div>
-              <label className="block text-xs text-gray-600 mb-1">Location</label>
-              <input name="address" defaultValue={editedProject.address}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-                placeholder="Suburb, QLD" />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Location</label>
+                <input name="address" defaultValue={editedProject.address}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  placeholder="Suburb" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">State</label>
+                <select name="state" defaultValue={editedProject.state || ''}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer">
+                  <option value="">Select state</option>
+                  <option value="QLD">QLD</option>
+                  <option value="NSW">NSW</option>
+                </select>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">

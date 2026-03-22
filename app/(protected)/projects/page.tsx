@@ -9,7 +9,7 @@ export default async function ProjectsPage() {
   const [{ data: currentEmployee }, { data: rows }, { data: clientRows }] = await Promise.all([
     supabase.from("employees").select("role").eq("user_id", user?.id ?? "").single(),
     supabase.from("projects")
-      .select("id, name, status, start_date, end_date, address, project_value, hours_logged, clients(name)")
+      .select("id, name, status, start_date, end_date, address, state, project_value, hours_logged, clients(name)")
       .order("name"),
     supabase.from("clients").select("id, name").order("name"),
   ]);
@@ -21,6 +21,7 @@ export default async function ProjectsPage() {
     name: r.name,
     client: (r.clients as any)?.name ?? "TBD",
     address: r.address ?? "",
+    state: (r as any).state ?? "",
     status: (r.status === "completed" ? "completed" : "active") as "active" | "completed",
     startDate: r.start_date ?? "",
     endDate: r.end_date ?? "",
