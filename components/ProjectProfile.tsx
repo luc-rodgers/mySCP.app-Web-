@@ -116,15 +116,11 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
         .select('id, date, status, reference_number, employee_id, data, employees(first_name, last_name)')
         .order('date', { ascending: false });
 
-      console.log('[ProjectProfile] project name:', editedProject.name);
-      console.log('[ProjectProfile] total rows fetched:', data?.length);
-      console.log('[ProjectProfile] error:', error);
       if (error || !data) { setLoadingHistory(false); return; }
 
       const filtered = data.filter((row: any) =>
         (row.data?.projects ?? []).some((p: any) => p.project === editedProject.name)
       );
-      console.log('[ProjectProfile] matched rows:', filtered.length);
 
       function subHours(siteStart: string, siteFinish: string): number {
         if (!siteStart || !siteFinish) return 0;
@@ -142,13 +138,13 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
 
         const travelHrs = projectActivities
           .filter((a: any) => a.type === 'travel')
-          .reduce((s: number, a: any) => s + subHours(a.siteStart, a.siteFinish), 0);
+          .reduce((s: number, a: any) => s + subHours(a.start, a.finish), 0);
         const pouringHrs = projectActivities
           .filter((a: any) => a.type === 'pouring')
-          .reduce((s: number, a: any) => s + subHours(a.siteStart, a.siteFinish), 0);
+          .reduce((s: number, a: any) => s + subHours(a.start, a.finish), 0);
         const nonPouringHrs = projectActivities
           .filter((a: any) => a.type === 'non-pouring')
-          .reduce((s: number, a: any) => s + subHours(a.siteStart, a.siteFinish), 0);
+          .reduce((s: number, a: any) => s + subHours(a.start, a.finish), 0);
 
         return {
           id: row.id,
