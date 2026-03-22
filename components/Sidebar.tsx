@@ -31,9 +31,9 @@ function SCPLogo() {
       <Image
         src="/scplogo.png"
         alt="Specialised Concrete Pumping"
-        width={120}
-        height={48}
-        className="object-contain"
+        width={96}
+        height={38}
+        className="object-contain w-24 h-auto"
         priority
       />
     </div>
@@ -55,7 +55,7 @@ export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   const sidebarContent = (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="px-5 pt-6 pb-2 mt-8 md:mt-0">
+      <div className="px-4 pt-4 pb-1 mt-8 md:mt-0">
         <SCPLogo />
       </div>
 
