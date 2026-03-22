@@ -27,13 +27,13 @@ const menuItems = [
 
 function SCPLogo() {
   return (
-    <div className="flex items-center">
+    <div className="overflow-hidden h-14">
       <Image
         src="/scplogo.png"
         alt="Specialised Concrete Pumping"
         width={160}
-        height={64}
-        className="object-contain w-40 h-auto"
+        height={90}
+        className="object-contain object-top w-40 h-auto"
         priority
       />
     </div>
