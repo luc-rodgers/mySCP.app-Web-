@@ -15,6 +15,7 @@ interface Project {
   endDate: string;
   hoursLogged: number;
   projectValue?: string;
+  state?: string;
 }
 
 interface Client {
@@ -31,6 +32,7 @@ interface ProjectsProps {
 export function Projects({ initialProjects = [], isAdmin = false, clients = [] }: ProjectsProps) {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [stateFilter, setStateFilter] = useState<'QLD' | 'NSW'>('QLD');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -46,7 +48,8 @@ export function Projects({ initialProjects = [], isAdmin = false, clients = [] }
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const filteredProjects = projects.filter(p => p.status === (showCompleted ? 'completed' : 'active'));
+  const stateProjects = projects.filter(p => !p.state || p.state === stateFilter);
+  const filteredProjects = stateProjects.filter(p => p.status === (showCompleted ? 'completed' : 'active'));
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -56,8 +59,8 @@ export function Projects({ initialProjects = [], isAdmin = false, clients = [] }
     }
   };
 
-  const activeProjects = projects.filter(p => p.status === 'active').length;
-  const completedProjects = projects.filter(p => p.status === 'completed').length;
+  const activeProjects = stateProjects.filter(p => p.status === 'active').length;
+  const completedProjects = stateProjects.filter(p => p.status === 'completed').length;
 
   if (selectedProject) {
     return (
@@ -119,6 +122,23 @@ export function Projects({ initialProjects = [], isAdmin = false, clients = [] }
           )}
         </div>
 
+        {/* State toggle */}
+        <div className="bg-gray-100 rounded-xl p-1 flex mb-4">
+          {(['QLD', 'NSW'] as const).map(s => (
+            <button
+              key={s}
+              onClick={() => setStateFilter(s)}
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors cursor-pointer ${
+                stateFilter === s
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Overview</p>
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
@@ -140,7 +160,7 @@ export function Projects({ initialProjects = [], isAdmin = false, clients = [] }
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         {filteredProjects.length === 0 && (
           <div className="px-4 py-10 text-center text-sm text-gray-500">
-            No {showCompleted ? 'completed' : 'active'} projects
+            No {showCompleted ? 'completed' : 'active'} projects in {stateFilter}
           </div>
         )}
 
