@@ -20,10 +20,13 @@ interface ClientProfileProps {
   client: Client;
   onBack: () => void;
   isAdmin?: boolean;
+  onUpdate?: (updated: Client) => void;
+  onDeleted?: () => void;
 }
 
-export function ClientProfile({ client, onBack, isAdmin = false }: ClientProfileProps) {
+export function ClientProfile({ client, onBack, isAdmin = false, onUpdate, onDeleted }: ClientProfileProps) {
   const router = useRouter();
+  const [localClient, setLocalClient] = useState(client);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -38,6 +41,16 @@ export function ClientProfile({ client, onBack, isAdmin = false }: ClientProfile
     const result = await updateClient(client.id, formData);
     setSaving(false);
     if (!result.success) { setError(result.error); return; }
+    const merged: Client = {
+      ...localClient,
+      name:    (formData.get('name')        as string)?.trim() || localClient.name,
+      contact: (formData.get('contactName') as string)?.trim() || localClient.contact,
+      email:   (formData.get('email')       as string)?.trim() || localClient.email,
+      phone:   (formData.get('phone')       as string)?.trim() || localClient.phone,
+      address: (formData.get('address')     as string)?.trim() || localClient.address,
+    };
+    setLocalClient(merged);
+    onUpdate?.(merged);
     router.refresh();
     setIsEditing(false);
   }
@@ -47,6 +60,7 @@ export function ClientProfile({ client, onBack, isAdmin = false }: ClientProfile
     const result = await deleteClient(client.id);
     setDeleting(false);
     if (!result.success) { setError(result.error); return; }
+    onDeleted?.();
     router.refresh();
     onBack();
   }
@@ -63,26 +77,26 @@ export function ClientProfile({ client, onBack, isAdmin = false }: ClientProfile
           <>
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
-                <h1 className="text-gray-900 mb-1">{client.name}</h1>
-                {client.contact && <p className="text-sm text-gray-500 mb-4">Contact: {client.contact}</p>}
+                <h1 className="text-gray-900 mb-1">{localClient.name}</h1>
+                {client.contact && <p className="text-sm text-gray-500 mb-4">Contact: {localClient.contact}</p>}
 
                 <div className="space-y-2 text-sm">
                   {client.address && (
                     <div className="flex items-center gap-2 text-gray-600">
                       <MapPin className="w-4 h-4 shrink-0" />
-                      <span>{client.address}</span>
+                      <span>{localClient.address}</span>
                     </div>
                   )}
                   {client.email && (
                     <div className="flex items-center gap-2 text-gray-600">
                       <Mail className="w-4 h-4 shrink-0" />
-                      <span>{client.email}</span>
+                      <span>{localClient.email}</span>
                     </div>
                   )}
                   {client.phone && (
                     <div className="flex items-center gap-2 text-gray-600">
                       <Phone className="w-4 h-4 shrink-0" />
-                      <span>{client.phone}</span>
+                      <span>{localClient.phone}</span>
                     </div>
                   )}
                 </div>
@@ -99,7 +113,7 @@ export function ClientProfile({ client, onBack, isAdmin = false }: ClientProfile
             <div className="grid grid-cols-3 gap-3 mt-4">
               <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                 <div className="text-gray-600 text-xs mb-1">Active Projects</div>
-                <div className="text-green-600 text-lg">{client.activeProjects}</div>
+                <div className="text-green-600 text-lg">{localClient.activeProjects}</div>
               </div>
             </div>
           </>
@@ -119,13 +133,13 @@ export function ClientProfile({ client, onBack, isAdmin = false }: ClientProfile
 
             <div>
               <label className="block text-xs text-gray-600 mb-1">Client Name *</label>
-              <input name="name" required defaultValue={client.name}
+              <input name="name" required defaultValue={localClient.name}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
             </div>
 
             <div>
               <label className="block text-xs text-gray-600 mb-1">Contact Name</label>
-              <input name="contactName" defaultValue={client.contact}
+              <input name="contactName" defaultValue={localClient.contact}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                 placeholder="Primary contact" />
             </div>
@@ -133,13 +147,13 @@ export function ClientProfile({ client, onBack, isAdmin = false }: ClientProfile
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Email</label>
-                <input name="email" type="email" defaultValue={client.email}
+                <input name="email" type="email" defaultValue={localClient.email}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                   placeholder="email@example.com" />
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Phone</label>
-                <input name="phone" type="tel" defaultValue={client.phone}
+                <input name="phone" type="tel" defaultValue={localClient.phone}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                   placeholder="04XX XXX XXX" />
               </div>
@@ -147,7 +161,7 @@ export function ClientProfile({ client, onBack, isAdmin = false }: ClientProfile
 
             <div>
               <label className="block text-xs text-gray-600 mb-1">Address</label>
-              <input name="address" defaultValue={client.address}
+              <input name="address" defaultValue={localClient.address}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                 placeholder="Street, Suburb, State" />
             </div>

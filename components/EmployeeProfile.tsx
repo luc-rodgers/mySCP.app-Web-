@@ -29,13 +29,15 @@ interface EmployeeProfileProps {
   employee: Employee;
   onBack: () => void;
   isAdmin?: boolean;
+  onUpdate?: (updated: Employee) => void;
 }
 
-export function EmployeeProfile({ employee, onBack, isAdmin = false }: EmployeeProfileProps) {
+export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }: EmployeeProfileProps) {
+  const [localEmployee, setLocalEmployee] = useState(employee);
   const [showEdit, setShowEdit] = useState(false);
 
   // Split name into first/last for the edit modal
-  const nameParts = employee.name.split(" ");
+  const nameParts = localEmployee.name.split(" ");
   const firstName = nameParts[0] ?? "";
   const lastName = nameParts.slice(1).join(" ") ?? "";
 
@@ -71,18 +73,31 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false }: EmployeeP
       {showEdit && (
         <EditEmployeeModal
           employee={{
-            id: employee.id,
-            firstName,
-            lastName,
-            email: employee.email,
-            phone: employee.phone,
-            classification: employee.classification,
-            employmentType: employee.employmentType,
+            id: localEmployee.id,
+            firstName: localEmployee.name.split(' ')[0] ?? '',
+            lastName: localEmployee.name.split(' ').slice(1).join(' ') ?? '',
+            email: localEmployee.email,
+            phone: localEmployee.phone,
+            classification: localEmployee.classification,
+            employmentType: localEmployee.employmentType,
             role: "user",
-            activeStatus: employee.status ?? "active",
+            activeStatus: localEmployee.status ?? "active",
           }}
           isAdmin={isAdmin}
           onClose={() => setShowEdit(false)}
+          onSaved={(updated) => {
+            const merged: Employee = {
+              ...localEmployee,
+              name: `${updated.firstName ?? ''} ${updated.lastName ?? ''}`.trim() || localEmployee.name,
+              email: updated.email ?? localEmployee.email,
+              phone: updated.phone ?? localEmployee.phone,
+              classification: updated.classification ?? localEmployee.classification,
+              employmentType: updated.employmentType ?? localEmployee.employmentType,
+              status: (updated.activeStatus === 'retired' ? 'retired' : 'active') as 'active' | 'retired',
+            };
+            setLocalEmployee(merged);
+            onUpdate?.(merged);
+          }}
         />
       )}
 
@@ -102,19 +117,19 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false }: EmployeeP
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-gray-900">{employee.name}</h1>
+              <h1 className="text-gray-900">{localEmployee.name}</h1>
             </div>
-            <p className="text-sm text-gray-500 mb-1">{employee.classification}</p>
-            <p className="text-sm text-gray-500 mb-4">{employee.employmentType}</p>
+            <p className="text-sm text-gray-500 mb-1">{localEmployee.classification}</p>
+            <p className="text-sm text-gray-500 mb-4">{localEmployee.employmentType}</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div className="flex items-center gap-2 text-gray-600">
                 <Mail className="w-4 h-4" />
-                <span>{employee.email}</span>
+                <span>{localEmployee.email}</span>
               </div>
               <div className="flex items-center gap-2 text-gray-600">
                 <Phone className="w-4 h-4" />
-                <span>{employee.phone}</span>
+                <span>{localEmployee.phone}</span>
               </div>
             </div>
           </div>
@@ -145,7 +160,7 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false }: EmployeeP
           </div>
           <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
             <div className="text-gray-600 text-xs mb-1">Avg Hrs/Wk</div>
-            <div className="text-blue-600 text-lg">{employee.hoursThisWeek.toFixed(1)}</div>
+            <div className="text-blue-600 text-lg">{localEmployee.hoursThisWeek.toFixed(1)}</div>
           </div>
         </div>
       </div>

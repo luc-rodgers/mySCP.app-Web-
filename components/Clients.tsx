@@ -20,12 +20,11 @@ interface ClientsProps {
 }
 
 export function Clients({ initialClients = [], isAdmin = false }: ClientsProps) {
+  const [clients, setClients] = useState<Client[]>(initialClients);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  const clients = initialClients;
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -42,7 +41,21 @@ export function Clients({ initialClients = [], isAdmin = false }: ClientsProps) 
   const totalProjects = clients.reduce((sum, c) => sum + c.activeProjects, 0);
 
   if (selectedClient) {
-    return <ClientProfile client={selectedClient} onBack={() => setSelectedClient(null)} isAdmin={isAdmin} />;
+    return (
+      <ClientProfile
+        client={selectedClient}
+        onBack={() => setSelectedClient(null)}
+        isAdmin={isAdmin}
+        onUpdate={(updated) => {
+          setClients(prev => prev.map(c => c.id === updated.id ? updated : c));
+          setSelectedClient(updated);
+        }}
+        onDeleted={() => {
+          setClients(prev => prev.filter(c => c.id !== selectedClient.id));
+          setSelectedClient(null);
+        }}
+      />
+    );
   }
 
   return (

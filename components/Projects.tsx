@@ -29,13 +29,12 @@ interface ProjectsProps {
 }
 
 export function Projects({ initialProjects = [], isAdmin = false, clients = [] }: ProjectsProps) {
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [showCompleted, setShowCompleted] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  const projects = initialProjects;
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -61,7 +60,21 @@ export function Projects({ initialProjects = [], isAdmin = false, clients = [] }
   const completedProjects = projects.filter(p => p.status === 'completed').length;
 
   if (selectedProject) {
-    return <ProjectProfile project={selectedProject} onBack={() => setSelectedProject(null)} isAdmin={isAdmin} />;
+    return (
+      <ProjectProfile
+        project={selectedProject}
+        onBack={() => setSelectedProject(null)}
+        isAdmin={isAdmin}
+        onUpdate={(updated) => {
+          setProjects(prev => prev.map(p => p.id === updated.id ? updated : p));
+          setSelectedProject(updated);
+        }}
+        onDeleted={() => {
+          setProjects(prev => prev.filter(p => p.id !== selectedProject.id));
+          setSelectedProject(null);
+        }}
+      />
+    );
   }
 
   return (

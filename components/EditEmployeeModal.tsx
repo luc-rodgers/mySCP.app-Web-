@@ -34,9 +34,10 @@ interface Props {
   employee: EmployeeData;
   isAdmin: boolean;
   onClose: () => void;
+  onSaved?: (updated: Partial<EmployeeData>) => void;
 }
 
-export function EditEmployeeModal({ employee, isAdmin, onClose }: Props) {
+export function EditEmployeeModal({ employee, isAdmin, onClose, onSaved }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +57,16 @@ export function EditEmployeeModal({ employee, isAdmin, onClose }: Props) {
       return;
     }
 
+    onSaved?.({
+      firstName:      (formData.get('firstName')      as string)?.trim() || employee.firstName,
+      lastName:       (formData.get('lastName')       as string)?.trim() || employee.lastName,
+      email:          (formData.get('email')          as string)?.trim() || employee.email,
+      phone:          (formData.get('phone')          as string)?.trim() || employee.phone,
+      classification: (formData.get('classification') as string) || employee.classification,
+      employmentType: (formData.get('employmentType') as string) || employee.employmentType,
+      role:           (formData.get('role')           as string) || employee.role,
+      activeStatus:   (formData.get('activeStatus')   as string) || employee.activeStatus,
+    });
     router.refresh();
     onClose();
   }

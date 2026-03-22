@@ -24,6 +24,8 @@ interface ProjectProfileProps {
   project: Project;
   onBack: () => void;
   isAdmin?: boolean;
+  onUpdate?: (updated: Project) => void;
+  onDeleted?: () => void;
 }
 
 const PROJECT_VALUE_OPTIONS = [
@@ -35,7 +37,7 @@ const PROJECT_VALUE_OPTIONS = [
   '>$1b+',
 ];
 
-export function ProjectProfile({ project, onBack, isAdmin = false }: ProjectProfileProps) {
+export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onDeleted }: ProjectProfileProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -63,15 +65,17 @@ export function ProjectProfile({ project, onBack, isAdmin = false }: ProjectProf
     setSaving(false);
     if (!result.success) { setError(result.error); return; }
     // Update local state immediately so the view reflects the saved values
-    setEditedProject(prev => ({
-      ...prev,
-      name: (formData.get('name') as string)?.trim() || prev.name,
-      client: (formData.get('clientName') as string)?.trim() || prev.client,
-      address: (formData.get('address') as string)?.trim() || prev.address,
-      state: (formData.get('state') as string) || prev.state,
-      projectValue: (formData.get('projectValue') as string) || prev.projectValue,
-      status: (formData.get('status') as string) || prev.status,
-    }));
+    const merged = {
+      ...editedProject,
+      name: (formData.get('name') as string)?.trim() || editedProject.name,
+      client: (formData.get('clientName') as string)?.trim() || editedProject.client,
+      address: (formData.get('address') as string)?.trim() || editedProject.address,
+      state: (formData.get('state') as string) || editedProject.state,
+      projectValue: (formData.get('projectValue') as string) || editedProject.projectValue,
+      status: (formData.get('status') as string) || editedProject.status,
+    };
+    setEditedProject(merged);
+    onUpdate?.(merged);
     router.refresh();
     setIsEditing(false);
   }
@@ -81,6 +85,7 @@ export function ProjectProfile({ project, onBack, isAdmin = false }: ProjectProf
     const result = await deleteProject(project.id);
     setDeleting(false);
     if (!result.success) { setError(result.error); return; }
+    onDeleted?.();
     router.refresh();
     onBack();
   }

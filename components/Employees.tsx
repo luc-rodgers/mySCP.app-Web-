@@ -21,13 +21,12 @@ interface EmployeesProps {
 }
 
 export function Employees({ initialEmployees, isAdmin = false }: EmployeesProps) {
+  const [employees, setEmployees] = useState<Employee[]>(initialEmployees ?? []);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [showRetired, setShowRetired] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  const employees = initialEmployees ?? [];
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -47,7 +46,17 @@ export function Employees({ initialEmployees, isAdmin = false }: EmployeesProps)
   const casualEmployees = employees.filter(e => e.employmentType === 'Casual' && e.status === 'active').length;
 
   if (selectedEmployee) {
-    return <EmployeeProfile employee={selectedEmployee} onBack={() => setSelectedEmployee(null)} isAdmin={isAdmin} />;
+    return (
+      <EmployeeProfile
+        employee={selectedEmployee}
+        onBack={() => setSelectedEmployee(null)}
+        isAdmin={isAdmin}
+        onUpdate={(updated) => {
+          setEmployees(prev => prev.map(e => e.id === updated.id ? updated : e));
+          setSelectedEmployee(updated);
+        }}
+      />
+    );
   }
 
   return (
