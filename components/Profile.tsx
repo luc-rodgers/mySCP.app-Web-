@@ -94,10 +94,15 @@ export function Profile({
     const sun = new Date(y, m - 1, d + 6);
     const fmtDay = (dt: Date) => dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
     const fmtDayYear = (dt: Date) => dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
-    // If Mon and Sun are in the same month, compress
+    // Week spans two years  e.g. "29 Dec 2025 – 4 Jan 2026"
+    if (mon.getFullYear() !== sun.getFullYear()) {
+      return `${fmtDayYear(mon)} – ${fmtDayYear(sun)}`;
+    }
+    // Same month  e.g. "3 – 9 Mar 2026"
     if (mon.getMonth() === sun.getMonth()) {
       return `${mon.getDate()} – ${fmtDayYear(sun)}`;
     }
+    // Different months, same year  e.g. "28 Mar – 3 Apr 2026"
     return `${fmtDay(mon)} – ${fmtDayYear(sun)}`;
   };
 
