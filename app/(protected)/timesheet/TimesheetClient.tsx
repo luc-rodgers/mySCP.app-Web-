@@ -26,10 +26,6 @@ type Props = {
 export default function TimesheetClient({ supabaseEmployee, userEmail, activeProjects }: Props) {
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [currentPage, setCurrentPage] = useState<"timesheet" | "weeklysummary">("timesheet");
-  const [nextTimeCardNumber, setNextTimeCardNumber] = useState<number>(1);
-  const [timeCardYear, setTimeCardYear] = useState<string>(
-    new Date().getFullYear().toString().slice(-2)
-  );
   const [loaded, setLoaded] = useState(false);
 
   const employeeDbId = supabaseEmployee?.id ?? null;
@@ -100,9 +96,9 @@ export default function TimesheetClient({ supabaseEmployee, userEmail, activePro
         })
         .select("id")
         .single();
-      if (!error && data) return data.id as string;
+      if (!error && data) return { id: data.id as string, referenceNumber: null };
     } else {
-      await supabase
+      const { data } = await supabase
         .from("time_entries")
         .upsert({
           id: entry.id,
@@ -110,7 +106,10 @@ export default function TimesheetClient({ supabaseEmployee, userEmail, activePro
           date: entry.date,
           status: entry.status,
           data: entry,
-        });
+        })
+        .select("id, reference_number")
+        .single();
+      if (data) return { id: data.id as string, referenceNumber: (data as any).reference_number as string | null };
     }
     return null;
   }, [employeeDbId]);
@@ -190,25 +189,26 @@ export default function TimesheetClient({ supabaseEmployee, userEmail, activePro
     deleteEntryFromDB(id);
   };
 
-  const handleStatusChange = (id: string, status: TimeEntry["status"]) => {
-    setEntries((prev) => {
-      const updated = prev.map((e) => {
-        if (e.id !== id) return e;
-        if (status === "submitted" && !e.timeCardNumber) {
-          const yr = new Date().getFullYear().toString().slice(-2);
-          if (yr !== timeCardYear) { setTimeCardYear(yr); setNextTimeCardNumber(1); }
-          const num = `TS-${yr}-${nextTimeCardNumber.toString().padStart(5, "0")}`;
-          setNextTimeCardNumber((n) => n + 1);
-          const updated = { ...e, status, timeCardNumber: num };
-          upsertEntry(updated);
-          return updated;
-        }
-        const updated = { ...e, status };
-        upsertEntry(updated);
-        return updated;
-      });
-      return updated;
-    });
+  const handleStatusChange = async (id: string, status: TimeEntry["status"]) => {
+    // Optimistic update — set status immediately
+    let entrySnapshot: TimeEntry | undefined;
+    setEntries((prev) => prev.map((e) => {
+      if (e.id !== id) return e;
+      entrySnapshot = { ...e, status };
+      return entrySnapshot;
+    }));
+
+    if (!entrySnapshot) return;
+
+    // Persist to DB; trigger will assign reference_number when status = 'submitted'
+    const result = await upsertEntry(entrySnapshot);
+
+    // Read back the DB-assigned reference number and store it on the entry
+    if (status === "submitted" && result?.referenceNumber) {
+      setEntries((prev) => prev.map((e) =>
+        e.id === id ? { ...e, timeCardNumber: result.referenceNumber! } : e
+      ));
+    }
   };
 
   const handleAddProject = (entryId: string, type: "project" | "yardwork" | "leave" = "project") => {

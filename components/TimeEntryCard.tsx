@@ -259,6 +259,11 @@ export function TimeEntryCard({ entry, activeProjects, onDelete, onStatusChange,
           {totalHours > 0 ? `${totalHours} hrs` : <span className="text-gray-400 text-xs">—</span>}
         </div>
 
+        {/* Reference number (submitted cards only) */}
+        {entry.timeCardNumber && (
+          <div className="text-[10px] text-gray-400 font-mono hidden md:block">{entry.timeCardNumber}</div>
+        )}
+
         {/* Status badge */}
         {(hasDraftData || entry.status === 'submitted' || entry.status === 'approved') && (
           <Badge className={`${getStatusColor(entry.status)} text-xs`}>
@@ -303,6 +308,9 @@ export function TimeEntryCard({ entry, activeProjects, onDelete, onStatusChange,
             <div>
               <div className="text-gray-900">{formatDate(entry.date).split(',')[0]}</div>
               <div className="text-xs text-gray-600">{formatDate(entry.date).split(',')[1]}</div>
+              {entry.timeCardNumber && (
+                <div className="text-[10px] text-gray-400 font-mono mt-0.5">{entry.timeCardNumber}</div>
+              )}
             </div>
             {entry.projects.length > 0 && entry.status !== 'draft' && (
               <Badge className={`${getStatusColor(entry.status)} text-xs`}>
