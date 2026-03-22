@@ -92,7 +92,8 @@ export function TimeEntryEditorModal({ initialEntry, employeeDbId, activeProject
       <TimeEntryCard
         entry={entry}
         activeProjects={activeProjects}
-        defaultOpen={true}
+        defaultOpen={!viewOnly}
+        defaultSummaryOpen={viewOnly}
         defaultEditMode={!viewOnly}
         hideHeader={true}
         onModalClose={onClose}

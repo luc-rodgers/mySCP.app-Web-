@@ -31,15 +31,17 @@ interface TimeEntryCardProps {
   defaultOpen?: boolean;
   /** Start in view mode even when defaultOpen is true */
   defaultEditMode?: boolean;
+  /** Open the summary ticket immediately on mount instead of the edit modal */
+  defaultSummaryOpen?: boolean;
   /** Hide the collapsed day-header tile — useful when the card is embedded in a standalone modal */
   hideHeader?: boolean;
   /** Called when the modal is closed — lets parent wrappers know to unmount */
   onModalClose?: () => void;
 }
 
-export function TimeEntryCard({ entry, activeProjects, onDelete, onStatusChange, onAddProject, onDeleteProject, onUpdateProject, onUpdateEntry, onAddSubActivity, onUpdateSubActivity, onDeleteSubActivity, defaultOpen = false, defaultEditMode, hideHeader = false, onModalClose }: TimeEntryCardProps) {
+export function TimeEntryCard({ entry, activeProjects, onDelete, onStatusChange, onAddProject, onDeleteProject, onUpdateProject, onUpdateEntry, onAddSubActivity, onUpdateSubActivity, onDeleteSubActivity, defaultOpen = false, defaultEditMode, defaultSummaryOpen = false, hideHeader = false, onModalClose }: TimeEntryCardProps) {
   const [showModal, setShowModal] = useState(defaultOpen);
-  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [showSummaryModal, setShowSummaryModal] = useState(defaultSummaryOpen);
   const [isEditMode, setIsEditMode] = useState(defaultEditMode ?? defaultOpen);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [hasBeenEdited, setHasBeenEdited] = useState(false);
@@ -287,7 +289,7 @@ export function TimeEntryCard({ entry, activeProjects, onDelete, onStatusChange,
       <TimeCardSummaryModal
         entry={entry}
         isOpen={showSummaryModal}
-        onClose={() => setShowSummaryModal(false)}
+        onClose={() => { setShowSummaryModal(false); onModalClose?.(); }}
         onSubmit={(signature) => {
           onStatusChange(entry.id, 'submitted');
           setShowSummaryModal(false);
