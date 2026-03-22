@@ -179,8 +179,8 @@ export default function TimesheetClient({ supabaseEmployee, userEmail, activePro
   const handleAddEntry = (entry: Omit<TimeEntry, "id">) => {
     const newEntry = { ...entry, id: Date.now().toString(), employeeName: mockEmployee.name };
     setEntries([newEntry, ...entries]);
-    upsertEntry(newEntry).then((dbId) => {
-      if (dbId) setEntries((prev) => prev.map((e) => e.id === newEntry.id ? { ...e, id: dbId } : e));
+    upsertEntry(newEntry).then((result) => {
+      if (result?.id) setEntries((prev) => prev.map((e) => e.id === newEntry.id ? { ...e, id: result.id } : e));
     });
   };
 
@@ -231,8 +231,8 @@ export default function TimesheetClient({ supabaseEmployee, userEmail, activePro
         employeeName: mockEmployee.name,
       };
       setEntries((prev) => prev.some((e) => e.date === date) ? prev : [...prev, newEntry]);
-      upsertEntry(newEntry).then((dbId) => {
-        if (dbId) setEntries((prev) => prev.map((e) => e.id === newEntry.id ? { ...e, id: dbId } : e));
+      upsertEntry(newEntry).then((result) => {
+        if (result?.id) setEntries((prev) => prev.map((e) => e.id === newEntry.id ? { ...e, id: result.id } : e));
       });
     } else {
       setEntries((prev) => {
@@ -281,8 +281,8 @@ export default function TimesheetClient({ supabaseEmployee, userEmail, activePro
         projects: [], employeeName: mockEmployee.name,
       };
       setEntries((prev) => prev.some((e) => e.date === date) ? prev : [...prev, newEntry]);
-      upsertEntry(newEntry).then((dbId) => {
-        if (dbId) setEntries((prev) => prev.map((e) => e.id === newEntry.id ? { ...e, id: dbId } : e));
+      upsertEntry(newEntry).then((result) => {
+        if (result?.id) setEntries((prev) => prev.map((e) => e.id === newEntry.id ? { ...e, id: result.id } : e));
       });
     } else {
       setEntries((prev) => prev.map((e) => {
