@@ -2,8 +2,8 @@
 import { Mail, Phone, Clock, Settings, ChevronDown, ChevronUp } from 'lucide-react';
 import { Employee, TimeEntry } from '@/lib/types';
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { TimeCardSummaryModal } from './TimeCardSummaryModal';
+import { TimeEntryEditorModal } from './TimeEntryEditorModal';
 import { EditEmployeeModal } from './EditEmployeeModal';
 import { WorkHeatmap } from './WorkHeatmap';
 
@@ -11,6 +11,8 @@ interface ProfileProps {
   employee: Employee;
   entries?: TimeEntry[];
   employeeId: string;
+  employeeDbId?: string;
+  activeProjects?: string[];
   firstName: string;
   lastName: string;
   classification: string;
@@ -23,15 +25,17 @@ export function Profile({
   employee,
   entries = [],
   employeeId,
+  employeeDbId,
+  activeProjects = [],
   firstName,
   lastName,
   classification,
   employmentType,
   role,
 }: ProfileProps) {
-  const router = useRouter();
   const [showEdit, setShowEdit] = useState(false);
   const [selectedTimeCard, setSelectedTimeCard] = useState<TimeEntry | null>(null);
+  const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [activeTab, setActiveTab] = useState<'history' | 'stats'>('history');
   const menuRef = useRef<HTMLDivElement>(null);
@@ -322,11 +326,21 @@ export function Profile({
           isOpen={true}
           onClose={() => setSelectedTimeCard(null)}
           viewOnly={true}
-          onEdit={() => {
-            const date = selectedTimeCard.date;
+          onEdit={employeeDbId ? () => {
+            const tc = selectedTimeCard;
             setSelectedTimeCard(null);
-            router.push(`/timesheet?date=${date}`);
-          }}
+            setEditingEntry(tc);
+          } : undefined}
+        />
+      )}
+
+      {editingEntry && employeeDbId && (
+        <TimeEntryEditorModal
+          initialEntry={editingEntry}
+          employeeDbId={employeeDbId}
+          activeProjects={activeProjects}
+          onClose={() => setEditingEntry(null)}
+          onDeleted={() => setEditingEntry(null)}
         />
       )}
     </div>

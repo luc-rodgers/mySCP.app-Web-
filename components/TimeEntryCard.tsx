@@ -27,12 +27,17 @@ interface TimeEntryCardProps {
   onAddSubActivity: (entryId: string, projectId: string, type: 'pouring' | 'non-pouring' | 'travel') => void;
   onUpdateSubActivity: (entryId: string, projectId: string, subActivityId: string, updatedSubActivity: Partial<SubActivity>) => void;
   onDeleteSubActivity: (entryId: string, projectId: string, subActivityId: string) => void;
+  /** Open the edit modal immediately on mount (e.g. when launched from another page) */
+  defaultOpen?: boolean;
+  /** Hide the collapsed day-header tile — useful when the card is embedded in a standalone modal */
+  hideHeader?: boolean;
 }
 
-export function TimeEntryCard({ entry, activeProjects, onDelete, onStatusChange, onAddProject, onDeleteProject, onUpdateProject, onUpdateEntry, onAddSubActivity, onUpdateSubActivity, onDeleteSubActivity }: TimeEntryCardProps) {
-  const [showModal, setShowModal] = useState(false);
+export function TimeEntryCard({ entry, activeProjects, onDelete, onStatusChange, onAddProject, onDeleteProject, onUpdateProject, onUpdateEntry, onAddSubActivity, onUpdateSubActivity, onDeleteSubActivity, defaultOpen = false, hideHeader = false }: TimeEntryCardProps) {
+  const [showModal, setShowModal] = useState(defaultOpen);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(defaultOpen);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [hasBeenEdited, setHasBeenEdited] = useState(false);
   const [wasSubmittedWhenEditStarted, setWasSubmittedWhenEditStarted] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -481,6 +486,46 @@ export function TimeEntryCard({ entry, activeProjects, onDelete, onStatusChange,
                 <FileCheck className="w-4 h-4 mr-2" />
                 Done Editing
               </Button>
+            )}
+
+            {/* Delete time card */}
+            {!isLocked && (
+              <div className="mt-4 pt-3 border-t border-gray-100">
+                {!showDeleteConfirm ? (
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="flex items-center gap-2 text-sm text-red-500 hover:text-red-700 cursor-pointer w-full justify-center"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete time card
+                  </button>
+                ) : (
+                  <div className="text-center space-y-2">
+                    <p className="text-sm text-red-700 font-medium">Delete this time card?</p>
+                    <p className="text-xs text-gray-500">This cannot be undone.</p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 cursor-pointer"
+                        onClick={() => setShowDeleteConfirm(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="flex-1 bg-red-600 hover:bg-red-700 text-white cursor-pointer"
+                        onClick={() => {
+                          handleCloseModal();
+                          onDelete(entry.id);
+                        }}
+                      >
+                        Yes, delete
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
 

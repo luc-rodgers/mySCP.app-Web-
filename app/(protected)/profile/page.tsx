@@ -7,10 +7,11 @@ export default async function ProfilePage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Parallel: employee record + admin count
-  const [{ data: emp }, { count: adminCount }] = await Promise.all([
+  // Parallel: employee record + admin count + active projects
+  const [{ data: emp }, { count: adminCount }, { data: projectRows }] = await Promise.all([
     supabase.from("employees").select("*").eq("user_id", user?.id ?? "").single(),
     supabase.from("employees").select("id", { count: "exact", head: true }).eq("role", "admin"),
+    supabase.from("projects").select("name").eq("status", "active").order("name"),
   ]);
 
   const isUserAdmin = emp?.role?.toLowerCase() === "admin";
@@ -63,6 +64,8 @@ export default async function ProfilePage() {
         employee={employee}
         entries={entries}
         employeeId={emp?.id ?? ""}
+        employeeDbId={emp?.id ?? ""}
+        activeProjects={(projectRows ?? []).map(p => p.name)}
         firstName={emp?.first_name ?? ""}
         lastName={emp?.last_name ?? ""}
         classification={emp?.title ?? ""}
