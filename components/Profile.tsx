@@ -1,5 +1,5 @@
 "use client"
-import { Mail, Phone, Clock, Settings } from 'lucide-react';
+import { Mail, Phone, Clock, Settings, ChevronDown, ChevronUp } from 'lucide-react';
 import { Employee, TimeEntry } from '@/lib/types';
 import { useState, useRef, useEffect } from 'react';
 import { TimeCardSummaryModal } from './TimeCardSummaryModal';
@@ -69,6 +69,51 @@ export function Profile({
   const totalHours = submittedTimeCards.reduce((sum, e) => sum + calculateTotalHours(e), 0);
   const avgHoursPerCard = totalTimeCards > 0 ? (totalHours / totalTimeCards).toFixed(1) : '0.0';
 
+  // Group time cards by week (Monday as week start)
+  const getMondayKey = (dateStr: string): string => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    const day = date.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    date.setDate(date.getDate() + diff);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  };
+
+  const weekGroups: Record<string, typeof submittedTimeCards> = {};
+  submittedTimeCards.forEach(entry => {
+    const key = getMondayKey(entry.date);
+    if (!weekGroups[key]) weekGroups[key] = [];
+    weekGroups[key].push(entry);
+  });
+
+  const sortedWeekKeys = Object.keys(weekGroups).sort((a, b) => b.localeCompare(a));
+
+  const formatWeekRange = (mondayKey: string): string => {
+    const [y, m, d] = mondayKey.split('-').map(Number);
+    const mon = new Date(y, m - 1, d);
+    const sun = new Date(y, m - 1, d + 6);
+    const fmtDay = (dt: Date) => dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+    const fmtDayYear = (dt: Date) => dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+    // If Mon and Sun are in the same month, compress
+    if (mon.getMonth() === sun.getMonth()) {
+      return `${mon.getDate()} – ${fmtDayYear(sun)}`;
+    }
+    return `${fmtDay(mon)} – ${fmtDayYear(sun)}`;
+  };
+
+  // Default: most recent week open
+  const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(
+    () => new Set(sortedWeekKeys.length > 0 ? [sortedWeekKeys[0]] : [])
+  );
+
+  const toggleWeek = (key: string) => {
+    setExpandedWeeks(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  };
+
   return (
     <div className="min-h-screen bg-[#f3f3f5] pb-24 pt-4">
 
@@ -99,14 +144,14 @@ export function Profile({
           </div>
 
           {/* Avatar + name */}
-          <div className="flex flex-col items-center text-center mb-5">
-            <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-3 ring-4 ring-gray-50">
-              <span className="text-2xl font-bold text-gray-700">{initials}</span>
+          <div className="flex items-center gap-4 mb-5">
+            <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center ring-4 ring-gray-50 shrink-0">
+              <span className="text-lg font-bold text-gray-700">{initials}</span>
             </div>
-            <h1 className="text-gray-900 font-bold text-xl mb-2">{employee.name}</h1>
-            <div className="flex items-center justify-center gap-2 flex-wrap">
+            <div>
+              <h1 className="text-gray-900 font-bold text-xl leading-tight">{employee.name}</h1>
               {classification && (
-                <span className="bg-gray-100 text-gray-500 text-xs font-medium px-3 py-1 rounded-full">
+                <span className="bg-gray-100 text-gray-500 text-xs font-medium px-3 py-1 rounded-full mt-1 inline-block">
                   {classification}
                 </span>
               )}
@@ -137,8 +182,8 @@ export function Profile({
         </div>
       </div>
 
-      {/* Work Heatmap */}
-      <div className="mx-4 mb-4">
+      {/* Work Heatmap — desktop only */}
+      <div className="hidden md:block mx-4 mb-4">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
           Activity
         </p>
@@ -151,38 +196,71 @@ export function Profile({
           Work History
         </p>
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          {submittedTimeCards.length === 0 ? (
+          {sortedWeekKeys.length === 0 ? (
             <div className="py-10 text-center">
               <Clock className="w-8 h-8 text-gray-200 mx-auto mb-2" />
               <p className="text-sm text-gray-400">No work history yet</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-100">
-              {submittedTimeCards.map((entry) => {
-                const hrs = calculateTotalHours(entry);
+              {sortedWeekKeys.map((weekKey) => {
+                const weekEntries = weekGroups[weekKey];
+                const weekTotal = weekEntries.reduce((sum, e) => sum + calculateTotalHours(e), 0);
+                const isOpen = expandedWeeks.has(weekKey);
+
                 return (
-                  <button
-                    key={entry.id}
-                    onClick={() => setSelectedTimeCard(entry)}
-                    className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors cursor-pointer text-left"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{formatDate(entry.date)}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{entry.timeCardNumber || 'N/A'}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-semibold text-gray-800">
-                        {hrs.toFixed(2)} hrs
-                      </span>
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                        entry.status === 'approved'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-amber-100 text-amber-700'
-                      }`}>
-                        {entry.status === 'approved' ? 'Approved' : 'Pending'}
-                      </span>
-                    </div>
-                  </button>
+                  <div key={weekKey}>
+                    {/* Week header row */}
+                    <button
+                      onClick={() => toggleWeek(weekKey)}
+                      className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors cursor-pointer text-left"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">{formatWeekRange(weekKey)}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {weekEntries.length} {weekEntries.length === 1 ? 'day' : 'days'} worked
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-semibold text-gray-800">{weekTotal.toFixed(2)} hrs</span>
+                        {isOpen
+                          ? <ChevronUp className="w-4 h-4 text-gray-400" />
+                          : <ChevronDown className="w-4 h-4 text-gray-400" />
+                        }
+                      </div>
+                    </button>
+
+                    {/* Expanded day cards */}
+                    {isOpen && (
+                      <div className="border-t border-gray-100 bg-gray-50 divide-y divide-gray-100">
+                        {weekEntries.map((entry) => {
+                          const hrs = calculateTotalHours(entry);
+                          return (
+                            <button
+                              key={entry.id}
+                              onClick={() => setSelectedTimeCard(entry)}
+                              className="w-full flex items-center justify-between pl-8 pr-5 py-3 hover:bg-gray-100 transition-colors cursor-pointer text-left"
+                            >
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">{formatDate(entry.date)}</p>
+                                <p className="text-xs text-gray-400 mt-0.5">{entry.timeCardNumber || 'No TC #'}</p>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className="text-sm text-gray-700">{hrs.toFixed(2)} hrs</span>
+                                <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                                  entry.status === 'approved'
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-amber-100 text-amber-700'
+                                }`}>
+                                  {entry.status === 'approved' ? 'Approved' : 'Pending'}
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
