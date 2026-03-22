@@ -61,6 +61,15 @@ export function ProjectProfile({ project, onBack, isAdmin = false }: ProjectProf
     const result = await updateProject(project.id, formData);
     setSaving(false);
     if (!result.success) { setError(result.error); return; }
+    // Update local state immediately so the view reflects the saved values
+    setEditedProject(prev => ({
+      ...prev,
+      name: (formData.get('name') as string)?.trim() || prev.name,
+      client: (formData.get('clientName') as string)?.trim() || prev.client,
+      address: (formData.get('address') as string)?.trim() || prev.address,
+      projectValue: (formData.get('projectValue') as string) || prev.projectValue,
+      status: (formData.get('status') as string) || prev.status,
+    }));
     router.refresh();
     setIsEditing(false);
   }

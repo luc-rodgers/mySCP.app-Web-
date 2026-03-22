@@ -61,7 +61,7 @@ export async function updateProject(
 
   if (error) return { success: false, error: error.message };
 
-  revalidatePath("/projects");
+  revalidatePath("/projects", "page");
   revalidatePath("/clients");
   return { success: true };
 }
