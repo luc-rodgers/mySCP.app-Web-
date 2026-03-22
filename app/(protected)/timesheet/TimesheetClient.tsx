@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { TimeEntry, Employee, Project, SubActivity } from "@/lib/types";
 import { TimeSheetHeader } from "@/components/TimeSheetHeader";
 import { TimeEntryList } from "@/components/TimeEntryList";
@@ -24,6 +25,9 @@ type Props = {
 };
 
 export default function TimesheetClient({ supabaseEmployee, userEmail, activeProjects }: Props) {
+  const searchParams = useSearchParams();
+  const initialDate = searchParams.get("date") ?? undefined;
+
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [currentPage, setCurrentPage] = useState<"timesheet" | "weeklysummary">("timesheet");
   const [loaded, setLoaded] = useState(false);
@@ -361,6 +365,7 @@ export default function TimesheetClient({ supabaseEmployee, userEmail, activePro
         onAddSubActivity={handleAddSubActivity}
         onUpdateSubActivity={handleUpdateSubActivity}
         onDeleteSubActivity={handleDeleteSubActivity}
+        initialDate={initialDate}
       />
     </>
   );

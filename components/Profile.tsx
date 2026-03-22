@@ -2,6 +2,7 @@
 import { Mail, Phone, Clock, Settings, ChevronDown, ChevronUp } from 'lucide-react';
 import { Employee, TimeEntry } from '@/lib/types';
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { TimeCardSummaryModal } from './TimeCardSummaryModal';
 import { EditEmployeeModal } from './EditEmployeeModal';
 import { WorkHeatmap } from './WorkHeatmap';
@@ -28,6 +29,7 @@ export function Profile({
   employmentType,
   role,
 }: ProfileProps) {
+  const router = useRouter();
   const [showEdit, setShowEdit] = useState(false);
   const [selectedTimeCard, setSelectedTimeCard] = useState<TimeEntry | null>(null);
   const [showMenu, setShowMenu] = useState(false);
@@ -320,7 +322,11 @@ export function Profile({
           isOpen={true}
           onClose={() => setSelectedTimeCard(null)}
           viewOnly={true}
-          onEdit={() => {}}
+          onEdit={() => {
+            const date = selectedTimeCard.date;
+            setSelectedTimeCard(null);
+            router.push(`/timesheet?date=${date}`);
+          }}
         />
       )}
     </div>

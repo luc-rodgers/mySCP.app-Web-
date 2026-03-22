@@ -18,11 +18,30 @@ interface TimeEntryListProps {
   onAddSubActivity: (entryId: string, projectId: string, type: string) => void;
   onUpdateSubActivity: (entryId: string, projectId: string, subActivityId: string, updatedSubActivity: any) => void;
   onDeleteSubActivity: (entryId: string, projectId: string, subActivityId: string) => void;
+  /** YYYY-MM-DD — jump straight to the week containing this date */
+  initialDate?: string;
 }
 
-export function TimeEntryList({ entries, activeProjects, onDelete, onStatusChange, onAddProject, onDeleteProject, onUpdateProject, onUpdateEntry, onViewWeeklySummary, onAddSubActivity, onUpdateSubActivity, onDeleteSubActivity }: TimeEntryListProps) {
+/** Return the number of whole weeks between today's Monday and the Monday of the week containing targetDate */
+function weekOffsetForDate(targetDateStr: string): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayDay = today.getDay();
+  const todayMonday = new Date(today);
+  todayMonday.setDate(today.getDate() + (todayDay === 0 ? -6 : 1 - todayDay));
+
+  const [y, m, d] = targetDateStr.split('-').map(Number);
+  const target = new Date(y, m - 1, d);
+  const targetDay = target.getDay();
+  const targetMonday = new Date(target);
+  targetMonday.setDate(target.getDate() + (targetDay === 0 ? -6 : 1 - targetDay));
+
+  return Math.round((targetMonday.getTime() - todayMonday.getTime()) / (7 * 24 * 60 * 60 * 1000));
+}
+
+export function TimeEntryList({ entries, activeProjects, onDelete, onStatusChange, onAddProject, onDeleteProject, onUpdateProject, onUpdateEntry, onViewWeeklySummary, onAddSubActivity, onUpdateSubActivity, onDeleteSubActivity, initialDate }: TimeEntryListProps) {
   // Track week offset (0 = current week, -1 = previous week, +1 = next week, etc.)
-  const [weekOffset, setWeekOffset] = useState(0);
+  const [weekOffset, setWeekOffset] = useState(() => initialDate ? weekOffsetForDate(initialDate) : 0);
 
   // Get current week date range (Monday to Sunday)
   const today = new Date();

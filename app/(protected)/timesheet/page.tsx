@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import TimesheetClient from "./TimesheetClient";
 
@@ -13,10 +14,12 @@ export default async function TimesheetPage() {
   const activeProjectNames = (projects ?? []).map((p: { name: string }) => p.name);
 
   return (
-    <TimesheetClient
-      supabaseEmployee={employee}
-      userEmail={user?.email ?? ""}
-      activeProjects={activeProjectNames}
-    />
+    <Suspense>
+      <TimesheetClient
+        supabaseEmployee={employee}
+        userEmail={user?.email ?? ""}
+        activeProjects={activeProjectNames}
+      />
+    </Suspense>
   );
 }
