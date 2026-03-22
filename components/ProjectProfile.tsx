@@ -110,16 +110,21 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
     async function fetchHistory() {
       setLoadingHistory(true);
       const supabase = createClient();
+      // Fetch all entries and filter client-side by project name for reliability
       const { data, error } = await supabase
         .from('time_entries')
         .select('id, date, status, reference_number, employee_id, data, employees(first_name, last_name)')
-        .filter('data', 'cs', JSON.stringify({ projects: [{ project: editedProject.name }] }))
         .order('date', { ascending: false });
 
       console.log('[ProjectProfile] project name:', editedProject.name);
-      console.log('[ProjectProfile] row count:', data?.length);
+      console.log('[ProjectProfile] total rows fetched:', data?.length);
       console.log('[ProjectProfile] error:', error);
       if (error || !data) { setLoadingHistory(false); return; }
+
+      const filtered = data.filter((row: any) =>
+        (row.data?.projects ?? []).some((p: any) => p.project === editedProject.name)
+      );
+      console.log('[ProjectProfile] matched rows:', filtered.length);
 
       function subHours(siteStart: string, siteFinish: string): number {
         if (!siteStart || !siteFinish) return 0;
@@ -128,7 +133,7 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
         return Math.max(0, (fh * 60 + fm - sh * 60 - sm) / 60);
       }
 
-      const rows: WorkHistoryRow[] = data.map((row: any) => {
+      const rows: WorkHistoryRow[] = filtered.map((row: any) => {
         const entry = row.data as any;
         const emp = Array.isArray(row.employees) ? row.employees[0] : row.employees;
         const projectActivities = (entry.projects ?? [])
