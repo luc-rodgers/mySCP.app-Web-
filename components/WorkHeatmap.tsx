@@ -83,18 +83,20 @@ export function WorkHeatmap({ entries, calculateHours, hoursData, weeksCount = 5
     weeks.push(week);
   }
 
-  // Month label — show at first week of each new month
-  const monthLabels: Array<{ weekIndex: number; label: string }> = [];
+  // Month label — show at first week of each new month, capped to fit weeksCount
+  const allMonthLabels: Array<{ weekIndex: number; label: string }> = [];
   weeks.forEach((week, i) => {
     const d = parseLocalDate(week[0].dateStr);
     const prev = i > 0 ? parseLocalDate(weeks[i - 1][0].dateStr) : null;
     if (!prev || d.getMonth() !== prev.getMonth()) {
-      monthLabels.push({
+      allMonthLabels.push({
         weekIndex: i,
         label: d.toLocaleDateString("en-AU", { month: "short" }),
       });
     }
   });
+  const maxMonthLabels = Math.round(weeksCount / 4.33);
+  const monthLabels = allMonthLabels.slice(-maxMonthLabels);
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 overflow-hidden">
