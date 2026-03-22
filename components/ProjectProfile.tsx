@@ -481,18 +481,24 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
             </div>
           </div>
 
-          <WorkHeatmap
-            hoursData={(() => {
-              const map: Record<string, number> = {};
-              workHistory.forEach(r => {
-                if (r.status === 'submitted' || r.status === 'approved') {
-                  map[r.date] = (map[r.date] ?? 0) + r.hours;
-                }
-              });
-              return map;
-            })()}
-            weeksCount={52}
-          />
+          {(() => {
+            const map: Record<string, number> = {};
+            workHistory.forEach(r => {
+              if (r.status === 'submitted' || r.status === 'approved') {
+                map[r.date] = (map[r.date] ?? 0) + r.hours;
+              }
+            });
+            return (
+              <>
+                <div className="md:hidden">
+                  <WorkHeatmap hoursData={map} weeksCount={13} />
+                </div>
+                <div className="hidden md:block">
+                  <WorkHeatmap hoursData={map} weeksCount={52} />
+                </div>
+              </>
+            );
+          })()}
         </div>
       )}
     </div>
