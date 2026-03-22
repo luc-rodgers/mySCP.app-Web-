@@ -184,10 +184,9 @@ export function Projects({ initialProjects = [], isAdmin = false, clients = [] }
         {/* Desktop Layout */}
         <div className="hidden md:block">
           <div className="grid grid-cols-12 gap-4 bg-gray-50 px-4 py-3 border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
-            <div className="col-span-3">Project Name</div>
+            <div className="col-span-4">Project Name</div>
             <div className="col-span-2">Client</div>
-            <div className="col-span-2">Location</div>
-            <div className="col-span-2">$ Value</div>
+            <div className="col-span-3">Location</div>
             <div className="col-span-2">Status</div>
             <div className="col-span-1 text-right">Hrs</div>
           </div>
@@ -198,10 +197,9 @@ export function Projects({ initialProjects = [], isAdmin = false, clients = [] }
                 onClick={() => setSelectedProject(project)}
                 className="w-full grid grid-cols-12 gap-4 items-center text-sm px-4 py-4 hover:bg-gray-50 transition-colors text-left cursor-pointer"
               >
-                <div className="col-span-3 text-gray-900">{project.name}</div>
+                <div className="col-span-4 text-gray-900">{project.name}</div>
                 <div className="col-span-2 text-gray-500">{project.client}</div>
-                <div className="col-span-2 text-gray-500">{project.address}</div>
-                <div className="col-span-2 text-gray-500">{project.projectValue || '—'}</div>
+                <div className="col-span-3 text-gray-500">{project.address}</div>
                 <div className="col-span-2">
                   <Badge variant="outline" className={`${getStatusColor(project.status)} text-xs capitalize`}>
                     {project.status}
