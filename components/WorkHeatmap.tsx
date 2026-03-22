@@ -98,7 +98,7 @@ export function WorkHeatmap({ entries, calculateHours, hoursData, weeksCount = 5
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 overflow-hidden">
-      <div className="overflow-x-auto w-full">
+      <div className="flex justify-center overflow-x-auto w-full">
         <div className="inline-flex flex-col gap-[3px] min-w-max">
 
           {/* Month labels row */}
@@ -148,7 +148,7 @@ export function WorkHeatmap({ entries, calculateHours, hoursData, weeksCount = 5
       </div>
 
       {/* Legend */}
-      <div className="flex items-center justify-end gap-1 mt-3">
+      <div className="flex items-center justify-center gap-1 mt-3">
         <span className="text-[10px] text-gray-400 mr-0.5">Less</span>
         {[0, 2, 5, 8, 11].map((h) => (
           <div key={h} className={`w-3 h-3 rounded-[2px] ${getCellColor(h)}`} />
