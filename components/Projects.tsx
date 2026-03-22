@@ -122,27 +122,10 @@ export function Projects({ initialProjects = [], isAdmin = false, clients = [] }
           )}
         </div>
 
-        {/* State toggle */}
-        <div className="bg-gray-100 rounded-xl p-1 flex mb-4">
-          {(['QLD', 'NSW'] as const).map(s => (
-            <button
-              key={s}
-              onClick={() => setStateFilter(s)}
-              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors cursor-pointer ${
-                stateFilter === s
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Overview</p>
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
-            <div className="text-[#374151] text-xl font-bold">{projects.length}</div>
+            <div className="text-[#374151] text-xl font-bold">{stateProjects.length}</div>
             <div className="text-gray-500 text-xs mt-0.5">Total</div>
           </div>
           <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
@@ -154,6 +137,23 @@ export function Projects({ initialProjects = [], isAdmin = false, clients = [] }
             <div className="text-gray-500 text-xs mt-0.5">Completed</div>
           </div>
         </div>
+      </div>
+
+      {/* State toggle */}
+      <div className="bg-gray-100 rounded-xl p-1 flex mb-4">
+        {(['QLD', 'NSW'] as const).map(s => (
+          <button
+            key={s}
+            onClick={() => setStateFilter(s)}
+            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors cursor-pointer ${
+              stateFilter === s
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {s}
+          </button>
+        ))}
       </div>
 
       {/* Projects Table */}
