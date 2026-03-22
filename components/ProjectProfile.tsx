@@ -69,6 +69,7 @@ function HistoryStatusBadge({ status }: { status: string }) {
 export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onDeleted }: ProjectProfileProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState<'history' | 'stats'>('history');
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [saving, setSaving] = useState(false);
@@ -243,24 +244,6 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
               )}
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                <div className="text-gray-600 text-xs mb-1">Total Entries</div>
-                <div className="text-blue-600 text-lg">{workHistory.length}</div>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                <div className="text-gray-600 text-xs mb-1">Unique Employees</div>
-                <div className="text-green-600 text-lg">
-                  {new Set(workHistory.map(r => r.employeeName)).size}
-                </div>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                <div className="text-gray-600 text-xs mb-1">Total Hours</div>
-                <div className="text-blue-600 text-lg">
-                  {workHistory.reduce((s, r) => s + r.hours, 0).toFixed(1)}
-                </div>
-              </div>
-            </div>
           </>
         ) : (
           <form onSubmit={handleSave} className="space-y-4">
@@ -358,11 +341,28 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
         )}
       </div>
 
-      {/* Work History */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
-          <h2 className="text-gray-900">Work History</h2>
+      {/* Tab toggle */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 mb-4">
+        <div className="bg-gray-100 rounded-xl p-1 flex">
+          {(['history', 'stats'] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors cursor-pointer ${
+                activeTab === tab
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {tab === 'history' ? 'Work History' : 'Statistics'}
+            </button>
+          ))}
         </div>
+      </div>
+
+      {/* Work History tab */}
+      {activeTab === 'history' && (
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
 
         {loadingHistory ? (
           <div className="flex items-center justify-center py-10 gap-2 text-sm text-gray-400">
@@ -453,6 +453,32 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
           </>
         )}
       </div>
+      )}
+
+      {/* Statistics tab */}
+      {activeTab === 'stats' && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Overview</p>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
+              <div className="text-[#374151] text-xl font-bold">{workHistory.length}</div>
+              <div className="text-gray-500 text-xs mt-0.5">Total Entries</div>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
+              <div className="text-[#374151] text-xl font-bold">
+                {new Set(workHistory.map(r => r.employeeName)).size}
+              </div>
+              <div className="text-gray-500 text-xs mt-0.5">Employees</div>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
+              <div className="text-[#374151] text-xl font-bold">
+                {workHistory.reduce((s, r) => s + r.hours, 0).toFixed(1)}
+              </div>
+              <div className="text-gray-500 text-xs mt-0.5">Total Hours</div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
