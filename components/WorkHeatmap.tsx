@@ -92,8 +92,8 @@ export function WorkHeatmap({ entries, calculateHours }: WorkHeatmapProps) {
   });
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-      <div className="overflow-x-auto">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 overflow-hidden">
+      <div className="overflow-x-auto w-full">
         <div className="inline-flex flex-col gap-[3px] min-w-max">
 
           {/* Month labels row */}
