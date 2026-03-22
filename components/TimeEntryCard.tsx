@@ -429,41 +429,32 @@ export function TimeEntryCard({ entry, activeProjects, onDelete, onStatusChange,
               </div>
             )}
 
-            {/* Add Project Buttons - Mobile */}
-            <div className="flex gap-4 justify-center mb-3">
-              <div className="flex flex-col items-center gap-1">
-                <Button
-                  size="sm"
-                  className="w-14 h-14 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white p-0 border-2 border-blue-600"
-                  onClick={() => handleAddProject(entry.id)}
-                  disabled={isLocked}
-                >
-                  <Briefcase className="w-6 h-6" />
-                </Button>
-                <span className="text-xs text-gray-600">Project</span>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <Button
-                  size="sm"
-                  className="w-14 h-14 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white p-0 border-2 border-blue-600"
-                  onClick={() => handleAddProject(entry.id, 'yardwork')}
-                  disabled={isLocked}
-                >
-                  <Truck className="w-6 h-6" />
-                </Button>
-                <span className="text-xs text-gray-600">Yard Work</span>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <Button
-                  size="sm"
-                  className="w-14 h-14 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white p-0 border-2 border-blue-600"
-                  onClick={() => handleAddProject(entry.id, 'leave')}
-                  disabled={isLocked}
-                >
-                  <Plane className="w-6 h-6" />
-                </Button>
-                <span className="text-xs text-gray-600">Leave</span>
-              </div>
+            {/* Add Project Buttons */}
+            <div className="flex gap-2 mb-3">
+              <button
+                onClick={() => handleAddProject(entry.id)}
+                disabled={isLocked}
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <Briefcase className="w-4 h-4 shrink-0" />
+                <span>Project</span>
+              </button>
+              <button
+                onClick={() => handleAddProject(entry.id, 'yardwork')}
+                disabled={isLocked}
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <Truck className="w-4 h-4 shrink-0" />
+                <span>Yard Work</span>
+              </button>
+              <button
+                onClick={() => handleAddProject(entry.id, 'leave')}
+                disabled={isLocked}
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <Plane className="w-4 h-4 shrink-0" />
+                <span>Leave</span>
+              </button>
             </div>
 
             {/* Submit Button */}
