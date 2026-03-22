@@ -324,13 +324,23 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs text-gray-600 mb-1">Status</label>
-              <select name="status" defaultValue={editedProject.status}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer">
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
-              </select>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Project Value</label>
+                <select name="projectValue" defaultValue={editedProject.projectValue || ''}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer">
+                  <option value="">Select value</option>
+                  {PROJECT_VALUE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Status</label>
+                <select name="status" defaultValue={editedProject.status}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer">
+                  <option value="active">Active</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
             </div>
 
             {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
