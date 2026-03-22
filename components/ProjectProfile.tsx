@@ -1,11 +1,22 @@
 "use client"
-import { ArrowLeft, MapPin, DollarSign, Edit2, X, Check, Trash2 } from 'lucide-react';
+import { ArrowLeft, MapPin, DollarSign, Edit2, X, Check, Trash2, Car, Droplets, Wrench, Loader2 } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 import { updateProject } from '@/app/actions/updateProject';
 import { deleteProject } from '@/app/actions/deleteProject';
+
+interface WorkHistoryRow {
+  id: string;
+  date: string;
+  status: string;
+  referenceNumber: string | null;
+  employeeName: string;
+  hours: number;
+  activities: { travel: number; pouring: number; nonPouring: number };
+}
 
 interface Project {
   id: string;
@@ -37,6 +48,24 @@ const PROJECT_VALUE_OPTIONS = [
   '>$1b+',
 ];
 
+function HistoryStatusBadge({ status }: { status: string }) {
+  const styles: Record<string, string> = {
+    draft:     'bg-amber-500 text-white border-amber-500',
+    submitted: 'bg-[#030213] text-white border-[#030213]',
+    approved:  'bg-green-100 text-green-700 border-green-200',
+  };
+  const labels: Record<string, string> = {
+    draft:     'Draft',
+    submitted: 'Pending',
+    approved:  'Approved',
+  };
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${styles[status] ?? styles.draft}`}>
+      {labels[status] ?? status}
+    </span>
+  );
+}
+
 export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onDeleted }: ProjectProfileProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -45,6 +74,59 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editedProject, setEditedProject] = useState<Project>(project);
+
+  const [workHistory, setWorkHistory] = useState<WorkHistoryRow[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+
+  const calculateHours = useCallback((entry: any): number => {
+    if (!entry.depotStart || !entry.depotFinish) return 0;
+    const [sh, sm] = (entry.depotStart as string).split(':').map(Number);
+    const [fh, fm] = (entry.depotFinish as string).split(':').map(Number);
+    const hours = (fh * 60 + fm - sh * 60 - sm) / 60;
+    const hasLunch = (entry.projects ?? []).some((p: any) => p.lunch);
+    return Math.max(0, hours - (hasLunch ? 0.5 : 0));
+  }, []);
+
+  useEffect(() => {
+    async function fetchHistory() {
+      setLoadingHistory(true);
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('time_entries')
+        .select('id, date, status, reference_number, data, employees(first_name, last_name)')
+        .filter('data', 'cs', JSON.stringify({ projects: [{ project: editedProject.name }] }))
+        .order('date', { ascending: false });
+
+      if (error || !data) { setLoadingHistory(false); return; }
+
+      const rows: WorkHistoryRow[] = data.map((row: any) => {
+        const entry = row.data as any;
+        const emp = Array.isArray(row.employees) ? row.employees[0] : row.employees;
+        const projectActivities = (entry.projects ?? [])
+          .filter((p: any) => p.project === editedProject.name)
+          .flatMap((p: any) => p.subActivities ?? []);
+
+        return {
+          id: row.id,
+          date: row.date,
+          status: row.status,
+          referenceNumber: row.reference_number ?? null,
+          employeeName: emp ? `${emp.first_name} ${emp.last_name}` : 'Unknown',
+          hours: calculateHours(entry),
+          activities: {
+            travel: projectActivities.filter((a: any) => a.type === 'travel').length,
+            pouring: projectActivities.filter((a: any) => a.type === 'pouring').length,
+            nonPouring: projectActivities.filter((a: any) => a.type === 'non-pouring').length,
+          },
+        };
+      });
+
+      setWorkHistory(rows);
+      setLoadingHistory(false);
+    }
+
+    fetchHistory();
+  }, [editedProject.name, calculateHours]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -138,15 +220,19 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
             <div className="grid grid-cols-3 gap-3">
               <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                 <div className="text-gray-600 text-xs mb-1">Total Entries</div>
-                <div className="text-blue-600 text-lg">0</div>
+                <div className="text-blue-600 text-lg">{workHistory.length}</div>
               </div>
               <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                 <div className="text-gray-600 text-xs mb-1">Unique Employees</div>
-                <div className="text-green-600 text-lg">0</div>
+                <div className="text-green-600 text-lg">
+                  {new Set(workHistory.map(r => r.employeeName)).size}
+                </div>
               </div>
               <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                 <div className="text-gray-600 text-xs mb-1">Total Hours</div>
-                <div className="text-blue-600 text-lg">0</div>
+                <div className="text-blue-600 text-lg">
+                  {workHistory.reduce((s, r) => s + r.hours, 0).toFixed(1)}
+                </div>
               </div>
             </div>
           </>
@@ -246,12 +332,100 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
         )}
       </div>
 
-      {/* Time Entries */}
+      {/* Work History */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
-          <h2 className="text-gray-900">Time Entries</h2>
+          <h2 className="text-gray-900">Work History</h2>
         </div>
-        <div className="px-4 py-8 text-center text-sm text-gray-500">No time entries yet</div>
+
+        {loadingHistory ? (
+          <div className="flex items-center justify-center py-10 gap-2 text-sm text-gray-400">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Loading…
+          </div>
+        ) : workHistory.length === 0 ? (
+          <div className="px-4 py-8 text-center text-sm text-gray-500">No work history yet</div>
+        ) : (
+          <>
+            {/* Mobile layout */}
+            <div className="md:hidden divide-y divide-gray-100">
+              {workHistory.map((row) => (
+                <div key={row.id} className="px-4 py-3">
+                  <div className="flex items-start justify-between gap-3 mb-1">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{row.employeeName}</p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(row.date + 'T00:00:00').toLocaleDateString('en-AU', {
+                          day: 'numeric', month: 'short', year: 'numeric',
+                        })}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-sm text-gray-700">{row.hours.toFixed(1)}h</span>
+                      <HistoryStatusBadge status={row.status} />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-gray-400 mt-1">
+                    {row.referenceNumber && (
+                      <span className="font-mono text-gray-500">{row.referenceNumber}</span>
+                    )}
+                    <span className="flex items-center gap-1">
+                      <Car className="w-3 h-3" />{row.activities.travel}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Droplets className="w-3 h-3" />{row.activities.pouring}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Wrench className="w-3 h-3" />{row.activities.nonPouring}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop layout */}
+            <div className="hidden md:block">
+              <div className="grid grid-cols-12 gap-3 bg-gray-50 px-4 py-2.5 border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
+                <div className="col-span-2">Date</div>
+                <div className="col-span-3">Employee</div>
+                <div className="col-span-2">Ref #</div>
+                <div className="col-span-2">Activities</div>
+                <div className="col-span-1 text-right">Hours</div>
+                <div className="col-span-2 text-right">Status</div>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {workHistory.map((row) => (
+                  <div key={row.id} className="grid grid-cols-12 gap-3 items-center px-4 py-3 text-sm hover:bg-gray-50">
+                    <div className="col-span-2 text-gray-600">
+                      {new Date(row.date + 'T00:00:00').toLocaleDateString('en-AU', {
+                        day: 'numeric', month: 'short', year: 'numeric',
+                      })}
+                    </div>
+                    <div className="col-span-3 text-gray-900">{row.employeeName}</div>
+                    <div className="col-span-2 font-mono text-xs text-gray-500">
+                      {row.referenceNumber ?? '—'}
+                    </div>
+                    <div className="col-span-2 flex items-center gap-2 text-xs text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <Car className="w-3 h-3 text-gray-400" />{row.activities.travel}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Droplets className="w-3 h-3 text-gray-400" />{row.activities.pouring}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Wrench className="w-3 h-3 text-gray-400" />{row.activities.nonPouring}
+                      </span>
+                    </div>
+                    <div className="col-span-1 text-right text-gray-700">{row.hours.toFixed(1)}</div>
+                    <div className="col-span-2 flex justify-end">
+                      <HistoryStatusBadge status={row.status} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

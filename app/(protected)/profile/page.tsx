@@ -33,7 +33,7 @@ export default async function ProfilePage() {
   if (emp?.id) {
     const { data: rows } = await supabase
       .from("time_entries")
-      .select("id, date, status, data")
+      .select("id, date, status, reference_number, data")
       .eq("employee_id", emp.id)
       .order("date", { ascending: false });
 
@@ -48,6 +48,9 @@ export default async function ProfilePage() {
           date: row.date,
           status: row.status as TimeEntry["status"],
           employeeName: employee.name,
+          // reference_number is the DB-assigned TC number; takes precedence over
+          // whatever was serialised into the data JSONB
+          timeCardNumber: (row as any).reference_number ?? (row.data as any)?.timeCardNumber ?? undefined,
         } as TimeEntry);
       }
     }

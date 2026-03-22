@@ -1,9 +1,13 @@
 "use client"
-import { ArrowLeft, Mail, Phone, Clock, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
-import { Badge } from './ui/badge';
-import { Button } from './ui/button';
-import { useState } from 'react';
+import { ArrowLeft, Mail, Phone, Clock, Settings, ChevronDown, ChevronUp } from 'lucide-react';
+import { TimeEntry } from '@/lib/types';
+import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { TimeCardSummaryModal } from './TimeCardSummaryModal';
+import { TimeEntryEditorModal } from './TimeEntryEditorModal';
 import { EditEmployeeModal } from './EditEmployeeModal';
+import { WorkHeatmap } from './WorkHeatmap';
 
 interface Employee {
   id: string;
@@ -16,15 +20,6 @@ interface Employee {
   status?: string;
 }
 
-interface TimeEntry {
-  id: string;
-  date: string;
-  project: string;
-  workType: string;
-  equipment: string;
-  hours: number;
-}
-
 interface EmployeeProfileProps {
   employee: Employee;
   onBack: () => void;
@@ -33,55 +28,370 @@ interface EmployeeProfileProps {
 }
 
 export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }: EmployeeProfileProps) {
+  const router = useRouter();
   const [localEmployee, setLocalEmployee] = useState(employee);
+  const [entries, setEntries] = useState<TimeEntry[]>([]);
+  const [activeProjects, setActiveProjects] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showEdit, setShowEdit] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [selectedTimeCard, setSelectedTimeCard] = useState<TimeEntry | null>(null);
+  const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
+  const [activeTab, setActiveTab] = useState<'history' | 'stats'>('history');
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  // Split name into first/last for the edit modal
-  const nameParts = localEmployee.name.split(" ");
-  const firstName = nameParts[0] ?? "";
-  const lastName = nameParts.slice(1).join(" ") ?? "";
+  // Close menu on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-  // Sample time entries for the employee
-  const timeEntries: TimeEntry[] = [];
+  // Fetch this employee's time entries + active projects
+  useEffect(() => {
+    async function load() {
+      const supabase = createClient();
+      const [{ data: rows }, { data: projectRows }] = await Promise.all([
+        supabase
+          .from('time_entries')
+          .select('id, date, status, reference_number, data')
+          .eq('employee_id', localEmployee.id)
+          .order('date', { ascending: false }),
+        supabase
+          .from('projects')
+          .select('name')
+          .eq('status', 'active')
+          .order('name'),
+      ]);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
+      if (rows) {
+        const seen = new Set<string>();
+        const mapped: TimeEntry[] = [];
+        for (const row of rows) {
+          if (seen.has(row.date)) continue;
+          seen.add(row.date);
+          mapped.push({
+            ...(row.data as Partial<TimeEntry>),
+            id: row.id,
+            date: row.date,
+            status: row.status as TimeEntry['status'],
+            employeeName: localEmployee.name,
+            timeCardNumber: (row as any).reference_number ?? (row.data as any)?.timeCardNumber ?? undefined,
+          } as TimeEntry);
+        }
+        setEntries(mapped);
+      }
+
+      if (projectRows) {
+        setActiveProjects(projectRows.map((p: { name: string }) => p.name));
+      }
+
+      setLoading(false);
+    }
+    load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localEmployee.id]);
+
+  const firstName = localEmployee.name.split(' ')[0] ?? '';
+  const lastName = localEmployee.name.split(' ').slice(1).join(' ') ?? '';
+  const initials = `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase() || '?';
+
+  const calculateTotalHours = (entry: TimeEntry) => {
+    if (!entry.depotStart || !entry.depotFinish) return 0;
+    const [sh, sm] = entry.depotStart.split(':').map(Number);
+    const [fh, fm] = entry.depotFinish.split(':').map(Number);
+    const hours = (fh * 60 + fm - sh * 60 - sm) / 60;
+    const hasLunch = (entry.projects ?? []).some(p => p.lunch);
+    return Math.max(0, hours - (hasLunch ? 0.5 : 0));
+  };
+
+  const formatDate = (dateStr: string) => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString('en-AU', {
+      day: 'numeric', month: 'short', year: 'numeric',
     });
   };
 
-  const totalEntries = timeEntries.length;
-  const uniqueProjects = new Set(timeEntries.map(e => e.project)).size;
-  const totalHours = timeEntries.reduce((sum, entry) => sum + entry.hours, 0);
+  const totalTimeCards = entries.length;
+  const totalHours = entries.reduce((sum, e) => sum + calculateTotalHours(e), 0);
+  const daysWithHours = entries.filter(e => calculateTotalHours(e) > 0).length;
+  const avgHoursPerCard = daysWithHours > 0 ? (totalHours / daysWithHours).toFixed(1) : '0.0';
 
-  const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
+  // Group by week (Monday as week start)
+  const getMondayKey = (dateStr: string): string => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    const day = date.getDay();
+    date.setDate(date.getDate() + (day === 0 ? -6 : 1 - day));
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  };
 
-  const toggleEntry = (entryId: string) => {
-    const newExpanded = new Set(expandedEntries);
-    if (newExpanded.has(entryId)) {
-      newExpanded.delete(entryId);
-    } else {
-      newExpanded.add(entryId);
-    }
-    setExpandedEntries(newExpanded);
+  const sortedEntries = [...entries].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const weekGroups: Record<string, TimeEntry[]> = {};
+  sortedEntries.forEach(entry => {
+    const key = getMondayKey(entry.date);
+    if (!weekGroups[key]) weekGroups[key] = [];
+    weekGroups[key].push(entry);
+  });
+  const sortedWeekKeys = Object.keys(weekGroups).sort((a, b) => b.localeCompare(a));
+
+  const formatWeekRange = (mondayKey: string): string => {
+    const [y, m, d] = mondayKey.split('-').map(Number);
+    const mon = new Date(y, m - 1, d);
+    const sun = new Date(y, m - 1, d + 6);
+    const fmtDay = (dt: Date) => dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+    const fmtDayYear = (dt: Date) => dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+    if (mon.getFullYear() !== sun.getFullYear()) return `${fmtDayYear(mon)} – ${fmtDayYear(sun)}`;
+    if (mon.getMonth() === sun.getMonth()) return `${mon.getDate()} – ${fmtDayYear(sun)}`;
+    return `${fmtDay(mon)} – ${fmtDayYear(sun)}`;
+  };
+
+  const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(
+    () => new Set(sortedWeekKeys.length > 0 ? [sortedWeekKeys[0]] : [])
+  );
+  const toggleWeek = (key: string) => {
+    setExpandedWeeks(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
   };
 
   return (
-    <div className="p-4 pb-24">
+    <div className="min-h-screen bg-[#f3f3f5] pb-24 pt-4">
+
+      {/* Back button */}
+      <div className="mx-4 mb-4">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Employees
+        </button>
+      </div>
+
+      {/* Profile card */}
+      <div className="mx-4 mb-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+
+          {/* Gear menu */}
+          {isAdmin && (
+            <div className="flex justify-end mb-2" ref={menuRef}>
+              <div className="relative">
+                <button
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
+                >
+                  <Settings className="w-4 h-4" />
+                </button>
+                {showMenu && (
+                  <div className="absolute right-0 top-10 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20">
+                    <button
+                      onClick={() => { setShowEdit(true); setShowMenu(false); }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                    >
+                      Edit Employee
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Avatar + name */}
+          <div className="flex items-center gap-4 mb-5">
+            <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center ring-4 ring-gray-50 shrink-0">
+              <span className="text-lg font-bold text-gray-700">{initials}</span>
+            </div>
+            <div>
+              <h1 className="text-gray-900 font-bold text-xl leading-tight">{localEmployee.name}</h1>
+              {localEmployee.classification && (
+                <span className="text-sm text-gray-400 mt-0.5 block">
+                  {localEmployee.classification}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Contact info */}
+          {(localEmployee.email || localEmployee.phone) && (
+            <div className="flex flex-wrap gap-4 text-sm text-gray-500 pt-4 border-t border-gray-100">
+              {localEmployee.email && (
+                <div className="flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-gray-400 shrink-0" />
+                  <span>{localEmployee.email}</span>
+                </div>
+              )}
+              {localEmployee.phone && (
+                <div className="flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-gray-400 shrink-0" />
+                  <span>{localEmployee.phone}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Tab toggle */}
+      <div className="mx-4 mb-4">
+        <div className="flex bg-gray-200 rounded-xl p-1 gap-1">
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors cursor-pointer ${
+              activeTab === 'history'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Work History
+          </button>
+          <button
+            onClick={() => setActiveTab('stats')}
+            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors cursor-pointer ${
+              activeTab === 'stats'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Statistics
+          </button>
+        </div>
+      </div>
+
+      {/* Work History tab */}
+      {activeTab === 'history' && (
+        <div className="mx-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            {loading ? (
+              <div className="py-10 text-center">
+                <p className="text-sm text-gray-400">Loading…</p>
+              </div>
+            ) : sortedWeekKeys.length === 0 ? (
+              <div className="py-10 text-center">
+                <Clock className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+                <p className="text-sm text-gray-400">No work history yet</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {sortedWeekKeys.map((weekKey) => {
+                  const weekEntries = weekGroups[weekKey];
+                  const weekTotal = weekEntries.reduce((sum, e) => sum + calculateTotalHours(e), 0);
+                  const isOpen = expandedWeeks.has(weekKey);
+
+                  return (
+                    <div key={weekKey}>
+                      {/* Week header row */}
+                      <button
+                        onClick={() => toggleWeek(weekKey)}
+                        className="w-full flex items-center justify-between px-5 py-5 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer text-left"
+                      >
+                        <div>
+                          <p className="text-base font-bold text-gray-900">{formatWeekRange(weekKey)}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {weekEntries.length} {weekEntries.length === 1 ? 'day' : 'days'} worked
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-base font-bold text-gray-900">{weekTotal.toFixed(2)} hrs</span>
+                          {isOpen
+                            ? <ChevronUp className="w-4 h-4 text-gray-500" />
+                            : <ChevronDown className="w-4 h-4 text-gray-500" />
+                          }
+                        </div>
+                      </button>
+
+                      {/* Expanded daily rows */}
+                      {isOpen && (
+                        <div className="border-t-2 border-gray-200 divide-y divide-gray-100 border-l-4 border-l-blue-300">
+                          {weekEntries.map((entry) => {
+                            const hrs = calculateTotalHours(entry);
+                            return (
+                              <button
+                                key={entry.id}
+                                onClick={() => setSelectedTimeCard(entry)}
+                                className="w-full flex items-center justify-between pl-6 pr-5 py-2.5 bg-white hover:bg-gray-50 transition-colors cursor-pointer text-left"
+                              >
+                                <div>
+                                  <p className="text-sm text-gray-600">{formatDate(entry.date)}</p>
+                                  <p className="text-xs text-gray-400 mt-0.5">
+                                    {entry.timeCardNumber ?? (entry.status === 'draft' ? 'Draft' : 'No TC #')}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-sm text-gray-500">{hrs.toFixed(2)} hrs</span>
+                                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                                    entry.status === 'approved'
+                                      ? 'bg-green-100 text-green-700'
+                                      : entry.status === 'submitted'
+                                      ? 'bg-[#030213] text-white'
+                                      : 'bg-amber-500 text-white'
+                                  }`}>
+                                    {entry.status === 'approved' ? 'Approved' : entry.status === 'submitted' ? 'Pending' : 'Draft'}
+                                  </span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Statistics tab */}
+      {activeTab === 'stats' && (
+        <div className="mx-4 space-y-4">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
+              <p className="text-2xl font-bold text-gray-800">{totalTimeCards}</p>
+              <p className="text-xs text-gray-400 mt-1 leading-tight">Days Worked</p>
+            </div>
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
+              <p className="text-2xl font-bold text-gray-800">{avgHoursPerCard}</p>
+              <p className="text-xs text-gray-400 mt-1 leading-tight">Avg Hrs/Day</p>
+            </div>
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
+              <p className="text-2xl font-bold text-gray-800">{totalHours.toFixed(0)}</p>
+              <p className="text-xs text-gray-400 mt-1 leading-tight">Total Hours</p>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Activity</p>
+            <div className="md:hidden">
+              <WorkHeatmap entries={entries} calculateHours={calculateTotalHours} weeksCount={13} />
+            </div>
+            <div className="hidden md:block">
+              <WorkHeatmap entries={entries} calculateHours={calculateTotalHours} weeksCount={52} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modals */}
       {showEdit && (
         <EditEmployeeModal
           employee={{
             id: localEmployee.id,
-            firstName: localEmployee.name.split(' ')[0] ?? '',
-            lastName: localEmployee.name.split(' ').slice(1).join(' ') ?? '',
+            firstName,
+            lastName,
             email: localEmployee.email,
             phone: localEmployee.phone,
             classification: localEmployee.classification,
             employmentType: localEmployee.employmentType,
-            role: "user",
-            activeStatus: localEmployee.status ?? "active",
+            role: 'user',
+            activeStatus: localEmployee.status ?? 'active',
           }}
           isAdmin={isAdmin}
           onClose={() => setShowEdit(false)}
@@ -93,165 +403,41 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
               phone: updated.phone ?? localEmployee.phone,
               classification: updated.classification ?? localEmployee.classification,
               employmentType: updated.employmentType ?? localEmployee.employmentType,
-              status: (updated.activeStatus === 'retired' ? 'retired' : 'active') as 'active' | 'retired',
+              status: updated.activeStatus === 'retired' ? 'retired' : 'active',
             };
             setLocalEmployee(merged);
             onUpdate?.(merged);
+            router.refresh();
           }}
         />
       )}
 
-      {/* Back Button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onBack}
-        className="mb-4 gap-2"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Employees
-      </Button>
+      {selectedTimeCard && (
+        <TimeCardSummaryModal
+          entry={selectedTimeCard}
+          isOpen={true}
+          onClose={() => setSelectedTimeCard(null)}
+          viewOnly={true}
+          onEdit={isAdmin ? () => {
+            const tc = selectedTimeCard;
+            setSelectedTimeCard(null);
+            setEditingEntry(tc);
+          } : undefined}
+        />
+      )}
 
-      {/* Employee Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-gray-900">{localEmployee.name}</h1>
-            </div>
-            <p className="text-sm text-gray-500 mb-1">{localEmployee.classification}</p>
-            <p className="text-sm text-gray-500 mb-4">{localEmployee.employmentType}</p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-              <div className="flex items-center gap-2 text-gray-600">
-                <Mail className="w-4 h-4" />
-                <span>{localEmployee.email}</span>
-              </div>
-              <div className="flex items-center gap-2 text-gray-600">
-                <Phone className="w-4 h-4" />
-                <span>{localEmployee.phone}</span>
-              </div>
-            </div>
-          </div>
-          {isAdmin && (
-            <button
-              onClick={() => setShowEdit(true)}
-              className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-            >
-              <Pencil className="w-4 h-4" />
-              Edit
-            </button>
-          )}
-        </div>
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-4 gap-3">
-          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-            <div className="text-gray-600 text-xs mb-1">Total Entries</div>
-            <div className="text-blue-600 text-lg">{totalEntries}</div>
-          </div>
-          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-            <div className="text-gray-600 text-xs mb-1">Projects</div>
-            <div className="text-green-600 text-lg">{uniqueProjects}</div>
-          </div>
-          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-            <div className="text-gray-600 text-xs mb-1">Total Hours</div>
-            <div className="text-blue-600 text-lg">{totalHours.toFixed(0)}</div>
-          </div>
-          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-            <div className="text-gray-600 text-xs mb-1">Avg Hrs/Wk</div>
-            <div className="text-blue-600 text-lg">{localEmployee.hoursThisWeek.toFixed(1)}</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Work History Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
-          <h2 className="text-gray-900">Work History</h2>
-        </div>
-
-        {/* Mobile Layout */}
-        <div className="md:hidden divide-y divide-gray-200">
-          {timeEntries.map((entry) => {
-            const isExpanded = expandedEntries.has(entry.id);
-            return (
-              <button
-                key={entry.id}
-                onClick={() => toggleEntry(entry.id)}
-                className="w-full p-4 text-left hover:bg-gray-50 transition-colors cursor-pointer"
-              >
-                {/* Simplified View */}
-                <div className="flex items-center justify-between gap-3 mb-2">
-                  <div className="flex-1">
-                    <div className="text-sm text-gray-500">{formatDate(entry.date)}</div>
-                    <h3 className="text-gray-900">{entry.project}</h3>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-blue-600">{entry.hours.toFixed(1)} hrs</span>
-                    {isExpanded ? (
-                      <ChevronUp className="w-4 h-4 text-gray-400" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
-                    )}
-                  </div>
-                </div>
-
-                {/* Expanded Details */}
-                {isExpanded && (
-                  <div className="mt-3 pt-3 border-t border-gray-200 space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Work Type:</span>
-                      <span className="text-gray-900">{entry.workType}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Equipment:</span>
-                      <span className="text-gray-900">{entry.equipment}</span>
-                    </div>
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Desktop Layout - Table */}
-        <div className="hidden md:block">
-          {/* Table Header */}
-          <div className="grid grid-cols-[1fr_2fr_1fr_1fr_1fr_1fr_1fr] gap-4 bg-gray-100 px-4 py-3 border-b border-gray-200 text-xs text-gray-600 uppercase tracking-wider">
-            <div>Date</div>
-            <div>Employee</div>
-            <div>Sign On</div>
-            <div>Sign Off</div>
-            <div className="text-right">Time</div>
-            <div className="text-center">Status</div>
-            <div className="text-right">TC Number</div>
-          </div>
-
-          {/* Table Rows */}
-          <div className="divide-y divide-gray-200">
-            {timeEntries.map((entry) => (
-              <div key={entry.id} className="grid grid-cols-[1fr_2fr_1fr_1fr_1fr_1fr_1fr] gap-4 items-center text-sm px-4 py-4 hover:bg-gray-50 transition-colors">
-                <div className="text-gray-500">{formatDate(entry.date)}</div>
-                <div className="text-gray-900">{entry.project}</div>
-                <div className="text-gray-500">{entry.workType}</div>
-                <div className="text-gray-500">{entry.equipment}</div>
-                <div className="text-right text-blue-600">
-                  {entry.hours.toFixed(1)}
-                </div>
-                <div className="flex justify-center">
-                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                    Approved
-                  </span>
-                </div>
-                <div className="text-right text-gray-500 text-xs">
-                  N/A
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      {editingEntry && isAdmin && (
+        <TimeEntryEditorModal
+          initialEntry={editingEntry}
+          employeeDbId={localEmployee.id}
+          activeProjects={activeProjects}
+          onClose={() => setEditingEntry(null)}
+          onDeleted={() => {
+            setEntries(prev => prev.filter(e => e.id !== editingEntry?.id));
+            setEditingEntry(null);
+          }}
+        />
+      )}
     </div>
   );
 }

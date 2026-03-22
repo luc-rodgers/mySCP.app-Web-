@@ -5,6 +5,7 @@ import { TimeEntry } from "@/lib/types";
 interface WorkHeatmapProps {
   entries: TimeEntry[];
   calculateHours: (entry: TimeEntry) => number;
+  weeksCount?: number;
 }
 
 function parseLocalDate(dateStr: string): Date {
@@ -29,7 +30,7 @@ function getCellColor(hours: number): string {
 
 const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 
-export function WorkHeatmap({ entries, calculateHours }: WorkHeatmapProps) {
+export function WorkHeatmap({ entries, calculateHours, weeksCount = 52 }: WorkHeatmapProps) {
   const [tooltip, setTooltip] = useState<{
     date: string;
     hours: number;
@@ -54,7 +55,7 @@ export function WorkHeatmap({ entries, calculateHours }: WorkHeatmapProps) {
   endDate.setDate(today.getDate() + (6 - today.getDay()));
 
   const startDate = new Date(endDate);
-  startDate.setDate(endDate.getDate() - 52 * 7 + 1);
+  startDate.setDate(endDate.getDate() - weeksCount * 7 + 1);
   // Snap back to the nearest preceding Sunday
   startDate.setDate(startDate.getDate() - startDate.getDay());
 

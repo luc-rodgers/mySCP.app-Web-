@@ -118,47 +118,27 @@ export function TimeEntryList({ entries, activeProjects, onDelete, onStatusChang
       </div>
       
       <div className="space-y-4 md:grid md:grid-cols-7 md:gap-2 md:space-y-0">
-        {weekDays.map((day, dayIndex) => {
+        {weekDays.map((day) => {
           const dayEntries = entriesByDate[day.dateString] || [];
-          
-          // If there are entries for this day, render them
-          if (dayEntries.length > 0) {
-            return (
-              <div key={day.dateString} className="space-y-2">
-                {dayEntries.map((entry) => (
-                  <TimeEntryCard
-                    key={`${day.dateString}-${entry.id}`}
-                    entry={entry}
-                    activeProjects={activeProjects}
-                    onDelete={onDelete}
-                    onStatusChange={onStatusChange}
-                    onAddProject={onAddProject}
-                    onDeleteProject={onDeleteProject}
-                    onUpdateProject={onUpdateProject}
-                    onUpdateEntry={onUpdateEntry}
-                    onAddSubActivity={onAddSubActivity}
-                    onUpdateSubActivity={onUpdateSubActivity}
-                    onDeleteSubActivity={onDeleteSubActivity}
-                  />
-                ))}
-              </div>
-            );
-          }
-          
-          // If no entries, create a placeholder entry to display the day
-          const newEntry: TimeEntry = {
+
+          // Use the real entry if one exists, otherwise a stable placeholder.
+          // Always use key={day.dateString} so React keeps the same TimeEntryCard
+          // instance when an entry transitions from placeholder → real — this
+          // preserves the open-modal state and prevents the card from closing.
+          const entry: TimeEntry = dayEntries[0] ?? {
             id: `placeholder-${day.dateString}`,
             date: day.dateString,
             status: 'draft',
             depotStart: '',
             depotFinish: '',
-            projects: []
+            projects: [],
           };
-          
+
           return (
             <div key={day.dateString}>
               <TimeEntryCard
-                entry={newEntry}
+                key={day.dateString}
+                entry={entry}
                 activeProjects={activeProjects}
                 onDelete={onDelete}
                 onStatusChange={onStatusChange}
