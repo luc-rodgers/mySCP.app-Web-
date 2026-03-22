@@ -31,9 +31,9 @@ function SCPLogo() {
       <Image
         src="/scplogo.png"
         alt="Specialised Concrete Pumping"
-        width={96}
-        height={38}
-        className="object-contain w-24 h-auto"
+        width={160}
+        height={64}
+        className="object-contain w-40 h-auto"
         priority
       />
     </div>
@@ -55,12 +55,12 @@ export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   const sidebarContent = (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="px-4 pt-4 pb-1 mt-8 md:mt-0">
+      <div className="px-5 pt-6 pb-4 mt-8 md:mt-0">
         <SCPLogo />
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-3 py-2 space-y-2 overflow-y-auto">
         {menuItems.map(({ id, label, icon: Icon, href }) => {
           const isActive = pathname === href;
           return (
@@ -68,7 +68,7 @@ export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
               key={id}
               href={href}
               onClick={() => setIsOpen(false)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+              className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                 isActive
                   ? "bg-gray-100 text-gray-900"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
