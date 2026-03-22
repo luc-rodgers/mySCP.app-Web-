@@ -10,11 +10,13 @@ interface Props {
   employeeDbId: string;
   activeProjects: string[];
   onClose: () => void;
+  /** Open in view mode instead of edit mode */
+  viewOnly?: boolean;
   /** Called after the entry is deleted */
   onDeleted?: () => void;
 }
 
-export function TimeEntryEditorModal({ initialEntry, employeeDbId, activeProjects, onClose, onDeleted }: Props) {
+export function TimeEntryEditorModal({ initialEntry, employeeDbId, activeProjects, onClose, viewOnly = false, onDeleted }: Props) {
   const [entry, setEntry] = useState<TimeEntry>(initialEntry);
 
   const persist = useCallback(async (updated: TimeEntry) => {
@@ -91,6 +93,7 @@ export function TimeEntryEditorModal({ initialEntry, employeeDbId, activeProject
         entry={entry}
         activeProjects={activeProjects}
         defaultOpen={true}
+        defaultEditMode={!viewOnly}
         hideHeader={true}
         onDelete={handleDelete}
         onStatusChange={handleStatusChange}

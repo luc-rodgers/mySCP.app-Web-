@@ -29,14 +29,16 @@ interface TimeEntryCardProps {
   onDeleteSubActivity: (entryId: string, projectId: string, subActivityId: string) => void;
   /** Open the edit modal immediately on mount (e.g. when launched from another page) */
   defaultOpen?: boolean;
+  /** Start in view mode even when defaultOpen is true */
+  defaultEditMode?: boolean;
   /** Hide the collapsed day-header tile — useful when the card is embedded in a standalone modal */
   hideHeader?: boolean;
 }
 
-export function TimeEntryCard({ entry, activeProjects, onDelete, onStatusChange, onAddProject, onDeleteProject, onUpdateProject, onUpdateEntry, onAddSubActivity, onUpdateSubActivity, onDeleteSubActivity, defaultOpen = false, hideHeader = false }: TimeEntryCardProps) {
+export function TimeEntryCard({ entry, activeProjects, onDelete, onStatusChange, onAddProject, onDeleteProject, onUpdateProject, onUpdateEntry, onAddSubActivity, onUpdateSubActivity, onDeleteSubActivity, defaultOpen = false, defaultEditMode, hideHeader = false }: TimeEntryCardProps) {
   const [showModal, setShowModal] = useState(defaultOpen);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(defaultOpen);
+  const [isEditMode, setIsEditMode] = useState(defaultEditMode ?? defaultOpen);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [hasBeenEdited, setHasBeenEdited] = useState(false);
   const [wasSubmittedWhenEditStarted, setWasSubmittedWhenEditStarted] = useState(false);

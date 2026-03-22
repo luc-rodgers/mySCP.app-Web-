@@ -215,6 +215,7 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
           initialEntry={openEntry.entryData}
           employeeDbId={openEntry.employeeDbId}
           activeProjects={[]}
+          viewOnly={true}
           onClose={() => setOpenEntry(null)}
           onDeleted={() => {
             setWorkHistory(prev => prev.filter(r => r.id !== openEntry.id));
