@@ -95,6 +95,7 @@ export function TimeEntryEditorModal({ initialEntry, employeeDbId, activeProject
         defaultOpen={true}
         defaultEditMode={!viewOnly}
         hideHeader={true}
+        onModalClose={onClose}
         onDelete={handleDelete}
         onStatusChange={handleStatusChange}
         onUpdateEntry={handleUpdateEntry}

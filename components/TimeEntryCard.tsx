@@ -33,9 +33,11 @@ interface TimeEntryCardProps {
   defaultEditMode?: boolean;
   /** Hide the collapsed day-header tile — useful when the card is embedded in a standalone modal */
   hideHeader?: boolean;
+  /** Called when the modal is closed — lets parent wrappers know to unmount */
+  onModalClose?: () => void;
 }
 
-export function TimeEntryCard({ entry, activeProjects, onDelete, onStatusChange, onAddProject, onDeleteProject, onUpdateProject, onUpdateEntry, onAddSubActivity, onUpdateSubActivity, onDeleteSubActivity, defaultOpen = false, defaultEditMode, hideHeader = false }: TimeEntryCardProps) {
+export function TimeEntryCard({ entry, activeProjects, onDelete, onStatusChange, onAddProject, onDeleteProject, onUpdateProject, onUpdateEntry, onAddSubActivity, onUpdateSubActivity, onDeleteSubActivity, defaultOpen = false, defaultEditMode, hideHeader = false, onModalClose }: TimeEntryCardProps) {
   const [showModal, setShowModal] = useState(defaultOpen);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(defaultEditMode ?? defaultOpen);
@@ -64,6 +66,7 @@ export function TimeEntryCard({ entry, activeProjects, onDelete, onStatusChange,
 
   const handleCloseModal = () => {
     setShowModal(false);
+    onModalClose?.();
   };
 
   // Mark that edits have been made (used to determine if signature is needed for re-opened cards)
