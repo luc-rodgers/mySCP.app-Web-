@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Sidebar from "@/components/Sidebar";
-import HelpButton from "@/components/HelpButton";
 
 export default async function ProtectedLayout({
   children,
@@ -31,7 +30,6 @@ export default async function ProtectedLayout({
       <main className="flex-1 min-h-screen">
         <div className="max-w-6xl mx-auto w-full px-6 py-6">{children}</div>
       </main>
-      <HelpButton />
     </div>
   );
 }

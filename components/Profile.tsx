@@ -4,6 +4,7 @@ import { Employee, TimeEntry } from '@/lib/types';
 import { useState, useRef, useEffect } from 'react';
 import { TimeCardSummaryModal } from './TimeCardSummaryModal';
 import { EditEmployeeModal } from './EditEmployeeModal';
+import { WorkHeatmap } from './WorkHeatmap';
 
 interface ProfileProps {
   employee: Employee;
@@ -109,41 +110,9 @@ export function Profile({
                   {classification}
                 </span>
               )}
-              {employmentType && (
-                <span className="bg-gray-100 text-gray-500 text-xs font-medium px-3 py-1 rounded-full">
-                  {employmentType}
-                </span>
-              )}
             </div>
           </div>
 
-          {/* Divider */}
-          <div className="border-t border-gray-100 mb-4" />
-
-          {/* Contact details */}
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-            Contact Details
-          </p>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center shrink-0">
-                <Mail className="w-4 h-4 text-gray-400" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs text-gray-400">Email</p>
-                <p className="text-sm text-gray-800 truncate">{employee.email || '—'}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center shrink-0">
-                <Phone className="w-4 h-4 text-gray-400" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-400">Phone</p>
-                <p className="text-sm text-gray-800">{employee.phone || '—'}</p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -155,7 +124,7 @@ export function Profile({
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
             <p className="text-2xl font-bold text-gray-800">{totalTimeCards}</p>
-            <p className="text-xs text-gray-400 mt-1 leading-tight">Time Cards</p>
+            <p className="text-xs text-gray-400 mt-1 leading-tight">Days Worked</p>
           </div>
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
             <p className="text-2xl font-bold text-gray-800">{avgHoursPerCard}</p>
@@ -166,6 +135,14 @@ export function Profile({
             <p className="text-xs text-gray-400 mt-1 leading-tight">Total Hours</p>
           </div>
         </div>
+      </div>
+
+      {/* Work Heatmap */}
+      <div className="mx-4 mb-4">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+          Activity
+        </p>
+        <WorkHeatmap entries={entries} calculateHours={calculateTotalHours} />
       </div>
 
       {/* Work History */}

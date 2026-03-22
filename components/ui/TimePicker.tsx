@@ -26,37 +26,43 @@ export function TimePicker({ value, onChange, disabled, className }: TimePickerP
   const selectBase =
     'h-12 rounded-lg border border-gray-300 bg-white text-sm text-center text-gray-900 ' +
     'focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer ' +
-    'disabled:opacity-50 disabled:cursor-not-allowed appearance-none';
+    'disabled:opacity-50 disabled:cursor-not-allowed';
 
   return (
     <div className={`flex items-center gap-1 ${className ?? ''}`}>
       {/* Hour */}
-      <select
-        value={hh ?? ''}
-        onChange={(e) => handleHour(e.target.value)}
-        disabled={disabled}
-        className={`${selectBase} w-[52px]`}
-      >
-        <option value="">--</option>
-        {HOURS.map((h) => (
-          <option key={h} value={h}>{h}</option>
-        ))}
-      </select>
+      <div className="flex flex-col items-center gap-0.5">
+        <select
+          value={hh ?? ''}
+          onChange={(e) => handleHour(e.target.value)}
+          disabled={disabled}
+          className={`${selectBase} w-[60px]`}
+        >
+          <option value="">--</option>
+          {HOURS.map((h) => (
+            <option key={h} value={h}>{h}</option>
+          ))}
+        </select>
+        <span className="text-[10px] text-gray-400 leading-none">hr</span>
+      </div>
 
-      <span className="text-gray-400 font-semibold select-none">:</span>
+      <span className="text-gray-400 font-semibold select-none pb-3">:</span>
 
       {/* Minute */}
-      <select
-        value={mm ?? ''}
-        onChange={(e) => handleMinute(e.target.value)}
-        disabled={disabled}
-        className={`${selectBase} w-[52px]`}
-      >
-        <option value="">--</option>
-        {MINUTES.map((m) => (
-          <option key={m} value={m}>{m}</option>
-        ))}
-      </select>
+      <div className="flex flex-col items-center gap-0.5">
+        <select
+          value={mm ?? ''}
+          onChange={(e) => handleMinute(e.target.value)}
+          disabled={disabled}
+          className={`${selectBase} w-[60px]`}
+        >
+          <option value="">--</option>
+          {MINUTES.map((m) => (
+            <option key={m} value={m}>{m}</option>
+          ))}
+        </select>
+        <span className="text-[10px] text-gray-400 leading-none">min</span>
+      </div>
     </div>
   );
 }
