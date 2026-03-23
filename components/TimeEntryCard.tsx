@@ -37,9 +37,11 @@ interface TimeEntryCardProps {
   hideHeader?: boolean;
   /** Called when the modal is closed — lets parent wrappers know to unmount */
   onModalClose?: () => void;
+  /** Projects grouped by state for the QLD/NSW toggle filter */
+  projectsByState?: { QLD: string[]; NSW: string[] };
 }
 
-export function TimeEntryCard({ entry, activeProjects, onDelete, onStatusChange, onAddProject, onDeleteProject, onUpdateProject, onUpdateEntry, onAddSubActivity, onUpdateSubActivity, onDeleteSubActivity, defaultOpen = false, defaultEditMode, defaultSummaryOpen = false, hideHeader = false, onModalClose }: TimeEntryCardProps) {
+export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete, onStatusChange, onAddProject, onDeleteProject, onUpdateProject, onUpdateEntry, onAddSubActivity, onUpdateSubActivity, onDeleteSubActivity, defaultOpen = false, defaultEditMode, defaultSummaryOpen = false, hideHeader = false, onModalClose }: TimeEntryCardProps) {
   const [showModal, setShowModal] = useState(defaultOpen);
   const [showSummaryModal, setShowSummaryModal] = useState(defaultSummaryOpen);
   const [isEditMode, setIsEditMode] = useState(defaultEditMode ?? defaultOpen);
@@ -47,6 +49,7 @@ export function TimeEntryCard({ entry, activeProjects, onDelete, onStatusChange,
   const [hasBeenEdited, setHasBeenEdited] = useState(false);
   const [wasSubmittedWhenEditStarted, setWasSubmittedWhenEditStarted] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [stateFilter, setStateFilter] = useState<'QLD' | 'NSW'>('QLD');
   const prevProjectsLengthRef = useRef(entry.projects.length);
 
   // Auto-open detail modal when a new project is added
@@ -634,49 +637,115 @@ export function TimeEntryCard({ entry, activeProjects, onDelete, onStatusChange,
                   {/* Project / Yard Work form */}
                   {(project.type === 'project' || project.type === 'yardwork') && (
                     <>
-                      {/* Project: dropdown (half) + add buttons (half) on same row */}
                       {project.type === 'project' ? (
-                        <div>
-                          <div className="flex gap-1 mb-1">
-                            <span className="text-xs text-gray-500 w-1/2">Project Name</span>
-                            {!isLocked && <span className="text-xs text-gray-500 w-1/2 text-center">Add Activity</span>}
+                        <div className="space-y-3">
+                          {/* Project dropdown + QLD/NSW toggle */}
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1.5">Project Name</label>
+                            <div className="flex gap-2 items-center">
+                              <Select
+                                value={project.project || ''}
+                                className="flex-1 h-11 text-sm font-semibold cursor-pointer !border !border-gray-300 !bg-white"
+                                onChange={(e) => onUpdateProject(entry.id, project.id, { project: e.target.value })}
+                                disabled={isLocked}
+                              >
+                                <option value="">Select Project</option>
+                                {(projectsByState
+                                  ? (stateFilter === 'QLD' ? projectsByState.QLD : projectsByState.NSW)
+                                  : activeProjects
+                                ).map(p => <option key={p} value={p}>{p}</option>)}
+                              </Select>
+                              {projectsByState && (
+                                <div className="flex bg-gray-100 rounded-lg p-0.5 shrink-0">
+                                  {(['QLD', 'NSW'] as const).map(s => (
+                                    <button
+                                      key={s}
+                                      onClick={() => setStateFilter(s)}
+                                      className={`px-2.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${stateFilter === s ? 'bg-white shadow-sm text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
+                                    >
+                                      {s}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex gap-2">
-                            <Select
-                              value={project.project || ''}
-                              className="h-12 text-sm w-1/2 font-semibold cursor-pointer !border !border-gray-300 !bg-white"
-                              onChange={(e) => onUpdateProject(entry.id, project.id, { project: e.target.value })}
-                              disabled={isLocked}
-                            >
-                              <option value="">Select Project</option>
-                              {getProjectOptions().map(p => <option key={p} value={p}>{p}</option>)}
-                            </Select>
-                            {!isLocked && (
-                              <div className="flex gap-1 w-1/2">
+
+                          {/* Sub-activity cards */}
+                          {(project.subActivities || []).length > 0 && (
+                            <div className="space-y-3">
+                              {(project.subActivities || []).map((sa) => {
+                                const isTravel = sa.type === 'travel';
+                                const isPouring = sa.type === 'pouring';
+                                const pouringOptions = ['🚚 Mobile', '🏗️ Placing Boom / Skid Pump'];
+                                const nonPouringOptions = ['Clean Pump', 'Installation Boom', 'Installation Pump', 'Installation Other', 'Dismantle Boom', 'Dismantle Pump', 'Dismantle Other', 'Climb Boom', 'Preparation to Climb Boom', 'Pipeline Installation', 'Pipeline Relocation', 'Transfer Line Relocation', 'Install HD Bolts', 'Install Crucifix/Base', 'Maintenance', 'Inspections'];
+                                const label = isTravel ? '🚗 Travel' : isPouring ? '💦 Pouring' : '🔧 Non-Pouring';
+                                return (
+                                  <div key={sa.id} className="border border-gray-200 rounded-xl p-3 bg-gray-50 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-sm font-medium text-gray-700">{label}</span>
+                                      {!isLocked && (
+                                        <button onClick={() => handleDeleteSubActivity(entry.id, project.id, sa.id)} className="text-red-400 hover:text-red-600 cursor-pointer">
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
+                                      )}
+                                    </div>
+                                    {!isTravel && (
+                                      <Select
+                                        value={sa.activityType || ''}
+                                        className="h-10 text-sm w-full"
+                                        onChange={(e) => handleUpdateSubActivity(entry.id, project.id, sa.id, { activityType: e.target.value })}
+                                        disabled={isLocked}
+                                      >
+                                        <option value="">Select type...</option>
+                                        {(isPouring ? pouringOptions : nonPouringOptions).map(o => <option key={o} value={o}>{o}</option>)}
+                                      </Select>
+                                    )}
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <div>
+                                        <label className="block text-[10px] text-gray-400 mb-1 text-center">Start</label>
+                                        <TimePicker value={sa.start || ''} onChange={(v) => handleUpdateSubActivity(entry.id, project.id, sa.id, { start: v })} disabled={isLocked} className="justify-center" />
+                                      </div>
+                                      <div>
+                                        <label className="block text-[10px] text-gray-400 mb-1 text-center">Finish</label>
+                                        <TimePicker value={sa.finish || ''} onChange={(v) => handleUpdateSubActivity(entry.id, project.id, sa.id, { finish: v })} disabled={isLocked} className="justify-center" />
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* Activity buttons — always visible below any cards */}
+                          {!isLocked && (
+                            <div>
+                              <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">Add Activity</p>
+                              <div className="grid grid-cols-3 gap-2">
                                 <button
-                                  className="flex-1 h-12 rounded-lg border-2 border-gray-200 bg-white hover:bg-gray-50 flex flex-col items-center justify-center gap-0.5 cursor-pointer transition-colors"
                                   onClick={() => handleAddSubActivity(entry.id, project.id, 'travel')}
+                                  className="flex flex-col items-center gap-1.5 py-3.5 rounded-xl border-2 border-gray-200 bg-white hover:bg-blue-50 hover:border-blue-300 text-gray-700 transition-colors cursor-pointer"
                                 >
-                                  <span className="text-base leading-none">🚗</span>
-                                  <span className="text-[9px] text-gray-500">Travel</span>
+                                  <Car className="w-5 h-5 text-blue-500" />
+                                  <span className="text-xs font-medium">Travel</span>
                                 </button>
                                 <button
-                                  className="flex-1 h-12 rounded-lg border-2 border-gray-200 bg-white hover:bg-gray-50 flex flex-col items-center justify-center gap-0.5 cursor-pointer transition-colors"
                                   onClick={() => handleAddSubActivity(entry.id, project.id, 'pouring')}
+                                  className="flex flex-col items-center gap-1.5 py-3.5 rounded-xl border-2 border-gray-200 bg-white hover:bg-cyan-50 hover:border-cyan-300 text-gray-700 transition-colors cursor-pointer"
                                 >
-                                  <span className="text-base leading-none">💦</span>
-                                  <span className="text-[9px] text-gray-500">Pouring</span>
+                                  <Droplet className="w-5 h-5 text-cyan-500" />
+                                  <span className="text-xs font-medium">Pouring</span>
                                 </button>
                                 <button
-                                  className="flex-1 h-12 rounded-lg border-2 border-gray-200 bg-white hover:bg-gray-50 flex flex-col items-center justify-center gap-0.5 cursor-pointer transition-colors"
                                   onClick={() => handleAddSubActivity(entry.id, project.id, 'non-pouring')}
+                                  className="flex flex-col items-center gap-1.5 py-3.5 rounded-xl border-2 border-gray-200 bg-white hover:bg-orange-50 hover:border-orange-300 text-gray-700 transition-colors cursor-pointer"
                                 >
-                                  <span className="text-base leading-none">🔧</span>
-                                  <span className="text-[9px] text-gray-500">Non-Pour</span>
+                                  <Hammer className="w-5 h-5 text-orange-500" />
+                                  <span className="text-xs font-medium">Non-Pouring</span>
                                 </button>
                               </div>
-                            )}
-                          </div>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div>
@@ -706,74 +775,6 @@ export function TimeEntryCard({ entry, activeProjects, onDelete, onStatusChange,
                           <Utensils className="w-3.5 h-3.5 mr-1" />
                           Lunch
                         </Button>
-                      )}
-
-                      {/* Sub-activity cards for project type */}
-                      {project.type === 'project' && (project.subActivities || []).length > 0 && (
-                        <div className="space-y-3">
-                          <p className="text-xs text-gray-400 uppercase tracking-wider">Activities</p>
-
-                          {(project.subActivities || []).map((sa) => {
-                            const isTravel = sa.type === 'travel';
-                            const isPouring = sa.type === 'pouring';
-                            const pouringOptions = ['🚚 Mobile', '🏗️ Placing Boom / Skid Pump'];
-                            const nonPouringOptions = ['Clean Pump', 'Installation Boom', 'Installation Pump', 'Installation Other', 'Dismantle Boom', 'Dismantle Pump', 'Dismantle Other', 'Climb Boom', 'Preparation to Climb Boom', 'Pipeline Installation', 'Pipeline Relocation', 'Transfer Line Relocation', 'Install HD Bolts', 'Install Crucifix/Base', 'Maintenance', 'Inspections'];
-                            const label = isTravel ? '🚗 Travel' : isPouring ? '💦 Pouring' : '🔧 Non-Pouring';
-
-                            return (
-                              <div key={sa.id} className="border border-gray-200 rounded-xl p-3 bg-gray-50 space-y-2">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm font-medium text-gray-700">{label}</span>
-                                  {!isLocked && (
-                                    <button
-                                      onClick={() => handleDeleteSubActivity(entry.id, project.id, sa.id)}
-                                      className="text-red-400 hover:text-red-600 cursor-pointer"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  )}
-                                </div>
-
-                                {/* Activity type dropdown (Pouring / Non-Pouring only) */}
-                                {!isTravel && (
-                                  <Select
-                                    value={sa.activityType || ''}
-                                    className="w-full h-10 text-sm !border !border-gray-300"
-                                    onChange={(e) => handleUpdateSubActivity(entry.id, project.id, sa.id, { activityType: e.target.value })}
-                                    disabled={isLocked}
-                                  >
-                                    <option value="">Select type…</option>
-                                    {(isPouring ? pouringOptions : nonPouringOptions).map(opt => (
-                                      <option key={opt} value={opt}>{opt}</option>
-                                    ))}
-                                  </Select>
-                                )}
-
-                                {/* Start / Finish */}
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div>
-                                    <label className="block text-xs text-gray-400 mb-1 text-center">Start</label>
-                                    <TimePicker
-                                      value={sa.start || ''}
-                                      onChange={(v) => handleUpdateSubActivity(entry.id, project.id, sa.id, { start: v })}
-                                      disabled={isLocked}
-                                      className="justify-center"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="block text-xs text-gray-400 mb-1 text-center">Finish</label>
-                                    <TimePicker
-                                      value={sa.finish || ''}
-                                      onChange={(v) => handleUpdateSubActivity(entry.id, project.id, sa.id, { finish: v })}
-                                      disabled={isLocked}
-                                      className="justify-center"
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
                       )}
 
                       {/* Lunch / Lunch Penalty / Weather toggles for project */}

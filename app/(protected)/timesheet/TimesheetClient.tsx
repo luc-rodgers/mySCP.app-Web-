@@ -22,9 +22,10 @@ type Props = {
   supabaseEmployee: SupabaseEmployee;
   userEmail: string;
   activeProjects: string[];
+  projectsByState?: { QLD: string[]; NSW: string[] };
 };
 
-export default function TimesheetClient({ supabaseEmployee, userEmail, activeProjects }: Props) {
+export default function TimesheetClient({ supabaseEmployee, userEmail, activeProjects, projectsByState }: Props) {
   const searchParams = useSearchParams();
   const initialDate = searchParams.get("date") ?? undefined;
 
@@ -355,6 +356,7 @@ export default function TimesheetClient({ supabaseEmployee, userEmail, activePro
       <TimeEntryList
         entries={entries}
         activeProjects={activeProjects}
+        projectsByState={projectsByState}
         onDelete={handleDeleteEntry}
         onStatusChange={handleStatusChange}
         onAddProject={handleAddProject}

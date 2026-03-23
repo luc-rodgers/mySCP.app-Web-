@@ -13,6 +13,7 @@ interface ProfileProps {
   employeeId: string;
   employeeDbId?: string;
   activeProjects?: string[];
+  projectsByState?: { QLD: string[]; NSW: string[] };
   firstName: string;
   lastName: string;
   classification: string;
@@ -27,6 +28,7 @@ export function Profile({
   employeeId,
   employeeDbId,
   activeProjects = [],
+  projectsByState,
   firstName,
   lastName,
   classification,
@@ -346,6 +348,7 @@ export function Profile({
           initialEntry={editingEntry}
           employeeDbId={employeeDbId}
           activeProjects={activeProjects}
+          projectsByState={projectsByState}
           onClose={() => setEditingEntry(null)}
           onDeleted={() => {
             setLocalEntries(prev => prev.filter(e => e.id !== editingEntry?.id));

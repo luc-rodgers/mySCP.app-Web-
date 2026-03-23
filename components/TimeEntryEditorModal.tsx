@@ -9,6 +9,7 @@ interface Props {
   initialEntry: TimeEntry;
   employeeDbId: string;
   activeProjects: string[];
+  projectsByState?: { QLD: string[]; NSW: string[] };
   onClose: () => void;
   /** Open in view mode instead of edit mode */
   viewOnly?: boolean;
@@ -16,7 +17,7 @@ interface Props {
   onDeleted?: () => void;
 }
 
-export function TimeEntryEditorModal({ initialEntry, employeeDbId, activeProjects, onClose, viewOnly = false, onDeleted }: Props) {
+export function TimeEntryEditorModal({ initialEntry, employeeDbId, activeProjects, projectsByState, onClose, viewOnly = false, onDeleted }: Props) {
   const [entry, setEntry] = useState<TimeEntry>(initialEntry);
 
   const persist = useCallback(async (updated: TimeEntry) => {
@@ -92,6 +93,7 @@ export function TimeEntryEditorModal({ initialEntry, employeeDbId, activeProject
       <TimeEntryCard
         entry={entry}
         activeProjects={activeProjects}
+        projectsByState={projectsByState}
         defaultOpen={!viewOnly}
         defaultSummaryOpen={viewOnly}
         defaultEditMode={!viewOnly}

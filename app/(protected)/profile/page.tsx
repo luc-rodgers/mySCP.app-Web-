@@ -11,7 +11,7 @@ export default async function ProfilePage() {
   const [{ data: emp }, { count: adminCount }, { data: projectRows }] = await Promise.all([
     supabase.from("employees").select("*").eq("user_id", user?.id ?? "").single(),
     supabase.from("employees").select("id", { count: "exact", head: true }).eq("role", "admin"),
-    supabase.from("projects").select("name").eq("status", "active").order("name"),
+    supabase.from("projects").select("name, state").eq("status", "active").order("name"),
   ]);
 
   const isUserAdmin = emp?.role?.toLowerCase() === "admin";
@@ -68,7 +68,11 @@ export default async function ProfilePage() {
         entries={entries}
         employeeId={emp?.id ?? ""}
         employeeDbId={emp?.id ?? ""}
-        activeProjects={(projectRows ?? []).map(p => p.name)}
+        activeProjects={(projectRows ?? []).map((p: any) => p.name)}
+        projectsByState={{
+          QLD: (projectRows ?? []).filter((p: any) => !p.state || p.state === 'QLD').map((p: any) => p.name),
+          NSW: (projectRows ?? []).filter((p: any) => !p.state || p.state === 'NSW').map((p: any) => p.name),
+        }}
         firstName={emp?.first_name ?? ""}
         lastName={emp?.last_name ?? ""}
         classification={emp?.title ?? ""}

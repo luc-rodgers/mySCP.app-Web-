@@ -8,6 +8,7 @@ import { useState } from 'react';
 interface TimeEntryListProps {
   entries: TimeEntry[];
   activeProjects: string[];
+  projectsByState?: { QLD: string[]; NSW: string[] };
   onDelete: (id: string) => void;
   onStatusChange: (id: string, status: TimeEntry['status']) => void;
   onAddProject: (entryId: string, type?: 'project' | 'yardwork' | 'leave') => void;
@@ -39,7 +40,7 @@ function weekOffsetForDate(targetDateStr: string): number {
   return Math.round((targetMonday.getTime() - todayMonday.getTime()) / (7 * 24 * 60 * 60 * 1000));
 }
 
-export function TimeEntryList({ entries, activeProjects, onDelete, onStatusChange, onAddProject, onDeleteProject, onUpdateProject, onUpdateEntry, onViewWeeklySummary, onAddSubActivity, onUpdateSubActivity, onDeleteSubActivity, initialDate }: TimeEntryListProps) {
+export function TimeEntryList({ entries, activeProjects, projectsByState, onDelete, onStatusChange, onAddProject, onDeleteProject, onUpdateProject, onUpdateEntry, onViewWeeklySummary, onAddSubActivity, onUpdateSubActivity, onDeleteSubActivity, initialDate }: TimeEntryListProps) {
   // Track week offset (0 = current week, -1 = previous week, +1 = next week, etc.)
   const [weekOffset, setWeekOffset] = useState(() => initialDate ? weekOffsetForDate(initialDate) : 0);
 
@@ -140,6 +141,7 @@ export function TimeEntryList({ entries, activeProjects, onDelete, onStatusChang
                 key={day.dateString}
                 entry={entry}
                 activeProjects={activeProjects}
+                projectsByState={projectsByState}
                 onDelete={onDelete}
                 onStatusChange={onStatusChange}
                 onAddProject={onAddProject}
