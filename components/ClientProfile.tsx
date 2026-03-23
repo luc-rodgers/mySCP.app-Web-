@@ -117,7 +117,7 @@ export function ClientProfile({ client, onBack, isAdmin = false, onUpdate, onDel
           <>
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
-                <h1 className="text-gray-900 mb-1">{localClient.name}</h1>
+                <h1 className="text-gray-900 font-bold mb-1">{localClient.name}</h1>
                 {localClient.contact && <p className="text-sm text-gray-500 mb-4">Contact: {localClient.contact}</p>}
 
                 <div className="space-y-2 text-sm">

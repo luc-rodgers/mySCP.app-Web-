@@ -242,7 +242,7 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-gray-900">{editedProject.name}</h1>
+                  <h1 className="text-gray-900 font-bold">{editedProject.name}</h1>
                   <Badge variant="outline" className={`${getStatusColor(editedProject.status)} text-xs capitalize`}>
                     {editedProject.status}
                   </Badge>
