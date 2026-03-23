@@ -497,7 +497,8 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                 className="w-full mt-3 bg-green-600 hover:bg-green-700 text-white cursor-pointer"
                 onClick={() => {
                   setIsEditMode(false);
-                  handleCloseModal();
+                  setShowModal(false);
+                  setShowSummaryModal(true);
                 }}
               >
                 <FileCheck className="w-4 h-4 mr-2" />
