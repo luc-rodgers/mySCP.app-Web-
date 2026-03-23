@@ -401,7 +401,7 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              {tab === 'history' ? 'Work History' : 'Statistics'}
+              {tab === 'history' ? 'Work History' : 'Analytics'}
             </button>
           ))}
         </div>
@@ -514,7 +514,7 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
       </div>
       )}
 
-      {/* Statistics tab */}
+      {/* Analytics tab */}
       {activeTab === 'stats' && (
         <div className="space-y-4">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">

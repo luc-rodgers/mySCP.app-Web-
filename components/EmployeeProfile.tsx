@@ -257,7 +257,7 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            Statistics
+            Analytics
           </button>
         </div>
       </div>
@@ -352,7 +352,7 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
         </div>
       )}
 
-      {/* Statistics tab */}
+      {/* Analytics tab */}
       {activeTab === 'stats' && (
         <div className="mx-4 space-y-4">
           <div className="grid grid-cols-3 gap-3">
