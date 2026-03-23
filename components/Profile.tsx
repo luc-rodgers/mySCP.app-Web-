@@ -1,5 +1,5 @@
 "use client"
-import { Mail, Phone, Clock, Settings, ChevronDown, ChevronUp } from 'lucide-react';
+import { Mail, Phone, Clock, Settings, ChevronDown, ChevronUp, Car, Droplets, Wrench } from 'lucide-react';
 import { Employee, TimeEntry } from '@/lib/types';
 import { useState, useRef, useEffect } from 'react';
 import { TimeCardSummaryModal } from './TimeCardSummaryModal';
@@ -296,6 +296,59 @@ export function Profile({
               <p className="text-xs text-gray-400 mt-1 leading-tight">Total Hours</p>
             </div>
           </div>
+
+          {/* Activity Breakdown */}
+          {(() => {
+            const subHours = (start: string, finish: string) => {
+              if (!start || !finish) return 0;
+              const [sh, sm] = start.split(':').map(Number);
+              const [fh, fm] = finish.split(':').map(Number);
+              return Math.max(0, (fh * 60 + fm - sh * 60 - sm) / 60);
+            };
+            let totalTravel = 0, totalPouring = 0, totalNonPouring = 0;
+            localEntries.forEach(entry => {
+              (entry.projects ?? []).forEach(project => {
+                (project.subActivities ?? []).forEach(sa => {
+                  const h = subHours(sa.start, sa.finish);
+                  if (sa.type === 'travel') totalTravel += h;
+                  else if (sa.type === 'pouring') totalPouring += h;
+                  else if (sa.type === 'non-pouring') totalNonPouring += h;
+                });
+              });
+            });
+            const grandTotal = totalTravel + totalPouring + totalNonPouring;
+            const pct = (val: number) => grandTotal > 0 ? Math.round((val / grandTotal) * 100) : 0;
+            return (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Activity Breakdown</p>
+                <div className="space-y-3">
+                  {[
+                    { label: 'Travel', hrs: totalTravel, icon: <Car className="w-4 h-4" />, color: 'bg-blue-400' },
+                    { label: 'Pouring', hrs: totalPouring, icon: <Droplets className="w-4 h-4" />, color: 'bg-cyan-400' },
+                    { label: 'Non-Pouring', hrs: totalNonPouring, icon: <Wrench className="w-4 h-4" />, color: 'bg-orange-400' },
+                  ].map(({ label, hrs, icon, color }) => (
+                    <div key={label}>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-1.5 text-sm text-gray-700">{icon}{label}</div>
+                        <div className="text-sm font-semibold text-gray-900">
+                          {hrs.toFixed(1)}h <span className="text-xs font-normal text-gray-400">({pct(hrs)}%)</span>
+                        </div>
+                      </div>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${pct(hrs)}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {grandTotal > 0 && (
+                  <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between text-xs text-gray-500">
+                    <span>Total activity hours</span>
+                    <span className="font-semibold text-gray-700">{grandTotal.toFixed(1)}h</span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Heatmap */}
           <div>
