@@ -682,8 +682,14 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                                 const ActivityIcon = isTravel ? Car : isPouring ? Droplet : Hammer;
                                 const activityLabel = isTravel ? 'Travel' : isPouring ? 'Pouring' : 'Non-Pouring';
                                 return (
-                                  <div key={sa.id} className="border border-gray-200 rounded-xl p-3 bg-gray-50 space-y-2">
-                                    <div className="relative flex items-center justify-center">
+                                  <div key={sa.id} className="border border-gray-200 rounded-xl bg-gray-50
+                                    /* Mobile: stacked */
+                                    p-3 space-y-2
+                                    /* Desktop: single tight row */
+                                    md:p-2 md:space-y-0 md:flex md:items-center md:gap-2">
+
+                                    {/* Icon + label */}
+                                    <div className="md:hidden relative flex items-center justify-center">
                                       <div className="flex items-center gap-1.5 text-gray-700">
                                         <ActivityIcon className="w-4 h-4" />
                                         <span className="text-sm font-medium">{activityLabel}</span>
@@ -694,10 +700,18 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                                         </button>
                                       )}
                                     </div>
+
+                                    {/* Desktop: icon label fixed-width */}
+                                    <div className="hidden md:flex items-center gap-1.5 text-gray-700 w-28 shrink-0">
+                                      <ActivityIcon className="w-3.5 h-3.5 shrink-0" />
+                                      <span className="text-xs font-medium">{activityLabel}</span>
+                                    </div>
+
+                                    {/* Type dropdown (non-travel) */}
                                     {!isTravel && (
                                       <Select
                                         value={sa.activityType || ''}
-                                        className="h-10 text-sm w-full"
+                                        className="h-10 text-sm w-full md:h-8 md:text-xs md:flex-1"
                                         onChange={(e) => handleUpdateSubActivity(entry.id, project.id, sa.id, { activityType: e.target.value })}
                                         disabled={isLocked}
                                       >
@@ -705,16 +719,26 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                                         {(isPouring ? pouringOptions : nonPouringOptions).map(o => <option key={o} value={o}>{o}</option>)}
                                       </Select>
                                     )}
-                                    <div className="grid grid-cols-2 gap-2">
-                                      <div>
-                                        <label className="block text-[10px] text-gray-400 mb-1 text-center">Start</label>
-                                        <TimePicker value={sa.start || ''} onChange={(v) => handleUpdateSubActivity(entry.id, project.id, sa.id, { start: v })} disabled={isLocked} className="justify-center" />
+                                    {isTravel && <div className="hidden md:block md:flex-1" />}
+
+                                    {/* Start / Finish */}
+                                    <div className="grid grid-cols-2 gap-2 md:contents">
+                                      <div className="md:contents">
+                                        <label className="block text-[10px] text-gray-400 mb-1 text-center md:hidden">Start</label>
+                                        <TimePicker value={sa.start || ''} onChange={(v) => handleUpdateSubActivity(entry.id, project.id, sa.id, { start: v })} disabled={isLocked} className="justify-center md:w-24 md:shrink-0" />
                                       </div>
-                                      <div>
-                                        <label className="block text-[10px] text-gray-400 mb-1 text-center">Finish</label>
-                                        <TimePicker value={sa.finish || ''} onChange={(v) => handleUpdateSubActivity(entry.id, project.id, sa.id, { finish: v })} disabled={isLocked} className="justify-center" />
+                                      <div className="md:contents">
+                                        <label className="block text-[10px] text-gray-400 mb-1 text-center md:hidden">Finish</label>
+                                        <TimePicker value={sa.finish || ''} onChange={(v) => handleUpdateSubActivity(entry.id, project.id, sa.id, { finish: v })} disabled={isLocked} className="justify-center md:w-24 md:shrink-0" />
                                       </div>
                                     </div>
+
+                                    {/* Desktop delete */}
+                                    {!isLocked && (
+                                      <button onClick={() => handleDeleteSubActivity(entry.id, project.id, sa.id)} className="hidden md:block text-red-400 hover:text-red-600 cursor-pointer shrink-0">
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
                                   </div>
                                 );
                               })}
