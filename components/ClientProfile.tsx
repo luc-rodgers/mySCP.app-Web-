@@ -1,7 +1,7 @@
 "use client"
-import { ArrowLeft, MapPin, Mail, Phone, Edit2, X, Check, Trash2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Mail, Phone, X, Check, Trash2, Settings } from 'lucide-react';
 import { Button } from './ui/button';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateClient } from '@/app/actions/updateClient';
 import { deleteClient } from '@/app/actions/deleteClient';
@@ -16,22 +16,44 @@ interface Client {
   activeProjects: number;
 }
 
+interface Project {
+  id: string;
+  name: string;
+  client: string;
+  status: string;
+  address: string;
+  state: string;
+}
+
 interface ClientProfileProps {
   client: Client;
   onBack: () => void;
   isAdmin?: boolean;
   onUpdate?: (updated: Client) => void;
   onDeleted?: () => void;
+  allProjects?: Project[];
 }
 
-export function ClientProfile({ client, onBack, isAdmin = false, onUpdate, onDeleted }: ClientProfileProps) {
+export function ClientProfile({ client, onBack, isAdmin = false, onUpdate, onDeleted, allProjects = [] }: ClientProfileProps) {
   const router = useRouter();
   const [localClient, setLocalClient] = useState(client);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   async function handleSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -65,6 +87,14 @@ export function ClientProfile({ client, onBack, isAdmin = false, onUpdate, onDel
     onBack();
   }
 
+  const activeProjects = allProjects.filter(p => p.status === 'active');
+  const completedProjects = allProjects.filter(p => p.status === 'completed');
+
+  const statusBadge = (status: string) => {
+    if (status === 'active') return 'bg-green-50 text-green-700 border border-green-200';
+    return 'bg-gray-100 text-gray-500 border border-gray-200';
+  };
+
   return (
     <div className="p-4 pb-24">
       <div className="flex justify-center md:justify-start mb-4">
@@ -80,22 +110,22 @@ export function ClientProfile({ client, onBack, isAdmin = false, onUpdate, onDel
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
                 <h1 className="text-gray-900 mb-1">{localClient.name}</h1>
-                {client.contact && <p className="text-sm text-gray-500 mb-4">Contact: {localClient.contact}</p>}
+                {localClient.contact && <p className="text-sm text-gray-500 mb-4">Contact: {localClient.contact}</p>}
 
                 <div className="space-y-2 text-sm">
-                  {client.address && (
+                  {localClient.address && (
                     <div className="flex items-center gap-2 text-gray-600">
                       <MapPin className="w-4 h-4 shrink-0" />
                       <span>{localClient.address}</span>
                     </div>
                   )}
-                  {client.email && (
+                  {localClient.email && (
                     <div className="flex items-center gap-2 text-gray-600">
                       <Mail className="w-4 h-4 shrink-0" />
                       <span>{localClient.email}</span>
                     </div>
                   )}
-                  {client.phone && (
+                  {localClient.phone && (
                     <div className="flex items-center gap-2 text-gray-600">
                       <Phone className="w-4 h-4 shrink-0" />
                       <span>{localClient.phone}</span>
@@ -105,18 +135,25 @@ export function ClientProfile({ client, onBack, isAdmin = false, onUpdate, onDel
               </div>
 
               {isAdmin && (
-                <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="gap-2 cursor-pointer">
-                  <Edit2 className="w-4 h-4" />
-                  Edit
-                </Button>
+                <div className="relative" ref={menuRef}>
+                  <button
+                    onClick={() => setShowMenu(!showMenu)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
+                  >
+                    <Settings className="w-4 h-4" />
+                  </button>
+                  {showMenu && (
+                    <div className="absolute right-0 top-10 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20">
+                      <button
+                        onClick={() => { setIsEditing(true); setShowMenu(false); }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                      >
+                        Edit Profile
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
-            </div>
-
-            <div className="grid grid-cols-3 gap-3 mt-4">
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                <div className="text-gray-600 text-xs mb-1">Active Projects</div>
-                <div className="text-green-600 text-lg">{localClient.activeProjects}</div>
-              </div>
             </div>
           </>
         ) : (
@@ -201,11 +238,56 @@ export function ClientProfile({ client, onBack, isAdmin = false, onUpdate, onDel
       </div>
 
       {/* Projects linked to this client */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
-          <h2 className="text-gray-900">Projects</h2>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-gray-50 px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Projects</p>
+          <span className="text-xs text-gray-400">{allProjects.length} total</span>
         </div>
-        <div className="px-4 py-8 text-center text-sm text-gray-500">No projects linked yet</div>
+
+        {allProjects.length === 0 ? (
+          <div className="px-4 py-8 text-center text-sm text-gray-500">No projects linked yet</div>
+        ) : (
+          <>
+            {/* Mobile */}
+            <div className="md:hidden divide-y divide-gray-100">
+              {allProjects.map((project) => (
+                <div key={project.id} className="p-4 flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{project.name}</p>
+                    {project.address && <p className="text-xs text-gray-500 mt-0.5">{project.address}{project.state ? `, ${project.state}` : ''}</p>}
+                  </div>
+                  <span className={`text-xs px-2 py-0.5 rounded-full capitalize shrink-0 ${statusBadge(project.status)}`}>
+                    {project.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop */}
+            <div className="hidden md:block">
+              <div className="grid grid-cols-12 gap-4 bg-gray-50 px-4 py-2.5 border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
+                <div className="col-span-5">Project Name</div>
+                <div className="col-span-4">Location</div>
+                <div className="col-span-2">State</div>
+                <div className="col-span-1 text-right">Status</div>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {allProjects.map((project) => (
+                  <div key={project.id} className="grid grid-cols-12 gap-4 items-center text-sm px-4 py-3">
+                    <div className="col-span-5 text-gray-900 font-medium">{project.name}</div>
+                    <div className="col-span-4 text-gray-500">{project.address || '—'}</div>
+                    <div className="col-span-2 text-gray-500">{project.state || '—'}</div>
+                    <div className="col-span-1 text-right">
+                      <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${statusBadge(project.status)}`}>
+                        {project.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

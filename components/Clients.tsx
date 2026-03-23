@@ -14,12 +14,22 @@ interface Client {
   activeProjects: number;
 }
 
+interface Project {
+  id: string;
+  name: string;
+  client: string;
+  status: string;
+  address: string;
+  state: string;
+}
+
 interface ClientsProps {
   initialClients: Client[];
+  allProjects?: Project[];
   isAdmin?: boolean;
 }
 
-export function Clients({ initialClients = [], isAdmin = false }: ClientsProps) {
+export function Clients({ initialClients = [], allProjects = [], isAdmin = false }: ClientsProps) {
   const [clients, setClients] = useState<Client[]>(initialClients);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -46,6 +56,7 @@ export function Clients({ initialClients = [], isAdmin = false }: ClientsProps) 
         client={selectedClient}
         onBack={() => setSelectedClient(null)}
         isAdmin={isAdmin}
+        allProjects={allProjects.filter(p => p.client === selectedClient.name)}
         onUpdate={(updated) => {
           setClients(prev => prev.map(c => c.id === updated.id ? updated : c));
           setSelectedClient(updated);
