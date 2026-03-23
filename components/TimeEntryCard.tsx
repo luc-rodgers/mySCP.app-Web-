@@ -397,7 +397,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                   if (project.type === 'leave') {
                     hours = parseFloat(project.leaveTotalHours || '0');
                   } else if ((project.subActivities || []).length > 0) {
-                    // Sum sub-activity durations
+                    // Sum sub-activity durations (project type)
                     hours = (project.subActivities || []).reduce((sum, sa) => {
                       if (!sa.start || !sa.finish) return sum;
                       const [sh, sm] = sa.start.split(':').map(Number);
@@ -406,9 +406,11 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                     }, 0);
                     if (project.lunch) hours = Math.max(0, hours - 0.5);
                   } else if (project.siteStart && project.siteFinish) {
+                    // Yard work or legacy entries using site times
                     const [sh, sm] = project.siteStart.split(':').map(Number);
                     const [fh, fm] = project.siteFinish.split(':').map(Number);
                     hours = Math.max(0, (fh * 60 + fm - sh * 60 - sm) / 60);
+                    if (project.lunch) hours = Math.max(0, hours - 0.5);
                   }
 
                   const label = project.type === 'leave'
@@ -801,30 +803,56 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                           )}
                         </div>
                       ) : (
-                        <div>
-                          <label className="block text-xs text-gray-500 mb-1">Yard Work Type</label>
-                          <Select
-                            value={project.project || ''}
-                            className="h-12 text-base w-full font-bold text-center cursor-pointer !border !border-gray-300"
-                            onChange={(e) => onUpdateProject(entry.id, project.id, { project: e.target.value })}
-                            disabled={isLocked}
-                          >
-                            <option value="">Select Yard Work Type</option>
-                            {getProjectOptions().map(p => <option key={p} value={p}>{p}</option>)}
-                          </Select>
-                        </div>
-                      )}
+                        <div className="space-y-3">
+                          {/* Yard work type dropdown */}
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1.5">Yard Work Type</label>
+                            <Select
+                              value={project.project || ''}
+                              className="h-11 text-sm w-full font-semibold cursor-pointer !border !border-gray-300 !bg-white"
+                              onChange={(e) => onUpdateProject(entry.id, project.id, { project: e.target.value })}
+                              disabled={isLocked}
+                            >
+                              <option value="">Select Yard Work Type</option>
+                              {getProjectOptions().map(p => <option key={p} value={p}>{p}</option>)}
+                            </Select>
+                          </div>
 
-                      {/* Lunch toggle for yardwork */}
-                      {project.type === 'yardwork' && (
-                        <button
-                          onClick={() => onUpdateProject(entry.id, project.id, { lunch: !project.lunch })}
-                          disabled={isLocked}
-                          className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.lunch ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
-                        >
-                          <Utensils className="w-4 h-4 shrink-0" />
-                          <span>Lunch</span>
-                        </button>
+                          {/* Start / Finish times */}
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="block text-[10px] text-gray-400 mb-1 text-center">Start</label>
+                              <TimePicker
+                                value={project.siteStart || ''}
+                                onChange={(v) => onUpdateProject(entry.id, project.id, { siteStart: v })}
+                                disabled={isLocked}
+                                className="justify-center"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] text-gray-400 mb-1 text-center">Finish</label>
+                              <TimePicker
+                                value={project.siteFinish || ''}
+                                onChange={(v) => onUpdateProject(entry.id, project.id, { siteFinish: v })}
+                                disabled={isLocked}
+                                className="justify-center"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Lunch toggle */}
+                          <div>
+                            <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">Options</p>
+                            <button
+                              onClick={() => onUpdateProject(entry.id, project.id, { lunch: !project.lunch })}
+                              disabled={isLocked}
+                              className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.lunch ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
+                            >
+                              <Utensils className="w-4 h-4 shrink-0" />
+                              <span>Lunch</span>
+                            </button>
+                          </div>
+                        </div>
                       )}
 
                       {/* Options — Lunch / Lunch Penalty / Inclement Weather */}
