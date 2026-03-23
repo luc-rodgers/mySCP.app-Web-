@@ -71,6 +71,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
 
   const handleCloseModal = () => {
     setShowModal(false);
+    setShowDeleteConfirm(false);
     onModalClose?.();
   };
 
