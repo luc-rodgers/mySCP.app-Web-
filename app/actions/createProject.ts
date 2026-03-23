@@ -25,7 +25,9 @@ export async function createProject(
 
   const name = (formData.get("name") as string)?.trim();
   const clientName = (formData.get("clientName") as string)?.trim() || null;
+  const streetAddress = (formData.get("streetAddress") as string)?.trim() || null;
   const address = (formData.get("address") as string)?.trim() || null;
+  const state = (formData.get("state") as string) || null;
   const projectValue = (formData.get("projectValue") as string) || null;
   const status = (formData.get("status") as string) || "active";
 
@@ -61,7 +63,9 @@ export async function createProject(
   const { error } = await supabase.from("projects").insert({
     name,
     client_id: clientId,
+    street_address: streetAddress,
     address,
+    state,
     project_value: projectValue,
     status,
   });

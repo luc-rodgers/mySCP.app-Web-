@@ -91,14 +91,37 @@ export function AddProjectModal({ clients = [], onClose }: Props) {
             </datalist>
           </div>
 
-          {/* Address */}
+          {/* Street Address + State */}
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Location</label>
+            <label className="block text-xs text-gray-600 mb-1">Street Address</label>
             <input
-              name="address"
+              name="streetAddress"
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
-              placeholder="Suburb, QLD"
+              placeholder="123 Example St"
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">Suburb</label>
+              <input
+                name="address"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
+                placeholder="Suburb"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">State</label>
+              <select
+                name="state"
+                defaultValue=""
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
+              >
+                <option value="">Select state</option>
+                <option value="QLD">QLD</option>
+                <option value="NSW">NSW</option>
+              </select>
+            </div>
           </div>
 
           {/* Project Value + Status */}
