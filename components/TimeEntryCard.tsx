@@ -152,9 +152,9 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
   const getStatusColor = (status: TimeEntry['status']) => {
     switch (status) {
       case 'draft':
-        return 'bg-gray-400 text-white';
-      case 'submitted':
         return 'bg-amber-500 text-white';
+      case 'submitted':
+        return 'bg-[#030213] text-white';
       case 'approved':
         return 'bg-green-500 text-white';
     }
