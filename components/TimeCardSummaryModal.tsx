@@ -5,8 +5,9 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react';
+import { ChevronDown, ChevronRight, AlertTriangle, Settings, Pencil, Trash2 } from 'lucide-react';
 import Image from 'next/image';
+import { useRef, useEffect } from 'react';
 
 interface TimeCardSummaryModalProps {
   entry: TimeEntry;
@@ -14,13 +15,28 @@ interface TimeCardSummaryModalProps {
   onClose: () => void;
   onSubmit?: (signature: string) => void;
   onEdit?: () => void;
+  onDelete?: () => void;
   viewOnly?: boolean;
   shouldShowSignature?: boolean;
 }
 
-export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit, viewOnly, shouldShowSignature = true }: TimeCardSummaryModalProps) {
+export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit, onDelete, viewOnly, shouldShowSignature = true }: TimeCardSummaryModalProps) {
   const [signature, setSignature] = useState('');
   const [expandedProjects, setExpandedProjects] = useState<Record<string, boolean>>({});
+  const [showSettings, setShowSettings] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
+        setShowSettings(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   // Check for missing times
   const missingSignOn = !entry.depotStart;
@@ -247,9 +263,9 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { setShowSettings(false); setShowDeleteConfirm(false); onClose(); } }}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="px-6 pt-4 pb-0 border-b-0">
+        <DialogHeader className="px-6 pt-4 pb-0 border-b-0 relative">
           <DialogTitle className="flex justify-center items-center">
             <Image
               src="/scplogo.png"
@@ -260,6 +276,59 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
               priority
             />
           </DialogTitle>
+
+          {/* Settings gear — top right, only shown in viewOnly mode */}
+          {viewOnly && (onEdit || onDelete) && (
+            <div ref={settingsRef} className="absolute top-0 right-0">
+              <button
+                onClick={() => setShowSettings(s => !s)}
+                className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+              {showSettings && (
+                <div className="absolute right-0 top-9 z-50 bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-[140px]">
+                  {onEdit && (
+                    <button
+                      onClick={() => { setShowSettings(false); onEdit(); }}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
+                    >
+                      <Pencil className="w-4 h-4" />
+                      Edit
+                    </button>
+                  )}
+                  {onDelete && !showDeleteConfirm && (
+                    <button
+                      onClick={() => setShowDeleteConfirm(true)}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 cursor-pointer"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Delete
+                    </button>
+                  )}
+                  {onDelete && showDeleteConfirm && (
+                    <div className="px-4 py-2 space-y-2">
+                      <p className="text-xs text-red-600 font-medium">Delete this time card?</p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setShowDeleteConfirm(false)}
+                          className="flex-1 text-xs px-2 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => { setShowSettings(false); setShowDeleteConfirm(false); onDelete(); }}
+                          className="flex-1 text-xs px-2 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </DialogHeader>
 
         <div className="space-y-4 pt-0 pb-4 px-6">
@@ -700,14 +769,6 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
           <Button variant="outline" onClick={onClose}>
             {viewOnly ? 'Close' : 'Cancel'}
           </Button>
-          {onEdit && viewOnly && (
-            <Button 
-              onClick={onEdit}
-              className="bg-gray-600 hover:bg-gray-700"
-            >
-              Edit
-            </Button>
-          )}
           {!viewOnly && onSubmit && (
             <Button 
               onClick={handleSubmit}

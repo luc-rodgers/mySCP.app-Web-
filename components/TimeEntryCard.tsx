@@ -308,6 +308,10 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
           setShowSummaryModal(false);
           setShowModal(true);
         } : undefined}
+        onDelete={entry.status === 'submitted' ? () => {
+          setShowSummaryModal(false);
+          onDelete(entry.id);
+        } : undefined}
         viewOnly={entry.status === 'submitted' && !isEditMode}
         shouldShowSignature={!wasSubmittedWhenEditStarted || hasBeenEdited}
       />
