@@ -67,10 +67,12 @@ export function ClientProfile({ client, onBack, isAdmin = false, onUpdate, onDel
 
   return (
     <div className="p-4 pb-24">
-      <Button variant="ghost" size="sm" onClick={onBack} className="mb-4 gap-2 cursor-pointer">
-        <ArrowLeft className="w-4 h-4" />
-        Back to Clients
-      </Button>
+      <div className="flex justify-center md:justify-start mb-4">
+        <Button variant="ghost" size="sm" onClick={onBack} className="gap-2 cursor-pointer">
+          <ArrowLeft className="w-4 h-4" />
+          Back to Clients
+        </Button>
+      </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         {!isEditing ? (

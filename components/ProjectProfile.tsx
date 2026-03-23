@@ -229,10 +229,12 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
           }}
         />
       )}
-      <Button variant="ghost" size="sm" onClick={onBack} className="mb-4 gap-2 cursor-pointer">
-        <ArrowLeft className="w-4 h-4" />
-        Back to Projects
-      </Button>
+      <div className="flex justify-center md:justify-start mb-4">
+        <Button variant="ghost" size="sm" onClick={onBack} className="gap-2 cursor-pointer">
+          <ArrowLeft className="w-4 h-4" />
+          Back to Projects
+        </Button>
+      </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         {!isEditing ? (
