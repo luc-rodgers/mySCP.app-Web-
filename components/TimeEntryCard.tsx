@@ -728,24 +728,24 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                               <div className="grid grid-cols-3 gap-2">
                                 <button
                                   onClick={() => handleAddSubActivity(entry.id, project.id, 'travel')}
-                                  className="flex flex-col items-center gap-1.5 py-3.5 rounded-xl border-2 border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 text-gray-700 transition-colors cursor-pointer"
+                                  className="flex-1 flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
                                 >
-                                  <Car className="w-5 h-5" />
-                                  <span className="text-xs font-medium">Travel</span>
+                                  <Car className="w-4 h-4 shrink-0" />
+                                  <span>Travel</span>
                                 </button>
                                 <button
                                   onClick={() => handleAddSubActivity(entry.id, project.id, 'pouring')}
-                                  className="flex flex-col items-center gap-1.5 py-3.5 rounded-xl border-2 border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 text-gray-700 transition-colors cursor-pointer"
+                                  className="flex-1 flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
                                 >
-                                  <Droplet className="w-5 h-5" />
-                                  <span className="text-xs font-medium">Pouring</span>
+                                  <Droplet className="w-4 h-4 shrink-0" />
+                                  <span>Pouring</span>
                                 </button>
                                 <button
                                   onClick={() => handleAddSubActivity(entry.id, project.id, 'non-pouring')}
-                                  className="flex flex-col items-center gap-1.5 py-3.5 rounded-xl border-2 border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 text-gray-700 transition-colors cursor-pointer"
+                                  className="flex-1 flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
                                 >
-                                  <Hammer className="w-5 h-5" />
-                                  <span className="text-xs font-medium">Non-Pouring</span>
+                                  <Hammer className="w-4 h-4 shrink-0" />
+                                  <span>Non-Pouring</span>
                                 </button>
                               </div>
                             </div>
