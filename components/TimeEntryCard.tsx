@@ -677,7 +677,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                               {(project.subActivities || []).map((sa) => {
                                 const isTravel = sa.type === 'travel';
                                 const isPouring = sa.type === 'pouring';
-                                const pouringOptions = ['🚚 Mobile', '🏗️ Placing Boom / Skid Pump'];
+                                const pouringOptions = ['Mobile', 'Placing Boom / Skid Pump'];
                                 const nonPouringOptions = ['Clean Pump', 'Installation Boom', 'Installation Pump', 'Installation Other', 'Dismantle Boom', 'Dismantle Pump', 'Dismantle Other', 'Climb Boom', 'Preparation to Climb Boom', 'Pipeline Installation', 'Pipeline Relocation', 'Transfer Line Relocation', 'Install HD Bolts', 'Install Crucifix/Base', 'Maintenance', 'Inspections'];
                                 const ActivityIcon = isTravel ? Car : isPouring ? Droplet : Hammer;
                                 const activityLabel = isTravel ? 'Travel' : isPouring ? 'Pouring' : 'Non-Pouring';
