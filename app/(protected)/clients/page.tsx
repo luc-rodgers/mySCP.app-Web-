@@ -10,7 +10,9 @@ export default async function ClientsPage() {
     supabase.from("clients")
       .select("id, name, contact_name, email, phone, address, projects(id, status)")
       .order("name"),
-    supabase.from("projects").select("id, name, status, street_address, address, state, client_id, clients(id, name)").order("name"),
+    supabase.from("projects")
+      .select("id, name, status, street_address, address, state, project_value, hours_logged, start_date, end_date, client_id, clients(id, name)")
+      .order("name"),
   ]);
 
   const isAdmin = currentEmployee?.role?.toLowerCase() === "admin";
@@ -31,8 +33,13 @@ export default async function ClientsPage() {
     clientId: (p.clients as any)?.id ?? p.client_id ?? "",
     client: (p.clients as any)?.name ?? "",
     status: p.status ?? "active",
-    address: p.street_address || p.address || "",
+    streetAddress: p.street_address ?? "",
+    address: p.address ?? "",
     state: p.state ?? "",
+    projectValue: p.project_value ?? "",
+    hoursLogged: p.hours_logged ?? 0,
+    startDate: p.start_date ?? "",
+    endDate: p.end_date ?? "",
   }));
 
   return <Clients initialClients={initialClients} allProjects={allProjects} isAdmin={isAdmin} />;

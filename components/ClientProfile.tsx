@@ -22,8 +22,13 @@ interface Project {
   clientId: string;
   client: string;
   status: string;
+  streetAddress: string;
   address: string;
   state: string;
+  projectValue: string;
+  hoursLogged: number;
+  startDate: string;
+  endDate: string;
 }
 
 interface ClientProfileProps {
@@ -32,10 +37,11 @@ interface ClientProfileProps {
   isAdmin?: boolean;
   onUpdate?: (updated: Client) => void;
   onDeleted?: () => void;
+  onSelectProject?: (project: Project) => void;
   allProjects?: Project[];
 }
 
-export function ClientProfile({ client, onBack, isAdmin = false, onUpdate, onDeleted, allProjects = [] }: ClientProfileProps) {
+export function ClientProfile({ client, onBack, isAdmin = false, onUpdate, onDeleted, onSelectProject, allProjects = [] }: ClientProfileProps) {
   const router = useRouter();
   const [localClient, setLocalClient] = useState(client);
   const [isEditing, setIsEditing] = useState(false);
@@ -90,6 +96,7 @@ export function ClientProfile({ client, onBack, isAdmin = false, onUpdate, onDel
 
   const activeProjects = allProjects.filter(p => p.status === 'active');
   const completedProjects = allProjects.filter(p => p.status === 'completed');
+  const totalProjectCount = allProjects.length;
 
   const statusBadge = (status: string) => {
     if (status === 'active') return 'bg-green-50 text-green-700 border border-green-200';
@@ -155,6 +162,22 @@ export function ClientProfile({ client, onBack, isAdmin = false, onUpdate, onDel
                   )}
                 </div>
               )}
+            </div>
+
+            {/* Project counters */}
+            <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-gray-100">
+              <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
+                <div className="text-[#374151] text-xl font-bold">{activeProjects.length}</div>
+                <div className="text-gray-500 text-xs mt-0.5">Active</div>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
+                <div className="text-[#374151] text-xl font-bold">{completedProjects.length}</div>
+                <div className="text-gray-500 text-xs mt-0.5">Completed</div>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
+                <div className="text-[#374151] text-xl font-bold">{totalProjectCount}</div>
+                <div className="text-gray-500 text-xs mt-0.5">Total</div>
+              </div>
             </div>
           </>
         ) : (
@@ -252,15 +275,23 @@ export function ClientProfile({ client, onBack, isAdmin = false, onUpdate, onDel
             {/* Mobile */}
             <div className="md:hidden divide-y divide-gray-100">
               {allProjects.map((project) => (
-                <div key={project.id} className="p-4 flex items-start justify-between gap-3">
+                <button
+                  key={project.id}
+                  onClick={() => onSelectProject?.(project)}
+                  className="w-full p-4 flex items-start justify-between gap-3 hover:bg-gray-50 transition-colors text-left cursor-pointer"
+                >
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{project.name}</p>
-                    {project.address && <p className="text-xs text-gray-500 mt-0.5">{project.address}{project.state ? `, ${project.state}` : ''}</p>}
+                    {(project.streetAddress || project.address) && (
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {project.streetAddress || project.address}{project.state ? `, ${project.state}` : ''}
+                      </p>
+                    )}
                   </div>
                   <span className={`text-xs px-2 py-0.5 rounded-full capitalize shrink-0 ${statusBadge(project.status)}`}>
                     {project.status}
                   </span>
-                </div>
+                </button>
               ))}
             </div>
 
@@ -274,16 +305,20 @@ export function ClientProfile({ client, onBack, isAdmin = false, onUpdate, onDel
               </div>
               <div className="divide-y divide-gray-100">
                 {allProjects.map((project) => (
-                  <div key={project.id} className="grid grid-cols-12 gap-4 items-center text-sm px-4 py-3">
+                  <button
+                    key={project.id}
+                    onClick={() => onSelectProject?.(project)}
+                    className="w-full grid grid-cols-12 gap-4 items-center text-sm px-4 py-3 hover:bg-gray-50 transition-colors text-left cursor-pointer"
+                  >
                     <div className="col-span-5 text-gray-900 font-medium">{project.name}</div>
-                    <div className="col-span-4 text-gray-500">{project.address || '—'}</div>
+                    <div className="col-span-4 text-gray-500">{project.streetAddress || project.address || '—'}</div>
                     <div className="col-span-2 text-gray-500">{project.state || '—'}</div>
                     <div className="col-span-1 text-right">
                       <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${statusBadge(project.status)}`}>
                         {project.status}
                       </span>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>

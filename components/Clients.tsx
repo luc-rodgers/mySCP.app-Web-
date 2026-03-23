@@ -2,6 +2,7 @@
 import { Settings } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { ClientProfile } from './ClientProfile';
+import { ProjectProfile } from './ProjectProfile';
 import { AddClientModal } from './AddClientModal';
 
 interface Client {
@@ -20,8 +21,13 @@ interface Project {
   clientId: string;
   client: string;
   status: string;
+  streetAddress: string;
   address: string;
   state: string;
+  projectValue: string;
+  hoursLogged: number;
+  startDate: string;
+  endDate: string;
 }
 
 interface ClientsProps {
@@ -33,6 +39,7 @@ interface ClientsProps {
 export function Clients({ initialClients = [], allProjects = [], isAdmin = false }: ClientsProps) {
   const [clients, setClients] = useState<Client[]>(initialClients);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -51,6 +58,19 @@ export function Clients({ initialClients = [], allProjects = [], isAdmin = false
   const activeClients = clients.filter(c => c.activeProjects > 0).length;
   const totalProjects = clients.reduce((sum, c) => sum + c.activeProjects, 0);
 
+  // Project profile view (drilled into from client profile)
+  if (selectedProject && selectedClient) {
+    return (
+      <ProjectProfile
+        project={selectedProject}
+        onBack={() => setSelectedProject(null)}
+        isAdmin={isAdmin}
+        onUpdate={(updated) => setSelectedProject(updated)}
+        onDeleted={() => setSelectedProject(null)}
+      />
+    );
+  }
+
   if (selectedClient) {
     return (
       <ClientProfile
@@ -58,6 +78,7 @@ export function Clients({ initialClients = [], allProjects = [], isAdmin = false
         onBack={() => setSelectedClient(null)}
         isAdmin={isAdmin}
         allProjects={allProjects.filter(p => p.clientId === selectedClient.id)}
+        onSelectProject={(project) => setSelectedProject(project)}
         onUpdate={(updated) => {
           setClients(prev => prev.map(c => c.id === updated.id ? updated : c));
           setSelectedClient(updated);
