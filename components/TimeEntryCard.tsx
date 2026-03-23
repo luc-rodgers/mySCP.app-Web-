@@ -322,7 +322,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
           {/* Desktop backdrop */}
           <div className="absolute inset-0 bg-black/50 hidden md:block" onClick={handleCloseModal} />
           {/* Panel */}
-          <div className="relative bg-white w-full md:max-w-2xl md:rounded-2xl md:shadow-2xl flex flex-col z-10 h-full md:h-auto md:max-h-[90vh]">
+          <div className="relative bg-white w-full md:max-w-4xl md:rounded-2xl md:shadow-2xl flex flex-col z-10 h-full md:h-auto md:max-h-[95vh]">
           {/* Modal Header */}
           <div className="px-4 py-3 flex justify-between items-center border-b border-gray-200 bg-gray-100 md:rounded-t-2xl shrink-0">
             <div>
@@ -713,7 +713,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                                 const ActivityIcon = isTravel ? Car : isPouring ? Droplet : Hammer;
                                 const activityLabel = isTravel ? 'Travel' : isPouring ? 'Pouring' : 'Non-Pouring';
                                 return (
-                                  <div key={sa.id} className="border border-gray-200 rounded-xl bg-gray-50 p-3 space-y-2 md:rounded-lg md:p-1.5 md:space-y-0 md:flex md:items-center md:gap-2">
+                                  <div key={sa.id} className="border border-gray-200 rounded-xl bg-gray-50 p-3 space-y-2 md:rounded-lg md:p-2 md:space-y-0 md:flex md:items-center md:gap-4">
 
                                     {/* ── Mobile header: centered label + absolute delete ── */}
                                     <div className="relative flex items-center justify-center md:hidden">
@@ -729,7 +729,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                                     </div>
 
                                     {/* ── Desktop label (fixed width) ── */}
-                                    <div className="hidden md:flex items-center gap-1 text-gray-600 w-24 shrink-0">
+                                    <div className="hidden md:flex items-center gap-1 text-gray-600 w-28 shrink-0">
                                       <ActivityIcon className="w-3 h-3 shrink-0" />
                                       <span className="text-xs font-medium">{activityLabel}</span>
                                     </div>
@@ -760,10 +760,16 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                                         <TimePicker value={sa.finish || ''} onChange={(v) => handleUpdateSubActivity(entry.id, project.id, sa.id, { finish: v })} disabled={isLocked} className="justify-center" />
                                       </div>
                                     </div>
-                                    <div className="hidden md:flex md:items-center md:gap-1 md:shrink-0">
-                                      <TimePicker value={sa.start || ''} onChange={(v) => handleUpdateSubActivity(entry.id, project.id, sa.id, { start: v })} disabled={isLocked} compact />
-                                      <span className="text-gray-300 text-xs">→</span>
-                                      <TimePicker value={sa.finish || ''} onChange={(v) => handleUpdateSubActivity(entry.id, project.id, sa.id, { finish: v })} disabled={isLocked} compact />
+                                    <div className="hidden md:flex md:items-center md:gap-4 md:shrink-0">
+                                      <div className="flex flex-col items-center gap-0.5">
+                                        <span className="text-[10px] text-gray-400">Start</span>
+                                        <TimePicker value={sa.start || ''} onChange={(v) => handleUpdateSubActivity(entry.id, project.id, sa.id, { start: v })} disabled={isLocked} compact />
+                                      </div>
+                                      <span className="text-gray-300 text-sm mt-3">→</span>
+                                      <div className="flex flex-col items-center gap-0.5">
+                                        <span className="text-[10px] text-gray-400">Finish</span>
+                                        <TimePicker value={sa.finish || ''} onChange={(v) => handleUpdateSubActivity(entry.id, project.id, sa.id, { finish: v })} disabled={isLocked} compact />
+                                      </div>
                                     </div>
 
                                     {/* ── Desktop delete ── */}
