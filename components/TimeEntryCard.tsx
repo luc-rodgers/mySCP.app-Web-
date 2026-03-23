@@ -794,49 +794,116 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
 
                       {/* Lunch toggle for yardwork */}
                       {project.type === 'yardwork' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className={`h-10 px-4 cursor-pointer border-2 ${project.lunch ? 'border-green-500 bg-green-50' : 'border-gray-300'}`}
+                        <button
                           onClick={() => onUpdateProject(entry.id, project.id, { lunch: !project.lunch })}
                           disabled={isLocked}
+                          className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.lunch ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
                         >
-                          {project.lunch && <Check className="w-3 h-3 mr-1 text-green-600" />}
-                          <Utensils className="w-3.5 h-3.5 mr-1" />
-                          Lunch
-                        </Button>
+                          <Utensils className="w-4 h-4 shrink-0" />
+                          <span>Lunch</span>
+                        </button>
                       )}
 
-                      {/* Lunch / Lunch Penalty / Weather toggles for project */}
-                      {project.type === 'project' && project.subActivities && project.subActivities.length > 0 && (
-                        <div>
-                          <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Options</p>
-                          <div className="flex gap-3">
-                            <Button variant="outline" size="sm"
-                              className={`flex-1 h-14 cursor-pointer border-2 flex flex-col items-center justify-center gap-0.5 py-1 ${project.lunch ? 'border-green-500 bg-green-50' : 'border-gray-300'}`}
+                      {/* Options — Lunch / Lunch Penalty / Inclement Weather */}
+                      {project.type === 'project' && (
+                        <div className="space-y-2">
+                          <p className="text-[10px] text-gray-400 uppercase tracking-wider">Options</p>
+
+                          {/* Toggle buttons row */}
+                          <div className="flex gap-2">
+                            <button
                               onClick={() => onUpdateProject(entry.id, project.id, { lunch: !project.lunch })}
                               disabled={isLocked}
+                              className={`flex-1 flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.lunch ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
                             >
-                              <div className="flex items-center">{project.lunch && <Check className="w-3 h-3 mr-0.5 text-green-600" />}<Utensils className="w-3.5 h-3.5" /></div>
-                              <span className="text-[10px]">Lunch</span>
-                            </Button>
-                            <Button variant="outline" size="sm"
-                              className={`flex-1 h-14 cursor-pointer border-2 flex flex-col items-center justify-center gap-0.5 py-1 ${project.lunchPenalty ? 'border-green-500 bg-green-50' : 'border-gray-300'}`}
+                              <Utensils className="w-4 h-4 shrink-0" />
+                              <span>Lunch</span>
+                            </button>
+                            <button
                               onClick={() => onUpdateProject(entry.id, project.id, { lunchPenalty: !project.lunchPenalty })}
                               disabled={isLocked}
+                              className={`flex-1 flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.lunchPenalty ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
                             >
-                              <div className="flex items-center">{project.lunchPenalty && <Check className="w-3 h-3 mr-0.5 text-green-600" />}<AlertTriangle className="w-3.5 h-3.5" /></div>
-                              <div className="text-[10px] text-center"><div>Lunch</div><div>Penalty</div></div>
-                            </Button>
-                            <Button variant="outline" size="sm"
-                              className={`flex-1 h-14 cursor-pointer border-2 flex flex-col items-center justify-center gap-0.5 py-1 ${project.weather ? 'border-green-500 bg-green-50' : 'border-gray-300'}`}
+                              <AlertTriangle className="w-4 h-4 shrink-0" />
+                              <span>Lunch Penalty</span>
+                            </button>
+                            <button
                               onClick={() => onUpdateProject(entry.id, project.id, { weather: !project.weather })}
                               disabled={isLocked}
+                              className={`flex-1 flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.weather ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
                             >
-                              <div className="flex items-center">{project.weather && <Check className="w-3 h-3 mr-0.5 text-green-600" />}<CloudRain className="w-3.5 h-3.5" /></div>
-                              <div className="text-[10px] text-center"><div>Inclement</div><div>Weather</div></div>
-                            </Button>
+                              <CloudRain className="w-4 h-4 shrink-0" />
+                              <span>Weather</span>
+                            </button>
                           </div>
+
+                          {/* Lunch Penalty detail box */}
+                          {project.lunchPenalty && (
+                            <div className="border border-gray-200 rounded-xl p-3 bg-gray-50 space-y-2">
+                              <div className="flex items-center justify-center gap-1.5 text-gray-700">
+                                <AlertTriangle className="w-4 h-4" />
+                                <span className="text-sm font-medium">Lunch Penalty</span>
+                              </div>
+                              <div>
+                                <label className="block text-[10px] text-gray-400 mb-1 text-center">Time</label>
+                                <TimePicker
+                                  value={project.lunchPenaltyTime || ''}
+                                  onChange={(v) => onUpdateProject(entry.id, project.id, { lunchPenaltyTime: v })}
+                                  disabled={isLocked}
+                                  className="justify-center"
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Inclement Weather detail box */}
+                          {project.weather && (
+                            <div className="border border-gray-200 rounded-xl p-3 bg-gray-50 space-y-3">
+                              <div className="flex items-center justify-center gap-1.5 text-gray-700">
+                                <CloudRain className="w-4 h-4" />
+                                <span className="text-sm font-medium">Inclement Weather</span>
+                              </div>
+                              <Select
+                                value={project.weatherType || ''}
+                                className="h-10 text-sm w-full"
+                                onChange={(e) => onUpdateProject(entry.id, project.id, { weatherType: e.target.value })}
+                                disabled={isLocked}
+                              >
+                                <option value="">Select type...</option>
+                                <option value="Rain">Rain</option>
+                                <option value="Heat">Heat</option>
+                                <option value="Air Quality">Air Quality</option>
+                                <option value="Other">Other</option>
+                              </Select>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="block text-[10px] text-gray-400 mb-1 text-center">Start</label>
+                                  <TimePicker
+                                    value={project.weatherStart || ''}
+                                    onChange={(v) => onUpdateProject(entry.id, project.id, { weatherStart: v })}
+                                    disabled={isLocked}
+                                    className="justify-center"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] text-gray-400 mb-1 text-center">End</label>
+                                  <TimePicker
+                                    value={project.weatherEnd || ''}
+                                    onChange={(v) => onUpdateProject(entry.id, project.id, { weatherEnd: v })}
+                                    disabled={isLocked}
+                                    className="justify-center"
+                                  />
+                                </div>
+                              </div>
+                              <Input
+                                placeholder="Appv By — Enter Name"
+                                value={project.approvedBy || ''}
+                                onChange={(e) => onUpdateProject(entry.id, project.id, { approvedBy: e.target.value })}
+                                disabled={isLocked}
+                                className="h-10 text-sm"
+                              />
+                            </div>
+                          )}
                         </div>
                       )}
 

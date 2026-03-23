@@ -20,6 +20,7 @@ export interface Project {
   approvedBy?: string;
   lunch: boolean;
   lunchPenalty: boolean;
+  lunchPenaltyTime?: string;
   lunchTime?: string;
   pumpClean: boolean;
   pumpCleanDuration?: string;
