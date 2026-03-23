@@ -423,6 +423,73 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
             );
           })()}
 
+          {/* Pouring Split */}
+          {(() => {
+            const subHours = (start: string, finish: string) => {
+              if (!start || !finish) return 0;
+              const [sh, sm] = start.split(':').map(Number);
+              const [fh, fm] = finish.split(':').map(Number);
+              return Math.max(0, (fh * 60 + fm - sh * 60 - sm) / 60);
+            };
+            let mobile = 0, placingBoom = 0;
+            entries.forEach(entry => {
+              (entry.projects ?? []).forEach(project => {
+                (project.subActivities ?? []).forEach(sa => {
+                  if (sa.type !== 'pouring') return;
+                  const h = subHours(sa.start, sa.finish);
+                  if (sa.activityType === 'Mobile') mobile += h;
+                  else if (sa.activityType === 'Placing Boom / Skid Pump') placingBoom += h;
+                });
+              });
+            });
+            const total = mobile + placingBoom;
+            const mobilePct = total > 0 ? (mobile / total) * 100 : 50;
+            const boomPct = total > 0 ? (placingBoom / total) * 100 : 50;
+            return (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Pouring Breakdown</p>
+                {total === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-2">No pouring data yet</p>
+                ) : (
+                  <>
+                    <div className="flex h-8 rounded-xl overflow-hidden mb-4 gap-0.5">
+                      {mobile > 0 && (
+                        <div className="bg-cyan-400 flex items-center justify-center text-white text-xs font-semibold transition-all" style={{ width: `${mobilePct}%` }}>
+                          {mobilePct >= 15 && `${Math.round(mobilePct)}%`}
+                        </div>
+                      )}
+                      {placingBoom > 0 && (
+                        <div className="bg-blue-500 flex items-center justify-center text-white text-xs font-semibold transition-all" style={{ width: `${boomPct}%` }}>
+                          {boomPct >= 15 && `${Math.round(boomPct)}%`}
+                        </div>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex items-start gap-2">
+                        <div className="w-3 h-3 rounded-full bg-cyan-400 mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-xs font-medium text-gray-700">Mobile</p>
+                          <p className="text-sm font-bold text-gray-900">{mobile.toFixed(1)}h</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="w-3 h-3 rounded-full bg-blue-500 mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-xs font-medium text-gray-700">Placing Boom</p>
+                          <p className="text-sm font-bold text-gray-900">{placingBoom.toFixed(1)}h</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between text-xs text-gray-500">
+                      <span>Total pouring hours</span>
+                      <span className="font-semibold text-gray-700">{total.toFixed(1)}h</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })()}
+
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Activity</p>
             <div className="md:hidden">
