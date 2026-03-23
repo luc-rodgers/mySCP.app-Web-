@@ -396,6 +396,15 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                   let hours = 0;
                   if (project.type === 'leave') {
                     hours = parseFloat(project.leaveTotalHours || '0');
+                  } else if ((project.subActivities || []).length > 0) {
+                    // Sum sub-activity durations
+                    hours = (project.subActivities || []).reduce((sum, sa) => {
+                      if (!sa.start || !sa.finish) return sum;
+                      const [sh, sm] = sa.start.split(':').map(Number);
+                      const [fh, fm] = sa.finish.split(':').map(Number);
+                      return sum + Math.max(0, (fh * 60 + fm - sh * 60 - sm) / 60);
+                    }, 0);
+                    if (project.lunch) hours = Math.max(0, hours - 0.5);
                   } else if (project.siteStart && project.siteFinish) {
                     const [sh, sm] = project.siteStart.split(':').map(Number);
                     const [fh, fm] = project.siteFinish.split(':').map(Number);
