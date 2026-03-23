@@ -539,6 +539,47 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
             </div>
           </div>
 
+          {/* Activity Breakdown */}
+          {(() => {
+            const totalTravel = workHistory.reduce((s, r) => s + r.activities.travel, 0);
+            const totalPouring = workHistory.reduce((s, r) => s + r.activities.pouring, 0);
+            const totalNonPouring = workHistory.reduce((s, r) => s + r.activities.nonPouring, 0);
+            const grandTotal = totalTravel + totalPouring + totalNonPouring;
+            const pct = (val: number) => grandTotal > 0 ? Math.round((val / grandTotal) * 100) : 0;
+            return (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Activity Breakdown</p>
+                <div className="space-y-3">
+                  {[
+                    { label: 'Travel', hrs: totalTravel, icon: <Car className="w-4 h-4" />, color: 'bg-blue-400' },
+                    { label: 'Pouring', hrs: totalPouring, icon: <Droplets className="w-4 h-4" />, color: 'bg-cyan-400' },
+                    { label: 'Non-Pouring', hrs: totalNonPouring, icon: <Wrench className="w-4 h-4" />, color: 'bg-orange-400' },
+                  ].map(({ label, hrs, icon, color }) => (
+                    <div key={label}>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-1.5 text-sm text-gray-700">
+                          {icon}{label}
+                        </div>
+                        <div className="text-sm font-semibold text-gray-900">
+                          {hrs.toFixed(1)}h <span className="text-xs font-normal text-gray-400">({pct(hrs)}%)</span>
+                        </div>
+                      </div>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${pct(hrs)}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {grandTotal > 0 && (
+                  <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between text-xs text-gray-500">
+                    <span>Total activity hours</span>
+                    <span className="font-semibold text-gray-700">{grandTotal.toFixed(1)}h</span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {(() => {
             const map: Record<string, number> = {};
             workHistory.forEach(r => {
