@@ -300,9 +300,14 @@ export default function TimesheetClient({ supabaseEmployee, userEmail, activePro
   };
 
   const handleAddSubActivity = (entryId: string, projectId: string, type: string) => {
-    const sa: SubActivity = { id: `sa${Date.now()}`, type, activityType: "", start: "", finish: "" };
     setEntries((prev) => prev.map((e) => {
       if (e.id !== entryId) return e;
+      const proj = e.projects.find((p) => p.id === projectId);
+      const existing = proj?.subActivities || [];
+      const defaultStart = existing.length === 0
+        ? (e.depotStart || '')
+        : (existing[existing.length - 1].finish || '');
+      const sa: SubActivity = { id: `sa${Date.now()}`, type, activityType: "", start: defaultStart, finish: "" };
       const upd = { ...e, projects: e.projects.map((p) => p.id === projectId ? { ...p, subActivities: [...p.subActivities, sa] } : p) };
       upsertEntry(upd);
       return upd;

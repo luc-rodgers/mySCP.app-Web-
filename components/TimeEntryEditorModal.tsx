@@ -60,8 +60,13 @@ export function TimeEntryEditorModal({ initialEntry, employeeDbId, activeProject
   };
 
   const handleAddSubActivity = (_entryId: string, projectId: string, type: "pouring" | "non-pouring" | "travel") => {
-    const sa: SubActivity = { id: `sa${Date.now()}`, type, activityType: "", start: "", finish: "" };
     setEntry(e => {
+      const proj = e.projects.find(p => p.id === projectId);
+      const existing = proj?.subActivities || [];
+      const defaultStart = existing.length === 0
+        ? (e.depotStart || '')
+        : (existing[existing.length - 1].finish || '');
+      const sa: SubActivity = { id: `sa${Date.now()}`, type, activityType: "", start: defaultStart, finish: "" };
       const u = { ...e, projects: e.projects.map(p => p.id === projectId ? { ...p, subActivities: [...(p.subActivities || []), sa] } : p) };
       persist(u); return u;
     });
