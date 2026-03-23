@@ -17,6 +17,7 @@ interface Client {
 interface Project {
   id: string;
   name: string;
+  clientId: string;
   client: string;
   status: string;
   address: string;
@@ -56,7 +57,7 @@ export function Clients({ initialClients = [], allProjects = [], isAdmin = false
         client={selectedClient}
         onBack={() => setSelectedClient(null)}
         isAdmin={isAdmin}
-        allProjects={allProjects.filter(p => p.client === selectedClient.name)}
+        allProjects={allProjects.filter(p => p.clientId === selectedClient.id)}
         onUpdate={(updated) => {
           setClients(prev => prev.map(c => c.id === updated.id ? updated : c));
           setSelectedClient(updated);

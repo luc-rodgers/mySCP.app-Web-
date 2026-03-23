@@ -10,7 +10,7 @@ export default async function ClientsPage() {
     supabase.from("clients")
       .select("id, name, contact_name, email, phone, address, projects(id, status)")
       .order("name"),
-    supabase.from("projects").select("id, name, client, status, address, state").order("name"),
+    supabase.from("projects").select("id, name, status, street_address, address, state, client_id, clients(id, name)").order("name"),
   ]);
 
   const isAdmin = currentEmployee?.role?.toLowerCase() === "admin";
@@ -28,9 +28,10 @@ export default async function ClientsPage() {
   const allProjects = (projectRows ?? []).map((p: any) => ({
     id: p.id,
     name: p.name,
-    client: p.client ?? "",
+    clientId: (p.clients as any)?.id ?? p.client_id ?? "",
+    client: (p.clients as any)?.name ?? "",
     status: p.status ?? "active",
-    address: p.address ?? "",
+    address: p.street_address || p.address || "",
     state: p.state ?? "",
   }));
 
