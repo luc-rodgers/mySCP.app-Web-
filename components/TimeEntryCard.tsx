@@ -969,13 +969,21 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                     <div className="text-lg font-bold text-gray-900">
                       {(() => {
                         let total = 0;
-                        (project.subActivities || []).forEach(sa => {
-                          if (sa.start && sa.finish) {
-                            const [sh, sm] = sa.start.split(':').map(Number);
-                            const [fh, fm] = sa.finish.split(':').map(Number);
-                            total += Math.max(0, (fh * 60 + fm - sh * 60 - sm) / 60);
+                        if (project.type === 'yardwork') {
+                          if (project.siteStart && project.siteFinish) {
+                            const [sh, sm] = project.siteStart.split(':').map(Number);
+                            const [fh, fm] = project.siteFinish.split(':').map(Number);
+                            total = Math.max(0, (fh * 60 + fm - sh * 60 - sm) / 60);
                           }
-                        });
+                        } else {
+                          (project.subActivities || []).forEach(sa => {
+                            if (sa.start && sa.finish) {
+                              const [sh, sm] = sa.start.split(':').map(Number);
+                              const [fh, fm] = sa.finish.split(':').map(Number);
+                              total += Math.max(0, (fh * 60 + fm - sh * 60 - sm) / 60);
+                            }
+                          });
+                        }
                         if (project.lunch) total -= 0.5;
                         return `${Math.max(0, total).toFixed(2)} hrs`;
                       })()}
