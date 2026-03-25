@@ -1002,8 +1002,9 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                     </div>
                   </div>
                   <Button
-                    className="flex-1 bg-gray-900 hover:bg-gray-700 text-white cursor-pointer"
+                    className="flex-1 bg-gray-900 hover:bg-gray-700 text-white cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                     onClick={() => setSelectedProjectId(null)}
+                    disabled={project.type === 'yardwork' && !project.project}
                   >
                     Done
                   </Button>
