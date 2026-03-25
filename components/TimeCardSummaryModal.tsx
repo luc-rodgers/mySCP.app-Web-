@@ -766,11 +766,25 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
 
           {/* Remarks Section */}
           {entry.remarks && entry.remarks.trim() && (
-            <div>
-              <h3 className="text-sm text-gray-500 mb-2">Remarks</h3>
-              <div className="border rounded-lg p-3 bg-gray-50">
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">{entry.remarks}</p>
+            <div className="border rounded-lg bg-white overflow-hidden">
+              <div
+                className="flex justify-between items-center p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => toggleProject('__remarks__')}
+              >
+                <div className="flex items-center gap-2">
+                  {expandedProjects['__remarks__'] ? (
+                    <ChevronDown className="w-5 h-5 text-gray-500" />
+                  ) : (
+                    <ChevronRight className="w-5 h-5 text-gray-500" />
+                  )}
+                  <div className="text-base font-bold">Remarks</div>
+                </div>
               </div>
+              {expandedProjects['__remarks__'] && (
+                <div className="px-4 pb-4 pt-0">
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{entry.remarks}</p>
+                </div>
+              )}
             </div>
           )}
 

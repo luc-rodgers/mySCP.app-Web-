@@ -477,6 +477,21 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
             </div>
 
             {/* Submit Button */}
+            {/* Remarks */}
+            {!isLocked && (
+              <div className="mt-4">
+                <label className="block text-xs text-gray-500 mb-1.5 font-medium">Remarks</label>
+                <textarea
+                  rows={3}
+                  placeholder="Any extra info about today's work..."
+                  value={entry.remarks ?? ''}
+                  disabled={isLocked}
+                  onChange={(e) => onUpdateEntry(entry.id, { remarks: e.target.value })}
+                  className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-gray-200 bg-white text-gray-800 placeholder-gray-400"
+                />
+              </div>
+            )}
+
             {entry.status !== 'submitted' && entry.status !== 'approved' && (
               <Button
                 variant="outline"
