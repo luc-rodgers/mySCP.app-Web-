@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { X } from "lucide-react";
+import { X, UserPlus, User } from "lucide-react";
 import { createEmployee } from "@/app/actions/createEmployee";
 import { useRouter } from "next/navigation";
 
@@ -25,16 +25,16 @@ interface Props {
 export function AddEmployeeModal({ onClose }: Props) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<false | 'profile' | 'invite'>(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setLoading(true);
+  async function handleSubmit(sendInvite: boolean) {
+    if (!formRef.current) return;
+    setLoading(sendInvite ? 'invite' : 'profile');
     setError(null);
 
-    const formData = new FormData(e.currentTarget);
-    const result = await createEmployee(formData);
+    const formData = new FormData(formRef.current);
+    const result = await createEmployee(formData, sendInvite);
 
     setLoading(false);
 
@@ -49,10 +49,8 @@ export function AddEmployeeModal({ onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40" />
 
-      {/* Modal */}
       <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md z-10 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
@@ -66,7 +64,7 @@ export function AddEmployeeModal({ onClose }: Props) {
         </div>
 
         {/* Form */}
-        <form ref={formRef} onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+        <form ref={formRef} onSubmit={(e) => e.preventDefault()} className="px-6 py-5 space-y-4">
           {/* Name row */}
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -91,11 +89,12 @@ export function AddEmployeeModal({ onClose }: Props) {
 
           {/* Email */}
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Email *</label>
+            <label className="block text-xs text-gray-600 mb-1">
+              Email <span className="text-gray-400">(required to send invite)</span>
+            </label>
             <input
               name="email"
               type="email"
-              required
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
               placeholder="email@example.com"
             />
@@ -134,7 +133,7 @@ export function AddEmployeeModal({ onClose }: Props) {
               <label className="block text-xs text-gray-600 mb-1">App Access</label>
               <select
                 name="role"
-                defaultValue="admin"
+                defaultValue="operator"
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
               >
                 <option value="admin">Admin</option>
@@ -166,16 +165,27 @@ export function AddEmployeeModal({ onClose }: Props) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 border border-gray-200 text-gray-700 rounded-lg px-4 py-2 text-sm hover:bg-gray-50 transition-colors cursor-pointer"
+              className="border border-gray-200 text-gray-700 rounded-lg px-4 py-2 text-sm hover:bg-gray-50 transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 bg-gray-900 text-white rounded-lg px-4 py-2 text-sm hover:bg-gray-700 transition-colors disabled:opacity-50 cursor-pointer"
+              type="button"
+              disabled={!!loading}
+              onClick={() => handleSubmit(false)}
+              className="flex-1 flex items-center justify-center gap-2 border border-gray-900 text-gray-900 rounded-lg px-4 py-2 text-sm hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer"
             >
-              {loading ? "Sending invite…" : "Send Invite"}
+              <User className="w-4 h-4" />
+              {loading === 'profile' ? 'Saving…' : 'Save Profile'}
+            </button>
+            <button
+              type="button"
+              disabled={!!loading}
+              onClick={() => handleSubmit(true)}
+              className="flex-1 flex items-center justify-center gap-2 bg-gray-900 text-white rounded-lg px-4 py-2 text-sm hover:bg-gray-700 transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              <UserPlus className="w-4 h-4" />
+              {loading === 'invite' ? 'Sending…' : 'Send Invite'}
             </button>
           </div>
         </form>

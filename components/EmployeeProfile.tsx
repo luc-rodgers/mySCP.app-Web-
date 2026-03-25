@@ -1,5 +1,6 @@
 "use client"
-import { ArrowLeft, Mail, Phone, Clock, Settings, ChevronDown, ChevronUp, Car, Droplets, Wrench } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Clock, Settings, ChevronDown, ChevronUp, Car, Droplets, Wrench, UserPlus, CheckCircle2, CircleDashed } from 'lucide-react';
+import { inviteEmployee } from '@/app/actions/inviteEmployee';
 import { TimeEntry } from '@/lib/types';
 import { useState, useRef, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -17,6 +18,7 @@ interface Employee {
   phone: string;
   hoursThisWeek: number;
   status?: string;
+  hasAccount?: boolean;
 }
 
 interface EmployeeProfileProps {
@@ -34,6 +36,8 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
   const [loading, setLoading] = useState(true);
   const [showEdit, setShowEdit] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [inviting, setInviting] = useState(false);
+  const [inviteMessage, setInviteMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [selectedTimeCard, setSelectedTimeCard] = useState<TimeEntry | null>(null);
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
   const [activeTab, setActiveTab] = useState<'history' | 'stats'>('history');
@@ -187,13 +191,35 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
                   <Settings className="w-4 h-4" />
                 </button>
                 {showMenu && (
-                  <div className="absolute right-0 top-10 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20">
+                  <div className="absolute right-0 top-10 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20">
                     <button
                       onClick={() => { setShowEdit(true); setShowMenu(false); }}
                       className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
                     >
                       Edit Employee
                     </button>
+                    {!localEmployee.hasAccount && localEmployee.email && (
+                      <button
+                        onClick={async () => {
+                          setShowMenu(false);
+                          setInviting(true);
+                          setInviteMessage(null);
+                          const result = await inviteEmployee(localEmployee.id);
+                          setInviting(false);
+                          if (result.success) {
+                            setLocalEmployee(e => ({ ...e, hasAccount: true }));
+                            onUpdate?.({ ...localEmployee, hasAccount: true });
+                            setInviteMessage({ ok: true, text: 'Invite sent!' });
+                          } else {
+                            setInviteMessage({ ok: false, text: result.error });
+                          }
+                          setTimeout(() => setInviteMessage(null), 4000);
+                        }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-2"
+                      >
+                        <UserPlus className="w-4 h-4" /> Send Invite
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -211,6 +237,19 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
                 <span className="text-sm text-gray-400 mt-0.5 block">
                   {localEmployee.classification}
                 </span>
+              )}
+              {isAdmin && (
+                <div className="flex items-center justify-center gap-1.5 mt-2">
+                  {localEmployee.hasAccount
+                    ? <><CheckCircle2 className="w-3.5 h-3.5 text-green-500" /><span className="text-xs text-green-600">Account active</span></>
+                    : <><CircleDashed className="w-3.5 h-3.5 text-gray-400" /><span className="text-xs text-gray-400">{localEmployee.email ? 'Not yet invited' : 'No email set'}</span></>}
+                </div>
+              )}
+              {inviting && <p className="text-xs text-gray-400 mt-1">Sending invite…</p>}
+              {inviteMessage && (
+                <p className={`text-xs mt-1 ${inviteMessage.ok ? 'text-green-600' : 'text-red-500'}`}>
+                  {inviteMessage.text}
+                </p>
               )}
             </div>
           </div>

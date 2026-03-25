@@ -1,5 +1,5 @@
 "use client"
-import { Mail, Phone, Settings } from 'lucide-react';
+import { Mail, Phone, Settings, CheckCircle2, CircleDashed } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { EmployeeProfile } from './EmployeeProfile';
 import { AddEmployeeModal } from './AddEmployeeModal';
@@ -13,6 +13,7 @@ interface Employee {
   phone: string;
   hoursThisWeek: number;
   status: 'active' | 'retired';
+  hasAccount?: boolean;
 }
 
 interface EmployeesProps {
@@ -142,18 +143,19 @@ export function Employees({ initialEmployees, isAdmin = false }: EmployeesProps)
 
         {/* Desktop Layout */}
         <div className="hidden md:block">
-          <div className="grid grid-cols-7 gap-4 bg-gray-50 px-4 py-3 border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
+          <div className="grid grid-cols-8 gap-4 bg-gray-50 px-4 py-3 border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
             <div className="col-span-2">Name</div>
             <div className="col-span-2">Position</div>
             <div className="col-span-2">Type</div>
             <div className="col-span-1">Contact</div>
+            <div className="col-span-1">Account</div>
           </div>
           <div className="divide-y divide-gray-100">
             {filteredEmployees.map((employee) => (
               <button
                 key={employee.id}
                 onClick={() => setSelectedEmployee(employee)}
-                className="w-full grid grid-cols-7 gap-4 items-center text-sm px-4 py-4 hover:bg-gray-50 transition-colors text-left cursor-pointer"
+                className="w-full grid grid-cols-8 gap-4 items-center text-sm px-4 py-4 hover:bg-gray-50 transition-colors text-left cursor-pointer"
               >
                 <div className="col-span-2 text-gray-900">{employee.name}</div>
                 <div className="col-span-2 text-gray-500">{employee.classification}</div>
@@ -161,6 +163,11 @@ export function Employees({ initialEmployees, isAdmin = false }: EmployeesProps)
                 <div className="col-span-1 flex items-center gap-2">
                   {employee.email && <Mail className="w-4 h-4 text-gray-400" />}
                   {employee.phone && <Phone className="w-4 h-4 text-gray-400" />}
+                </div>
+                <div className="col-span-1">
+                  {employee.hasAccount
+                    ? <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    : <CircleDashed className="w-4 h-4 text-gray-300" />}
                 </div>
               </button>
             ))}

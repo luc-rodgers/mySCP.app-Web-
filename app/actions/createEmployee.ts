@@ -9,7 +9,8 @@ export type CreateEmployeeResult =
   | { success: false; error: string };
 
 export async function createEmployee(
-  formData: FormData
+  formData: FormData,
+  sendInvite: boolean = true
 ): Promise<CreateEmployeeResult> {
   // Verify caller is an admin
   const supabase = await createClient();
@@ -35,51 +36,71 @@ export async function createEmployee(
   const employmentType = (formData.get("employmentType") as string) || "Casual";
   const phone = (formData.get("phone") as string)?.trim() || null;
 
-  if (!firstName || !lastName || !email) {
-    return { success: false, error: "First name, last name, and email are required." };
+  if (!firstName || !lastName) {
+    return { success: false, error: "First name and last name are required." };
   }
 
-  // Check for duplicate email before touching Auth
-  const { data: existing } = await supabase
-    .from("employees")
-    .select("id")
-    .eq("email", email)
-    .maybeSingle();
-
-  if (existing) {
-    return { success: false, error: "An employee with this email already exists." };
+  if (sendInvite && !email) {
+    return { success: false, error: "Email is required to send an invite." };
   }
 
   const admin = createAdminClient();
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(".supabase.co", "") ?? "http://localhost:3000";
+  if (sendInvite && email) {
+    // Check for duplicate email before touching Auth
+    const { data: existing } = await supabase
+      .from("employees")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
 
-  // Invite the user — Supabase emails them a set-password link
-  const { data: authData, error: authError } = await admin.auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${siteUrl}/auth/callback`,
-  });
+    if (existing) {
+      return { success: false, error: "An employee with this email already exists." };
+    }
 
-  if (authError) {
-    return { success: false, error: authError.message };
-  }
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
-  // Create the employee record
-  const { error: empError } = await admin.from("employees").insert({
-    user_id: authData.user.id,
-    first_name: firstName,
-    last_name: lastName,
-    email,
-    phone,
-    role,
-    title,
-    employment_type: employmentType,
-    active_status: "active",
-  });
+    const { data: authData, error: authError } = await admin.auth.admin.inviteUserByEmail(email, {
+      redirectTo: `${siteUrl}/auth/callback`,
+    });
 
-  if (empError) {
-    // Roll back: delete the auth user so we don't leave an orphan
-    await admin.auth.admin.deleteUser(authData.user.id);
-    return { success: false, error: empError.message };
+    if (authError) {
+      return { success: false, error: authError.message };
+    }
+
+    const { error: empError } = await admin.from("employees").insert({
+      user_id: authData.user.id,
+      first_name: firstName,
+      last_name: lastName,
+      email,
+      phone,
+      role,
+      title,
+      employment_type: employmentType,
+      active_status: "active",
+    });
+
+    if (empError) {
+      await admin.auth.admin.deleteUser(authData.user.id);
+      return { success: false, error: empError.message };
+    }
+  } else {
+    // Profile only — no auth user yet
+    const { error: empError } = await admin.from("employees").insert({
+      user_id: null,
+      first_name: firstName,
+      last_name: lastName,
+      email: email || null,
+      phone,
+      role,
+      title,
+      employment_type: employmentType,
+      active_status: "active",
+    });
+
+    if (empError) {
+      return { success: false, error: empError.message };
+    }
   }
 
   revalidatePath("/employees");
