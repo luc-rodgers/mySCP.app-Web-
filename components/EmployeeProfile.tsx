@@ -228,8 +228,17 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
 
           {/* Avatar + name */}
           <div className="flex flex-col items-center gap-2 mb-5">
-            <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center ring-4 ring-gray-50 shrink-0">
-              <span className="text-lg font-bold text-gray-700">{initials}</span>
+            <div className="relative w-14 h-14 shrink-0">
+              <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center ring-4 ring-gray-50">
+                <span className="text-lg font-bold text-gray-700">{initials}</span>
+              </div>
+              {isAdmin && (
+                <div className="absolute bottom-0 right-0">
+                  {localEmployee.hasAccount
+                    ? <CheckCircle2 className="w-4 h-4 text-green-500 bg-white rounded-full" />
+                    : <div className="w-4 h-4 rounded-full border-2 border-dashed border-red-400 bg-white" />}
+                </div>
+              )}
             </div>
             <div className="text-center">
               <h1 className="text-gray-900 font-bold text-xl leading-tight">{localEmployee.name}</h1>
@@ -237,13 +246,6 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
                 <span className="text-sm text-gray-400 mt-0.5 block">
                   {localEmployee.classification}
                 </span>
-              )}
-              {isAdmin && (
-                <div className="flex items-center justify-center gap-1.5 mt-2">
-                  {localEmployee.hasAccount
-                    ? <><CheckCircle2 className="w-3.5 h-3.5 text-green-500" /><span className="text-xs text-green-600">Account active</span></>
-                    : <><CircleDashed className="w-3.5 h-3.5 text-gray-400" /><span className="text-xs text-gray-400">{localEmployee.email ? 'Not yet invited' : 'No email set'}</span></>}
-                </div>
               )}
               {inviting && <p className="text-xs text-gray-400 mt-1">Sending invite…</p>}
               {inviteMessage && (
