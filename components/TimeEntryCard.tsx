@@ -282,9 +282,9 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
 
         {/* Status badge */}
         {(hasDraftData || entry.status === 'submitted' || entry.status === 'approved') && (
-          <Badge className={`${getStatusColor(entry.status)} text-xs`}>
+          <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(entry.status)}`}>
             {getStatusLabel(entry.status)}
-          </Badge>
+          </span>
         )}
       </div>
 
@@ -333,9 +333,9 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
               )}
             </div>
             {entry.projects.length > 0 && entry.status !== 'draft' && (
-              <Badge className={`${getStatusColor(entry.status)} text-xs`}>
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(entry.status)}`}>
                 {getStatusLabel(entry.status)}
-              </Badge>
+              </span>
             )}
             <div className="flex items-center gap-3">
               <div className="text-sm text-gray-900">{totalHours} hrs</div>
