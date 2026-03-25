@@ -278,70 +278,78 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { setShowSettings(false); setShowDeleteConfirm(false); onClose(); } }}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="px-6 pt-4 pb-0 border-b-0 relative">
-          <DialogTitle className="flex justify-center items-center">
-            <Image
-              src="/scplogo.png"
-              alt="Specialised Concrete Pumping"
-              width={140}
-              height={56}
-              className="object-contain"
-              priority
-            />
-          </DialogTitle>
+        <DialogHeader className="px-4 pt-4 pb-0 border-b-0">
+          <DialogTitle asChild>
+            <div className="flex items-center justify-between">
+              {/* Left spacer — same width as gear button so logo stays centred */}
+              <div className="w-8 shrink-0" />
 
-          {/* Settings gear — top right, only shown in viewOnly mode */}
-          {viewOnly && (onEdit || onDelete) && (
-            <div ref={settingsRef} className="absolute top-0 right-0">
-              <button
-                onClick={() => setShowSettings(s => !s)}
-                className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
-              >
-                <Settings className="w-4 h-4" />
-              </button>
-              {showSettings && (
-                <div className="absolute right-0 top-9 z-50 bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-[140px]">
-                  {onEdit && (
-                    <button
-                      onClick={() => { setShowSettings(false); onEdit(); }}
-                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
-                    >
-                      <Pencil className="w-4 h-4" />
-                      Edit
-                    </button>
-                  )}
-                  {onDelete && !showDeleteConfirm && (
-                    <button
-                      onClick={() => setShowDeleteConfirm(true)}
-                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 cursor-pointer"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Delete
-                    </button>
-                  )}
-                  {onDelete && showDeleteConfirm && (
-                    <div className="px-4 py-2 space-y-2">
-                      <p className="text-xs text-red-600 font-medium">Delete this time card?</p>
-                      <div className="flex gap-2">
+              {/* Logo */}
+              <Image
+                src="/scplogo.png"
+                alt="Specialised Concrete Pumping"
+                width={140}
+                height={56}
+                className="object-contain"
+                priority
+              />
+
+              {/* Settings gear — top right */}
+              {viewOnly && (onEdit || onDelete) ? (
+                <div ref={settingsRef} className="relative shrink-0">
+                  <button
+                    onClick={() => setShowSettings(s => !s)}
+                    className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+                  >
+                    <Settings className="w-5 h-5" />
+                  </button>
+                  {showSettings && (
+                    <div className="absolute right-0 top-10 z-50 bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-[140px]">
+                      {onEdit && (
                         <button
-                          onClick={() => setShowDeleteConfirm(false)}
-                          className="flex-1 text-xs px-2 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 cursor-pointer"
+                          onClick={() => { setShowSettings(false); onEdit(); }}
+                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
                         >
-                          Cancel
+                          <Pencil className="w-4 h-4" />
+                          Edit
                         </button>
+                      )}
+                      {onDelete && !showDeleteConfirm && (
                         <button
-                          onClick={() => { setShowSettings(false); setShowDeleteConfirm(false); onDelete(); }}
-                          className="flex-1 text-xs px-2 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+                          onClick={() => setShowDeleteConfirm(true)}
+                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 cursor-pointer"
                         >
+                          <Trash2 className="w-4 h-4" />
                           Delete
                         </button>
-                      </div>
+                      )}
+                      {onDelete && showDeleteConfirm && (
+                        <div className="px-4 py-2 space-y-2">
+                          <p className="text-xs text-red-600 font-medium">Delete this time card?</p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setShowDeleteConfirm(false)}
+                              className="flex-1 text-xs px-2 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => { setShowSettings(false); setShowDeleteConfirm(false); onDelete(); }}
+                              className="flex-1 text-xs px-2 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
+              ) : (
+                <div className="w-8 shrink-0" />
               )}
             </div>
-          )}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 pt-0 pb-4 px-6">
