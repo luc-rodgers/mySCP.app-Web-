@@ -221,9 +221,9 @@ export function WeeklySummary({ entries, employee, onBack }: WeeklySummaryProps)
                 <th className="px-2 py-2 text-left min-w-[120px]" rowSpan={2}>Comments</th>
               </tr>
               <tr className="bg-gray-100 border-b-2 border-gray-300">
-                <th className="px-2 py-2 text-center border-r border-gray-300 text-[10px] text-gray-500">Project 2</th>
-                <th className="px-2 py-2 text-center border-r border-gray-300 text-[10px] text-gray-500">Project 2</th>
-                <th className="px-2 py-2 text-center border-r border-gray-300 text-[10px] text-gray-500">Project 2</th>
+                <th className="px-2 py-2 border-r border-gray-300"></th>
+                <th className="px-2 py-2 border-r border-gray-300"></th>
+                <th className="px-2 py-2 border-r border-gray-300"></th>
               </tr>
             </thead>
             <tbody>
