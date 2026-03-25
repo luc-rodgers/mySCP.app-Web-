@@ -1,5 +1,5 @@
 "use client"
-import { Settings } from 'lucide-react';
+import { Settings, Search } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { ClientProfile } from './ClientProfile';
 import { ProjectProfile } from './ProjectProfile';
@@ -42,6 +42,7 @@ export function Clients({ initialClients = [], allProjects = [], isAdmin = false
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [search, setSearch] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -54,9 +55,9 @@ export function Clients({ initialClients = [], allProjects = [], isAdmin = false
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const totalClients = clients.length;
-  const activeClients = clients.filter(c => c.activeProjects > 0).length;
-  const totalProjects = clients.reduce((sum, c) => sum + c.activeProjects, 0);
+  const filteredClients = clients.filter(c =>
+    c.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   // Project profile view (drilled into from client profile)
   if (selectedProject && selectedClient) {
@@ -123,34 +124,29 @@ export function Clients({ initialClients = [], allProjects = [], isAdmin = false
           )}
         </div>
 
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Overview</p>
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
-            <div className="text-[#374151] text-xl font-bold">{totalClients}</div>
-            <div className="text-gray-500 text-xs mt-0.5">Total</div>
-          </div>
-          <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
-            <div className="text-[#374151] text-xl font-bold">{activeClients}</div>
-            <div className="text-gray-500 text-xs mt-0.5">With Projects</div>
-          </div>
-          <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
-            <div className="text-[#374151] text-xl font-bold">{totalProjects}</div>
-            <div className="text-gray-500 text-xs mt-0.5">Projects</div>
-          </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search clients..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-transparent"
+          />
         </div>
       </div>
 
       {/* Clients Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        {clients.length === 0 && (
+        {filteredClients.length === 0 && (
           <div className="px-4 py-10 text-center text-sm text-gray-500">
-            No clients yet
+            {search ? 'No clients match your search' : 'No clients yet'}
           </div>
         )}
 
         {/* Mobile Layout */}
         <div className="md:hidden divide-y divide-gray-100">
-          {clients.map((client) => (
+          {filteredClients.map((client) => (
             <button
               key={client.id}
               onClick={() => setSelectedClient(client)}
@@ -174,7 +170,7 @@ export function Clients({ initialClients = [], allProjects = [], isAdmin = false
             <div className="col-span-1 text-right">Projects</div>
           </div>
           <div className="divide-y divide-gray-100">
-            {clients.map((client) => (
+            {filteredClients.map((client) => (
               <button
                 key={client.id}
                 onClick={() => setSelectedClient(client)}
