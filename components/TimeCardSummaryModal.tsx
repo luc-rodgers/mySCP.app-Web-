@@ -25,6 +25,7 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
   const [expandedProjects, setExpandedProjects] = useState<Record<string, boolean>>({});
   const [showSettings, setShowSettings] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [submitState, setSubmitState] = useState<'idle' | 'submitting' | 'done'>('idle');
   const settingsRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -250,8 +251,15 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
 
   const handleSubmit = () => {
     if (signature.trim() && onSubmit) {
-      onSubmit(signature);
-      setSignature('');
+      setSubmitState('submitting');
+      setTimeout(() => {
+        onSubmit(signature);
+        setSignature('');
+        setSubmitState('done');
+        setTimeout(() => {
+          setSubmitState('idle');
+        }, 1200);
+      }, 800);
     }
   };
 
@@ -770,15 +778,30 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
             {viewOnly ? 'Close' : 'Cancel'}
           </Button>
           {!viewOnly && onSubmit && (
-            <Button 
+            <Button
               onClick={handleSubmit}
-              disabled={(shouldShowSignature && !signature.trim()) || hasMissingTimes || hasInvalidTimeOrder || hasInvalidWorkTimes}
+              disabled={(shouldShowSignature && !signature.trim()) || hasMissingTimes || hasInvalidTimeOrder || hasInvalidWorkTimes || submitState !== 'idle'}
               className="bg-blue-600 hover:bg-blue-700"
             >
               Accept & Submit
             </Button>
           )}
         </DialogFooter>
+
+        {/* Submit feedback overlay */}
+        {submitState !== 'idle' && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center rounded-lg bg-white/90 backdrop-blur-sm">
+            {submitState === 'submitting' ? (
+              <div className="w-12 h-12 border-4 border-gray-200 border-t-[#030213] rounded-full animate-spin" />
+            ) : (
+              <div className="flex items-center justify-center w-14 h-14 rounded-full bg-green-100">
+                <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            )}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
