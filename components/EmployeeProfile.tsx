@@ -146,10 +146,12 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
     const [y, m, d] = mondayKey.split('-').map(Number);
     const mon = new Date(y, m - 1, d);
     const sun = new Date(y, m - 1, d + 6);
-    const fmtDay = (dt: Date) => dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
-    const fmtDayYear = (dt: Date) => dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const monthStr = (dt: Date) => dt.toLocaleDateString('en-AU', { month: 'short' });
+    const fmtDay = (dt: Date) => `${pad(dt.getDate())} ${monthStr(dt)}`;
+    const fmtDayYear = (dt: Date) => `${pad(dt.getDate())} ${monthStr(dt)} ${dt.getFullYear()}`;
     if (mon.getFullYear() !== sun.getFullYear()) return `${fmtDayYear(mon)} – ${fmtDayYear(sun)}`;
-    if (mon.getMonth() === sun.getMonth()) return `${mon.getDate()} – ${fmtDayYear(sun)}`;
+    if (mon.getMonth() === sun.getMonth()) return `${pad(mon.getDate())} – ${fmtDayYear(sun)}`;
     return `${fmtDay(mon)} – ${fmtDayYear(sun)}`;
   };
 
