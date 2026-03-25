@@ -47,6 +47,7 @@ export function TimeEntryList({ entries, activeProjects, projectsByState, onDele
   // Get current week date range (Monday to Sunday)
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   
   // Calculate the base date for the selected week
   const baseDate = new Date(today);
@@ -135,8 +136,10 @@ export function TimeEntryList({ entries, activeProjects, projectsByState, onDele
             projects: [],
           };
 
+          const isToday = day.dateString === todayString;
+
           return (
-            <div key={day.dateString}>
+            <div key={day.dateString} className={isToday ? 'rounded-xl ring-2 ring-[#030213] ring-offset-2' : ''}>
               <TimeEntryCard
                 key={day.dateString}
                 entry={entry}
