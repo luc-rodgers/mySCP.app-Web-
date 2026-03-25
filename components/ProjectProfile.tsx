@@ -20,6 +20,8 @@ interface WorkHistoryRow {
   employeeDbId: string;
   hours: number;
   activities: { travel: number; pouring: number; nonPouring: number };
+  pouringTypes: Record<string, number>;
+  nonPouringTypes: Record<string, number>;
   entryData: TimeEntry;
 }
 
@@ -147,6 +149,20 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
           .filter((a: any) => a.type === 'non-pouring')
           .reduce((s: number, a: any) => s + subHours(a.start, a.finish), 0);
 
+        // Pouring sub-type breakdown
+        const pouringTypes: Record<string, number> = {};
+        projectActivities.filter((a: any) => a.type === 'pouring').forEach((a: any) => {
+          const key = a.activityType || 'Unknown';
+          pouringTypes[key] = (pouringTypes[key] ?? 0) + subHours(a.start, a.finish);
+        });
+
+        // Non-pouring sub-type breakdown
+        const nonPouringTypes: Record<string, number> = {};
+        projectActivities.filter((a: any) => a.type === 'non-pouring').forEach((a: any) => {
+          const key = a.activityType || 'Unknown';
+          nonPouringTypes[key] = (nonPouringTypes[key] ?? 0) + subHours(a.start, a.finish);
+        });
+
         return {
           id: row.id,
           date: row.date,
@@ -156,6 +172,8 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
           employeeDbId: row.employee_id,
           hours: calculateHours(entry),
           activities: { travel: travelHrs, pouring: pouringHrs, nonPouring: nonPouringHrs },
+          pouringTypes,
+          nonPouringTypes,
           entryData: { ...entry, id: row.id, date: row.date, status: row.status,
             referenceNumber: row.reference_number ?? undefined,
             employeeName: emp ? `${emp.first_name} ${emp.last_name}` : 'Unknown' } as TimeEntry,
@@ -577,6 +595,102 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
                     <span>Total activity hours</span>
                     <span className="font-semibold text-gray-700">{grandTotal.toFixed(1)}h</span>
                   </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Pouring Breakdown (Mobile vs Placing Boom) */}
+          {(() => {
+            const combined: Record<string, number> = {};
+            workHistory.forEach(r => {
+              Object.entries(r.pouringTypes).forEach(([k, v]) => {
+                combined[k] = (combined[k] ?? 0) + v;
+              });
+            });
+            const mobile = combined['Mobile'] ?? 0;
+            const boom = combined['Placing Boom / Skid Pump'] ?? 0;
+            const total = mobile + boom;
+            const mobilePct = total > 0 ? (mobile / total) * 100 : 50;
+            const boomPct = total > 0 ? (boom / total) * 100 : 50;
+            return (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Pouring Breakdown</p>
+                {total === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-2">No pouring data yet</p>
+                ) : (
+                  <>
+                    <div className="flex h-8 rounded-xl overflow-hidden mb-4 gap-0.5">
+                      {mobile > 0 && (
+                        <div className="bg-cyan-400 flex items-center justify-center text-white text-xs font-semibold" style={{ width: `${mobilePct}%` }}>
+                          {mobilePct >= 15 && `${Math.round(mobilePct)}%`}
+                        </div>
+                      )}
+                      {boom > 0 && (
+                        <div className="bg-blue-500 flex items-center justify-center text-white text-xs font-semibold" style={{ width: `${boomPct}%` }}>
+                          {boomPct >= 15 && `${Math.round(boomPct)}%`}
+                        </div>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex items-start gap-2">
+                        <div className="w-3 h-3 rounded-full bg-cyan-400 mt-0.5 shrink-0" />
+                        <div><p className="text-xs font-medium text-gray-700">Mobile</p><p className="text-sm font-bold text-gray-900">{mobile.toFixed(1)}h</p></div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="w-3 h-3 rounded-full bg-blue-500 mt-0.5 shrink-0" />
+                        <div><p className="text-xs font-medium text-gray-700">Placing Boom</p><p className="text-sm font-bold text-gray-900">{boom.toFixed(1)}h</p></div>
+                      </div>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between text-xs text-gray-500">
+                      <span>Total pouring hours</span>
+                      <span className="font-semibold text-gray-700">{total.toFixed(1)}h</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Non-Pouring Breakdown */}
+          {(() => {
+            const combined: Record<string, number> = {};
+            workHistory.forEach(r => {
+              Object.entries(r.nonPouringTypes).forEach(([k, v]) => {
+                combined[k] = (combined[k] ?? 0) + v;
+              });
+            });
+            const entries = Object.entries(combined).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+            const total = entries.reduce((s, [, v]) => s + v, 0);
+            const colors = ['bg-orange-400','bg-orange-300','bg-amber-400','bg-amber-300','bg-yellow-400','bg-yellow-300','bg-red-400','bg-red-300'];
+            return (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Non-Pouring Breakdown</p>
+                {entries.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-2">No non-pouring data yet</p>
+                ) : (
+                  <>
+                    <div className="space-y-3">
+                      {entries.map(([label, hrs], i) => {
+                        const pct = total > 0 ? Math.round((hrs / total) * 100) : 0;
+                        return (
+                          <div key={label}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs text-gray-700 truncate pr-2">{label}</span>
+                              <span className="text-xs font-semibold text-gray-900 shrink-0">{hrs.toFixed(1)}h <span className="font-normal text-gray-400">({pct}%)</span></span>
+                            </div>
+                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                              <div className={`h-full ${colors[i % colors.length]} rounded-full`} style={{ width: `${pct}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between text-xs text-gray-500">
+                      <span>Total non-pouring hours</span>
+                      <span className="font-semibold text-gray-700">{total.toFixed(1)}h</span>
+                    </div>
+                  </>
                 )}
               </div>
             );
