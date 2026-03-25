@@ -59,10 +59,6 @@ function LoginForm() {
             />
           </div>
 
-          <h2 className="text-lg font-semibold text-[#030213] mb-6 text-center">
-            Sign in
-          </h2>
-
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label
