@@ -465,61 +465,6 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
             );
           })()}
 
-          {/* Non-Allocated Hours */}
-          {(() => {
-            const subHrs = (s: string, f: string) => {
-              if (!s || !f) return 0;
-              const [sh, sm] = s.split(':').map(Number);
-              const [fh, fm] = f.split(':').map(Number);
-              return Math.max(0, (fh * 60 + fm - sh * 60 - sm) / 60);
-            };
-            let totalNonAlloc = 0;
-            const weekSet = new Set<string>();
-            entries.forEach(entry => {
-              const depotHrs = calculateTotalHours(entry);
-              if (depotHrs <= 0) return;
-              let allocated = 0;
-              (entry.projects ?? []).forEach(p => {
-                if (p.type === 'yardwork') {
-                  allocated += subHrs(p.siteStart, p.siteFinish);
-                  if (p.lunch) allocated -= 0.5;
-                } else if (p.type === 'leave') {
-                  allocated += parseFloat(p.leaveTotalHours || '0');
-                } else {
-                  (p.subActivities ?? []).forEach(sa => { allocated += subHrs(sa.start, sa.finish); });
-                }
-              });
-              totalNonAlloc += Math.max(0, depotHrs - allocated);
-              const d = new Date(entry.date);
-              d.setHours(0, 0, 0, 0);
-              const dow = d.getDay();
-              const mon = new Date(d);
-              mon.setDate(d.getDate() + (dow === 0 ? -6 : 1 - dow));
-              weekSet.add(mon.toISOString().split('T')[0]);
-            });
-            const avgPerWeek = weekSet.size > 0 ? totalNonAlloc / weekSet.size : 0;
-            return (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Non-Allocated Hours</p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center bg-gray-50 rounded-xl p-4">
-                    <p className="text-2xl font-bold text-gray-900">{totalNonAlloc.toFixed(1)}</p>
-                    <p className="text-xs text-gray-400 mt-1">Total hrs</p>
-                  </div>
-                  <div className="text-center bg-gray-50 rounded-xl p-4">
-                    <p className="text-2xl font-bold text-gray-900">{avgPerWeek.toFixed(1)}</p>
-                    <p className="text-xs text-gray-400 mt-1">Avg hrs / week</p>
-                  </div>
-                </div>
-                {totalNonAlloc > 0 && (
-                  <p className="text-xs text-gray-400 mt-3 text-center">Time between sign on/off not assigned to an activity</p>
-                )}
-                {totalNonAlloc === 0 && (
-                  <p className="text-xs text-green-500 mt-3 text-center font-medium">All hours fully allocated</p>
-                )}
-              </div>
-            );
-          })()}
 
           {/* Pouring Split */}
           {(() => {
@@ -597,6 +542,40 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
               <WorkHeatmap entries={entries} calculateHours={calculateTotalHours} weeksCount={52} />
             </div>
           </div>
+
+          {/* Non-Allocated Hours — compact square, bottom of page */}
+          {(() => {
+            const subHrs = (s: string, f: string) => {
+              if (!s || !f) return 0;
+              const [sh, sm] = s.split(':').map(Number);
+              const [fh, fm] = f.split(':').map(Number);
+              return Math.max(0, (fh * 60 + fm - sh * 60 - sm) / 60);
+            };
+            let totalNonAlloc = 0;
+            entries.forEach(entry => {
+              const depotHrs = calculateTotalHours(entry);
+              if (depotHrs <= 0) return;
+              let allocated = 0;
+              (entry.projects ?? []).forEach(p => {
+                if (p.type === 'yardwork') { allocated += subHrs(p.siteStart, p.siteFinish); if (p.lunch) allocated -= 0.5; }
+                else if (p.type === 'leave') { allocated += parseFloat(p.leaveTotalHours || '0'); }
+                else { (p.subActivities ?? []).forEach(sa => { allocated += subHrs(sa.start, sa.finish); }); }
+              });
+              totalNonAlloc += Math.max(0, depotHrs - allocated);
+            });
+            if (totalNonAlloc === 0) return null;
+            return (
+              <div className="flex justify-start">
+                <div className="w-28 h-28 bg-white rounded-2xl shadow-sm border border-red-100 flex flex-col items-center justify-center gap-1">
+                  <div className="flex items-center gap-1">
+                    <span className="text-red-500 text-lg font-bold">!</span>
+                    <span className="text-2xl font-bold text-gray-900">{totalNonAlloc.toFixed(1)}</span>
+                  </div>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-wider">Unallocated</p>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
 
