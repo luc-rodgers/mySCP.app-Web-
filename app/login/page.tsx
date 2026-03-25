@@ -45,11 +45,11 @@ function LoginForm() {
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <Image
-            src="/scplogo.png"
-            alt="Specialised Concrete Pumping"
-            width={160}
-            height={64}
-            className="object-contain mb-2"
+            src="/myscp.jpeg"
+            alt="MySCP"
+            width={220}
+            height={90}
+            className="object-contain"
             priority
           />
         </div>
@@ -59,12 +59,9 @@ function LoginForm() {
           className="bg-white rounded-[0.625rem] shadow-sm border p-8"
           style={{ borderColor: "var(--border)" }}
         >
-          <h2 className="text-lg font-semibold text-[#030213] mb-1">
+          <h2 className="text-lg font-semibold text-[#030213] mb-6 text-center">
             Sign in
           </h2>
-          <p className="text-sm text-[#717182] mb-6">
-            Enter your credentials to access your account
-          </p>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
