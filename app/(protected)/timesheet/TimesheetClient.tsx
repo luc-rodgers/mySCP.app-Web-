@@ -216,14 +216,30 @@ export default function TimesheetClient({ supabaseEmployee, userEmail, activePro
     }
   };
 
+  const getDefaultStartTime = (entry: TimeEntry): string => {
+    // Find the latest finish time across all existing activities
+    let lastFinish = '';
+    entry.projects.forEach(p => {
+      if (p.type === 'yardwork' && p.siteFinish) {
+        if (!lastFinish || p.siteFinish > lastFinish) lastFinish = p.siteFinish;
+      }
+      (p.subActivities || []).forEach(sa => {
+        if (sa.finish && (!lastFinish || sa.finish > lastFinish)) lastFinish = sa.finish;
+      });
+    });
+    return lastFinish || entry.depotStart || '';
+  };
+
   const handleAddProject = (entryId: string, type: "project" | "yardwork" | "leave" = "project") => {
-    const newProject: Project = {
-      id: `p${Date.now()}`, type, project: "", siteStart: "", siteFinish: "",
-      subActivities: [], weather: false, lunch: false, lunchPenalty: false, pumpClean: false,
-    };
     if (entryId.startsWith("placeholder-")) {
       const date = entryId.replace("placeholder-", "");
       const existingForDate = entries.find((e) => e.date === date);
+      const baseEntry = existingForDate ?? { depotStart: '', projects: [] } as any;
+      const defaultStart = type === 'yardwork' ? getDefaultStartTime(baseEntry) : '';
+      const newProject: Project = {
+        id: `p${Date.now()}`, type, project: "", siteStart: defaultStart, siteFinish: "",
+        subActivities: [], weather: false, lunch: false, lunchPenalty: false, pumpClean: false,
+      };
       if (existingForDate) {
         const upd = { ...existingForDate, projects: [...existingForDate.projects, newProject] };
         setEntries((prev) => prev.map((e) => e.id === existingForDate.id ? upd : e));
@@ -243,6 +259,11 @@ export default function TimesheetClient({ supabaseEmployee, userEmail, activePro
       setEntries((prev) => {
         const updated = prev.map((e) => {
           if (e.id !== entryId) return e;
+          const defaultStart = type === 'yardwork' ? getDefaultStartTime(e) : '';
+          const newProject: Project = {
+            id: `p${Date.now()}`, type, project: "", siteStart: defaultStart, siteFinish: "",
+            subActivities: [], weather: false, lunch: false, lunchPenalty: false, pumpClean: false,
+          };
           const upd = { ...e, projects: [...e.projects, newProject] };
           upsertEntry(upd);
           return upd;

@@ -41,11 +41,26 @@ export function TimeEntryEditorModal({ initialEntry, employeeDbId, activeProject
   };
 
   const handleAddProject = (_entryId: string, type: "project" | "yardwork" | "leave" = "project") => {
-    const newProject: Project = {
-      id: `p${Date.now()}`, type, project: "", siteStart: "", siteFinish: "",
-      subActivities: [], weather: false, lunch: false, lunchPenalty: false, pumpClean: false,
-    };
-    setEntry(e => { const u = { ...e, projects: [...e.projects, newProject] }; persist(u); return u; });
+    setEntry(e => {
+      let defaultStart = '';
+      if (type === 'yardwork') {
+        let lastFinish = '';
+        e.projects.forEach(p => {
+          if (p.type === 'yardwork' && p.siteFinish && p.siteFinish > lastFinish) lastFinish = p.siteFinish;
+          (p.subActivities || []).forEach(sa => {
+            if (sa.finish && sa.finish > lastFinish) lastFinish = sa.finish;
+          });
+        });
+        defaultStart = lastFinish || e.depotStart || '';
+      }
+      const newProject: Project = {
+        id: `p${Date.now()}`, type, project: "", siteStart: defaultStart, siteFinish: "",
+        subActivities: [], weather: false, lunch: false, lunchPenalty: false, pumpClean: false,
+      };
+      const u = { ...e, projects: [...e.projects, newProject] };
+      persist(u);
+      return u;
+    });
   };
 
   const handleDeleteProject = (_entryId: string, projectId: string) => {

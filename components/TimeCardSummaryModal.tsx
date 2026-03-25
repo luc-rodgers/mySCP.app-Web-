@@ -44,6 +44,9 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
   const missingSignOn = !entry.depotStart;
   const missingSignOff = !entry.depotFinish;
   const hasMissingTimes = missingSignOn || missingSignOff;
+
+  // Check yard work entries have an activity type selected
+  const hasUnselectedYardWork = entry.projects.some(p => p.type === 'yardwork' && !p.project);
   
   // Check for invalid time order (sign on after sign off)
   const hasInvalidTimeOrder = (() => {
@@ -463,10 +466,11 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                     const isExpanded = expandedProjects[project.id];
                     const hasInvalidTime = !viewOnly && projectHasInvalidTimes(project);
                     
+                    const missingYardType = !viewOnly && !project.project;
                     return (
-                      <div key={project.id} className={`border rounded-lg bg-white overflow-hidden ${hasInvalidTime ? 'border-red-400 bg-red-50' : ''}`}>
+                      <div key={project.id} className={`border rounded-lg bg-white overflow-hidden ${hasInvalidTime || missingYardType ? 'border-red-400 bg-red-50' : ''}`}>
                         {/* Clickable Header */}
-                        <div 
+                        <div
                           className="flex justify-between items-start p-4 cursor-pointer hover:bg-gray-50 transition-colors"
                           onClick={() => toggleProject(project.id)}
                         >
@@ -480,7 +484,12 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                             {project.lunch && (
                               <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded border border-green-200">Lunch</span>
                             )}
-                            {hasInvalidTime && (
+                            {missingYardType && (
+                              <span className="flex items-center gap-1 text-xs text-red-600">
+                                <AlertTriangle className="w-4 h-4" /> Activity required
+                              </span>
+                            )}
+                            {hasInvalidTime && !missingYardType && (
                               <span className="flex items-center">
                                 <AlertTriangle className="w-4 h-4 text-red-600" />
                               </span>
@@ -782,7 +791,7 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
           {!viewOnly && onSubmit && (
             <Button
               onClick={handleSubmit}
-              disabled={(shouldShowSignature && !signature.trim()) || hasMissingTimes || hasInvalidTimeOrder || hasInvalidWorkTimes || submitState !== 'idle'}
+              disabled={(shouldShowSignature && !signature.trim()) || hasMissingTimes || hasInvalidTimeOrder || hasInvalidWorkTimes || hasUnselectedYardWork || submitState !== 'idle'}
               className="bg-blue-600 hover:bg-blue-700"
             >
               Accept & Submit
