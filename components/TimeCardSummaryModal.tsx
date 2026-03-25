@@ -252,15 +252,16 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
 
   const handleSubmit = () => {
     if (signature.trim() && onSubmit) {
-      setSubmitState('submitting');
-      onSubmit(signature);
+      const sig = signature;
       setSignature('');
+      setSubmitState('submitting');
       setTimeout(() => {
         setSubmitState('done');
         setTimeout(() => {
           setSubmitState('idle');
-        }, 1200);
-      }, 900);
+          onSubmit(sig); // call AFTER animation so no re-render interrupts
+        }, 1000);
+      }, 800);
     }
   };
 
