@@ -132,11 +132,14 @@ export function Employees({ initialEmployees, isAdmin = false }: EmployeesProps)
               onClick={() => setSelectedEmployee(employee)}
               className="w-full p-4 text-left hover:bg-gray-50 transition-colors cursor-pointer"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  <h3 className="text-gray-900 mb-1">{employee.name}</h3>
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-gray-900 font-medium">{employee.name}</h3>
+                <div className="text-right shrink-0">
                   <p className="text-sm text-gray-500">{employee.classification}</p>
-                  <p className="text-sm text-gray-400 mt-0.5">{employee.employmentType}</p>
+                  <div className="flex items-center justify-end gap-2 mt-1">
+                    {employee.email && <Mail className="w-3.5 h-3.5 text-gray-400" />}
+                    {employee.phone && <Phone className="w-3.5 h-3.5 text-gray-400" />}
+                  </div>
                 </div>
               </div>
             </button>
