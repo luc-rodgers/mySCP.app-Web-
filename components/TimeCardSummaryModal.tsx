@@ -402,7 +402,7 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                     : [];
 
                   // Get site start (first pouring/non-pouring activity's start time) and site finish (last pouring/non-pouring activity's finish time)
-                  const workActivitiesOnly = sortedSubActivities.filter(sa => sa.type === 'pouring' || sa.type === 'nonpouring');
+                  const workActivitiesOnly = sortedSubActivities.filter(sa => sa.type === 'pouring' || sa.type === 'non-pouring');
                   const siteStart = workActivitiesOnly.length > 0 
                     ? workActivitiesOnly[0].start 
                     : project.siteStart || '--:--';
