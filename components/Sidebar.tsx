@@ -27,13 +27,13 @@ const menuItems = [
 
 function SCPLogo() {
   return (
-    <div className="overflow-hidden h-14">
+    <div className="flex items-center justify-center">
       <Image
-        src="/scplogo.png"
-        alt="Specialised Concrete Pumping"
-        width={160}
-        height={90}
-        className="object-contain object-top w-40 h-auto"
+        src="/myscp.jpeg"
+        alt="MySCP"
+        width={180}
+        height={80}
+        className="object-contain w-44 h-auto"
         priority
       />
     </div>
