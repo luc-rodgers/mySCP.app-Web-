@@ -2,7 +2,6 @@
 import { ArrowLeft, Mail, Phone, Clock, Settings, ChevronDown, ChevronUp, Car, Droplets, Wrench } from 'lucide-react';
 import { TimeEntry } from '@/lib/types';
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { TimeCardSummaryModal } from './TimeCardSummaryModal';
 import { TimeEntryEditorModal } from './TimeEntryEditorModal';
@@ -28,7 +27,7 @@ interface EmployeeProfileProps {
 }
 
 export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }: EmployeeProfileProps) {
-  const router = useRouter();
+
   const [localEmployee, setLocalEmployee] = useState(employee);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [activeProjects, setActiveProjects] = useState<string[]>([]);
@@ -586,7 +585,7 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
             };
             setLocalEmployee(merged);
             onUpdate?.(merged);
-            router.refresh();
+            setShowEdit(false);
           }}
         />
       )}
