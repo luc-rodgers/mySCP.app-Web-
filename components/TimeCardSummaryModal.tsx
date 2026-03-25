@@ -352,7 +352,7 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 pt-0 pb-4 px-6">
+        <div className="space-y-4 pt-4 pb-4 px-6">
           {/* Employee Name */}
           <div className="text-center">
             <div className="text-2xl font-bold">{entry.employeeName || 'Employee Name'}</div>
