@@ -1,5 +1,5 @@
 "use client"
-import { ArrowLeft, Mail, Phone, Clock, Settings, ChevronDown, ChevronUp, Car, Droplets, Wrench, UserPlus, CheckCircle2, CircleDashed } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Clock, Settings, ChevronDown, ChevronUp, Car, Droplets, Wrench, UserPlus, CheckCircle2, CircleDashed, AlertTriangle } from 'lucide-react';
 import { inviteEmployee } from '@/app/actions/inviteEmployee';
 import { TimeEntry } from '@/lib/types';
 import { useState, useRef, useEffect } from 'react';
@@ -543,7 +543,7 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
             </div>
           </div>
 
-          {/* Non-Allocated Hours — compact square, bottom of page */}
+          {/* Non-Allocated Hours */}
           {(() => {
             const subHrs = (s: string, f: string) => {
               if (!s || !f) return 0;
@@ -552,6 +552,7 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
               return Math.max(0, (fh * 60 + fm - sh * 60 - sm) / 60);
             };
             let totalNonAlloc = 0;
+            const weekSet = new Set<string>();
             entries.forEach(entry => {
               const depotHrs = calculateTotalHours(entry);
               if (depotHrs <= 0) return;
@@ -562,16 +563,33 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
                 else { (p.subActivities ?? []).forEach(sa => { allocated += subHrs(sa.start, sa.finish); }); }
               });
               totalNonAlloc += Math.max(0, depotHrs - allocated);
+              const d = new Date(entry.date);
+              d.setHours(0, 0, 0, 0);
+              const dow = d.getDay();
+              const mon = new Date(d);
+              mon.setDate(d.getDate() + (dow === 0 ? -6 : 1 - dow));
+              weekSet.add(mon.toISOString().split('T')[0]);
             });
+            const avgPerWeek = weekSet.size > 0 ? totalNonAlloc / weekSet.size : 0;
             if (totalNonAlloc === 0) return null;
             return (
-              <div className="flex justify-start">
-                <div className="w-28 h-28 bg-white rounded-2xl shadow-sm border border-red-100 flex flex-col items-center justify-center gap-1">
-                  <div className="flex items-center gap-1">
-                    <span className="text-red-500 text-lg font-bold">!</span>
-                    <span className="text-2xl font-bold text-gray-900">{totalNonAlloc.toFixed(1)}</span>
+              <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-5">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Non-Allocated Hours</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center bg-red-50 rounded-xl p-4">
+                    <div className="flex items-center justify-center gap-1.5 mb-1">
+                      <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+                      <p className="text-2xl font-bold text-gray-900">{totalNonAlloc.toFixed(1)}</p>
+                    </div>
+                    <p className="text-xs text-gray-400">Total hrs</p>
                   </div>
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wider">Unallocated</p>
+                  <div className="text-center bg-red-50 rounded-xl p-4">
+                    <div className="flex items-center justify-center gap-1.5 mb-1">
+                      <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+                      <p className="text-2xl font-bold text-gray-900">{avgPerWeek.toFixed(1)}</p>
+                    </div>
+                    <p className="text-xs text-gray-400">Avg hrs / week</p>
+                  </div>
                 </div>
               </div>
             );
