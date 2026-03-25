@@ -286,7 +286,7 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
 
               {/* Logo */}
               <Image
-                src="/scplogo.png"
+                src="/SCP Corporate Logo.jpg"
                 alt="Specialised Concrete Pumping"
                 width={140}
                 height={56}
