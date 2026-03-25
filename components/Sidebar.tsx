@@ -67,7 +67,13 @@ export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
             <Link
               key={id}
               href={href}
-              onClick={() => setIsOpen(false)}
+              onClick={(e) => {
+                setIsOpen(false);
+                if (isActive) {
+                  e.preventDefault();
+                  window.location.href = href;
+                }
+              }}
               className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                 isActive
                   ? "bg-gray-100 text-gray-900"
