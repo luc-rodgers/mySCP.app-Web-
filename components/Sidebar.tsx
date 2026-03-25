@@ -100,7 +100,8 @@ export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
       <Button
         variant="ghost"
         size="icon"
-        className="fixed top-4 left-4 z-50 md:hidden bg-white shadow-md"
+        className="fixed z-50 md:hidden bg-white shadow-md"
+        style={{ top: 'max(1rem, env(safe-area-inset-top, 1rem))', left: 'max(1rem, env(safe-area-inset-left, 1rem))' }}
         onClick={() => setIsOpen(!isOpen)}
       >
         {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
