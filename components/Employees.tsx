@@ -133,8 +133,8 @@ export function Employees({ initialEmployees, isAdmin = false }: EmployeesProps)
               className="w-full p-4 text-left hover:bg-gray-50 transition-colors cursor-pointer"
             >
               <div className="flex items-center justify-between w-full gap-3">
-                <p className="text-sm text-gray-500">{employee.classification}</p>
-                <h3 className="text-gray-900 font-medium text-right">{employee.name}</h3>
+                <h3 className="text-gray-900 font-medium">{employee.name}</h3>
+                <p className="text-sm text-gray-500 text-right shrink-0">{employee.classification}</p>
               </div>
             </button>
           ))}
