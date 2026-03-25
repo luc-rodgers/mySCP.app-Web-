@@ -42,23 +42,23 @@ function LoginForm() {
       style={{ backgroundColor: "#f3f3f5" }}
     >
       <div className="w-full max-w-sm">
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <Image
-            src="/myscp.jpeg"
-            alt="MySCP"
-            width={220}
-            height={90}
-            className="object-contain"
-            priority
-          />
-        </div>
-
         {/* Card */}
         <div
-          className="bg-white rounded-[0.625rem] shadow-sm border p-8"
+          className="bg-white rounded-[0.625rem] shadow-sm border pt-8 pb-8 px-8"
           style={{ borderColor: "var(--border)" }}
         >
+          {/* Logo inside card */}
+          <div className="flex justify-center mb-6">
+            <Image
+              src="/myscp.jpeg"
+              alt="MySCP"
+              width={220}
+              height={90}
+              className="object-contain"
+              priority
+            />
+          </div>
+
           <h2 className="text-lg font-semibold text-[#030213] mb-6 text-center">
             Sign in
           </h2>
