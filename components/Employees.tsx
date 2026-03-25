@@ -132,9 +132,9 @@ export function Employees({ initialEmployees, isAdmin = false }: EmployeesProps)
               onClick={() => setSelectedEmployee(employee)}
               className="w-full p-4 text-left hover:bg-gray-50 transition-colors cursor-pointer"
             >
-              <div className="flex flex-col gap-0.5">
-                <h3 className="text-gray-900 font-medium">{employee.name}</h3>
+              <div className="flex items-center justify-between w-full gap-3">
                 <p className="text-sm text-gray-500">{employee.classification}</p>
+                <h3 className="text-gray-900 font-medium text-right">{employee.name}</h3>
               </div>
             </button>
           ))}
