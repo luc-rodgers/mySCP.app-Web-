@@ -252,14 +252,14 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
   const handleSubmit = () => {
     if (signature.trim() && onSubmit) {
       setSubmitState('submitting');
+      onSubmit(signature);
+      setSignature('');
       setTimeout(() => {
-        onSubmit(signature);
-        setSignature('');
         setSubmitState('done');
         setTimeout(() => {
           setSubmitState('idle');
         }, 1200);
-      }, 800);
+      }, 900);
     }
   };
 
@@ -790,14 +790,17 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
 
         {/* Submit feedback overlay */}
         {submitState !== 'idle' && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center rounded-lg bg-white/90 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-white/80 backdrop-blur-sm">
             {submitState === 'submitting' ? (
-              <div className="w-12 h-12 border-4 border-gray-200 border-t-[#030213] rounded-full animate-spin" />
+              <div className="w-14 h-14 border-4 border-gray-200 border-t-[#030213] rounded-full animate-spin" />
             ) : (
-              <div className="flex items-center justify-center w-14 h-14 rounded-full bg-green-100">
-                <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
+              <div className="flex flex-col items-center gap-3">
+                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-green-100">
+                  <svg className="w-9 h-9 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <p className="text-sm font-medium text-green-600">Submitted!</p>
               </div>
             )}
           </div>
