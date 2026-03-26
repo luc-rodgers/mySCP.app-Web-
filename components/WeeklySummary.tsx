@@ -116,7 +116,10 @@ export function WeeklySummary({ entries, employee, onBack }: WeeklySummaryProps)
 
     const isLeaveOnly = entry.projects.every((p: any) => p.type === 'leave');
 
-    const grossHours = isLeaveOnly ? 0 : calcHrs(entry.depotStart, entry.depotFinish);
+    const leaveTotal = entry.projects
+      .filter((p: any) => p.type === 'leave')
+      .reduce((sum: number, p: any) => sum + parseFloat(p.leaveTotalHours || '0'), 0);
+    const grossHours = isLeaveOnly ? 0 : calcHrs(entry.depotStart, entry.depotFinish) + leaveTotal;
     const hasLunch = !isLeaveOnly && entry.projects.some(p => p.lunch);
     const hasLunchPenalty = !isLeaveOnly && entry.projects.some(p => p.lunchPenalty);
     const lunchPenaltyHours = hasLunchPenalty ? 0.5 : 0;
@@ -129,9 +132,6 @@ export function WeeklySummary({ entries, employee, onBack }: WeeklySummaryProps)
     const mealAllowance = grossHours > 10 ? 'Y' : '';
     const cribBreak = grossHours >= 10 ? 'Y' : '';
 
-    const leaveTotal = isLeaveOnly
-      ? entry.projects.reduce((sum: number, p: any) => sum + parseFloat(p.leaveTotalHours || '0'), 0)
-      : 0;
 
     const slot0 = entry.projects[0] ? getProjectSlot(entry.projects[0]) : emptySlot;
     const slot1 = entry.projects[1] ? getProjectSlot(entry.projects[1]) : emptySlot;
@@ -152,7 +152,7 @@ export function WeeklySummary({ entries, employee, onBack }: WeeklySummaryProps)
       inclementWeather: hasWeather ? weatherTypes || 'Y' : '',
       prodAllowance: '', siteAllowance: '', heightAllowance: '',
       mealAllowance, cribBreak, travel: '', rdo: '',
-      leaveHours: leaveTotal > 0 ? leaveTotal.toString() : '',
+      leaveHours: leaveTotal > 0 ? leaveTotal.toFixed(2) : '',
       comments: '',
       slots: [slot0, slot1],
     };

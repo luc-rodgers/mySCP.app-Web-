@@ -229,7 +229,11 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
     const [depotFinishHour, depotFinishMin] = entry.depotFinish.split(':').map(Number);
     const hours = (depotFinishHour * 60 + depotFinishMin - depotStartHour * 60 - depotStartMin) / 60;
     const hasLunch = entry.projects.some(project => project.lunch);
-    return Math.max(0, hours - (hasLunch ? 0.5 : 0));
+    const depotHours = Math.max(0, hours - (hasLunch ? 0.5 : 0));
+    const leaveHours = entry.projects
+      .filter(p => p.type === 'leave')
+      .reduce((sum, p) => sum + parseFloat((p as any).leaveTotalHours || '0'), 0);
+    return depotHours + leaveHours;
   })();
 
   // Calculate total productive hours (project + yard work)

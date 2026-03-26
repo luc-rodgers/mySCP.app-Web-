@@ -226,10 +226,15 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
     const hasLunch = entry.projects.some(project => project.lunch);
     
     // Subtract 30 minutes (0.5 hours) if lunch is selected
-    const totalHours = Math.max(0, hours - (hasLunch ? 0.5 : 0));
-    
+    const depotHours = Math.max(0, hours - (hasLunch ? 0.5 : 0));
+
+    // Add any leave hours on top of depot hours
+    const leaveHours = entry.projects
+      .filter(p => p.type === 'leave')
+      .reduce((sum, p) => sum + parseFloat((p as any).leaveTotalHours || '0'), 0);
+
     // Round down to nearest 0.25 increment
-    return roundToQuarterHour(totalHours);
+    return roundToQuarterHour(depotHours + leaveHours);
   })();
 
   const calculateWeatherHours = (start?: string, end?: string) => {
