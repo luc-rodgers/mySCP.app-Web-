@@ -221,6 +221,9 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
   };
 
   const totalHours = (() => {
+    if (isLeaveOnly) {
+      return entry.projects.reduce((sum, p) => sum + parseFloat((p as any).leaveTotalHours || '0'), 0);
+    }
     if (!entry.depotStart || !entry.depotFinish) return 0;
     const [depotStartHour, depotStartMin] = entry.depotStart.split(':').map(Number);
     const [depotFinishHour, depotFinishMin] = entry.depotFinish.split(':').map(Number);

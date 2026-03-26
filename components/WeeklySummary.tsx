@@ -114,18 +114,24 @@ export function WeeklySummary({ entries, employee, onBack }: WeeklySummaryProps)
       };
     }
 
-    const grossHours = calcHrs(entry.depotStart, entry.depotFinish);
-    const hasLunch = entry.projects.some(p => p.lunch);
-    const hasLunchPenalty = entry.projects.some(p => p.lunchPenalty);
+    const isLeaveOnly = entry.projects.every((p: any) => p.type === 'leave');
+
+    const grossHours = isLeaveOnly ? 0 : calcHrs(entry.depotStart, entry.depotFinish);
+    const hasLunch = !isLeaveOnly && entry.projects.some(p => p.lunch);
+    const hasLunchPenalty = !isLeaveOnly && entry.projects.some(p => p.lunchPenalty);
     const lunchPenaltyHours = hasLunchPenalty ? 0.5 : 0;
     const lunchDeduct = hasLunch && !hasLunchPenalty ? 0.5 : 0;
     const netHours = roundQ(grossHours - lunchDeduct - lunchPenaltyHours);
     const ordinaryTime = roundQ(Math.min(netHours, 8));
     const overtimeX2 = roundQ(Math.max(0, netHours - 8));
-    const hasWeather = entry.projects.some(p => p.weather);
+    const hasWeather = !isLeaveOnly && entry.projects.some(p => p.weather);
     const weatherTypes = entry.projects.filter(p => p.weather && p.weatherType).map(p => p.weatherType).join(', ');
     const mealAllowance = grossHours > 10 ? 'Y' : '';
     const cribBreak = grossHours >= 10 ? 'Y' : '';
+
+    const leaveTotal = isLeaveOnly
+      ? entry.projects.reduce((sum: number, p: any) => sum + parseFloat(p.leaveTotalHours || '0'), 0)
+      : 0;
 
     const slot0 = entry.projects[0] ? getProjectSlot(entry.projects[0]) : emptySlot;
     const slot1 = entry.projects[1] ? getProjectSlot(entry.projects[1]) : emptySlot;
@@ -133,8 +139,8 @@ export function WeeklySummary({ entries, employee, onBack }: WeeklySummaryProps)
     return {
       weekday: weekdays[index],
       date: formatDate(date),
-      start: entry.depotStart,
-      finish: entry.depotFinish,
+      start: isLeaveOnly ? '' : entry.depotStart,
+      finish: isLeaveOnly ? '' : entry.depotFinish,
       grossHours,
       timeLunchTaken: hasLunch ? '30 min' : '',
       lunchDeduct: hasLunch && !hasLunchPenalty ? 'Y' : '',
@@ -145,7 +151,9 @@ export function WeeklySummary({ entries, employee, onBack }: WeeklySummaryProps)
       lunchPenalty: lunchPenaltyHours,
       inclementWeather: hasWeather ? weatherTypes || 'Y' : '',
       prodAllowance: '', siteAllowance: '', heightAllowance: '',
-      mealAllowance, cribBreak, travel: '', rdo: '', leaveHours: '', comments: '',
+      mealAllowance, cribBreak, travel: '', rdo: '',
+      leaveHours: leaveTotal > 0 ? leaveTotal.toString() : '',
+      comments: '',
       slots: [slot0, slot1],
     };
   });

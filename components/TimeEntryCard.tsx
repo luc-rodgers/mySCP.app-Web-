@@ -180,6 +180,13 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
   };
 
   const totalHours = (() => {
+    // Leave-only entries: sum leave hours directly, ignore depot span
+    if (isLeaveOnly) {
+      return roundToQuarterHour(
+        entry.projects.reduce((sum, p) => sum + parseFloat((p as any).leaveTotalHours || '0'), 0)
+      );
+    }
+
     // Determine effective start time
     let effectiveStart = entry.depotStart;
     if (!effectiveStart) {
