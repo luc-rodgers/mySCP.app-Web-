@@ -162,6 +162,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
   };
 
   const hasDraftData = entry.status === 'draft' && (!!entry.depotStart || entry.projects.length > 0);
+  const isLeaveOnly = entry.projects.length > 0 && entry.projects.every(p => p.type === 'leave');
 
   const getStatusLabel = (status: TimeEntry['status']) => {
     if (status === 'submitted') return 'Pending';
@@ -352,8 +353,8 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
 
           {/* Modal Content */}
           <div className="overflow-y-auto p-4" onClick={markAsEdited}>
-            {/* Depot Section - Always visible by default */}
-            <div className="mb-4">
+            {/* Depot Section - Hidden when all projects are leave */}
+            {!isLeaveOnly && <div className="mb-4">
               <div className="border rounded-lg p-4 bg-gray-50">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -391,7 +392,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                   </div>
                 </div>
               </div>
-            </div>
+            </div>}
 
             {/* Projects List - Compact summary cards */}
             {entry.projects.length > 0 && (
@@ -602,8 +603,8 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                   </button>
                 </div>
 
-                {/* Depot time reference bar */}
-                {(entry.depotStart || entry.depotFinish) && (
+                {/* Depot time reference bar — not shown for leave entries */}
+                {project.type !== 'leave' && (entry.depotStart || entry.depotFinish) && (
                   <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex items-center justify-center gap-3 shrink-0">
                     <Clock className="w-3.5 h-3.5 text-gray-300 shrink-0" />
                     <span className="text-xs text-gray-400">
@@ -636,32 +637,6 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                           <option value="Sick Leave">Sick Leave</option>
                           <option value="RDO">RDO</option>
                         </Select>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs text-gray-500 mb-1 text-center">Start</label>
-                          <TimePicker
-                            value={project.leaveStart || ''}
-                            onChange={(v) => {
-                              const calc = calculateLeaveHours(v, project.leaveFinish);
-                              onUpdateProject(entry.id, project.id, { leaveStart: v, leaveTotalHours: calc > 0 ? calc.toString() : project.leaveTotalHours });
-                            }}
-                            disabled={isLocked}
-                            className="justify-center"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs text-gray-500 mb-1 text-center">Finish</label>
-                          <TimePicker
-                            value={project.leaveFinish || ''}
-                            onChange={(v) => {
-                              const calc = calculateLeaveHours(project.leaveStart, v);
-                              onUpdateProject(entry.id, project.id, { leaveFinish: v, leaveTotalHours: calc > 0 ? calc.toString() : project.leaveTotalHours });
-                            }}
-                            disabled={isLocked}
-                            className="justify-center"
-                          />
-                        </div>
                       </div>
                       <div>
                         <label className="block text-xs text-gray-500 mb-1 text-center">Total Hours</label>
