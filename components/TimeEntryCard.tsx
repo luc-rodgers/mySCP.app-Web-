@@ -518,18 +518,23 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
             )}
 
             {entry.status !== 'submitted' && entry.status !== 'approved' && (
-              <Button
-                variant="outline"
-                className="w-full mt-4 !bg-white hover:!bg-gray-50 !text-gray-900 !border-2 !border-gray-400 cursor-pointer font-semibold"
-                onClick={() => {
-                  handleCloseModal();
-                  setSummaryFromEdit(true);
-                  setShowSummaryModal(true);
-                }}
-              >
-                <FileCheck className="w-4 h-4 mr-2" />
-                Submit
-              </Button>
+              <div className="flex items-center gap-3 mt-4">
+                <div className="text-sm font-semibold text-gray-700 whitespace-nowrap">
+                  {totalHours > 0 ? `${totalHours} hrs` : '—'}
+                </div>
+                <Button
+                  variant="outline"
+                  className="flex-1 !bg-white hover:!bg-gray-50 !text-gray-900 !border-2 !border-gray-400 cursor-pointer font-semibold"
+                  onClick={() => {
+                    handleCloseModal();
+                    setSummaryFromEdit(true);
+                    setShowSummaryModal(true);
+                  }}
+                >
+                  <FileCheck className="w-4 h-4 mr-2" />
+                  Submit
+                </Button>
+              </div>
             )}
 
             {/* Done Editing Button - Visible when in edit mode */}
@@ -682,11 +687,6 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                             <option key={h} value={h.toString()}>{h} {h === 1 ? 'hr' : 'hrs'}</option>
                           ))}
                         </Select>
-                        {totalHours > 0 && (
-                          <div className="mt-3 text-center text-2xl font-bold text-gray-900">
-                            {totalHours} hrs
-                          </div>
-                        )}
                       </div>
                     </>
                   )}
