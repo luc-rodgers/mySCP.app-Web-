@@ -250,6 +250,9 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
       } else if (project.type === 'yardwork') {
         // For yard work, use siteStart and siteFinish
         total += calculateProjectHours(project);
+      } else if (project.type === 'leave') {
+        // Leave hours are fully allocated — don't count as non-allocated
+        total += parseFloat((project as any).leaveTotalHours || '0');
       }
       // RDO type doesn't count toward productive hours
     });
