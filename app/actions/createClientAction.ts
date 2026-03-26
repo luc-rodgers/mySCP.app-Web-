@@ -52,7 +52,7 @@ export async function createClientAction(
     address,
   }).select("id, name").single();
 
-  if (error) return { success: false, error: error.message };
+  if (error || !newClient) return { success: false, error: error?.message ?? "Failed to save client." };
 
   revalidatePath("/clients");
   return { success: true, client: { id: newClient.id, name: newClient.name } };

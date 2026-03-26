@@ -31,6 +31,7 @@ export function AddProjectModal({ clients: initialClients = [], onClose }: Props
   const [error, setError] = useState<string | null>(null);
   const [clients, setClients] = useState<Client[]>(initialClients);
   const [selectedClientId, setSelectedClientId] = useState('');
+  const [projectName, setProjectName] = useState('');
 
   // New client inline form state
   const [showNewClient, setShowNewClient] = useState(false);
@@ -57,9 +58,11 @@ export function AddProjectModal({ clients: initialClients = [], onClose }: Props
     const result = await createClientAction(formData);
     setNewClientLoading(false);
     if (!result.success) { setNewClientError(result.error); return; }
+    if (!result.client) { setNewClientError("Client saved but could not be retrieved."); return; }
     // Add new client to list and auto-select it
-    setClients(prev => [...prev, result.client].sort((a, b) => a.name.localeCompare(b.name)));
-    setSelectedClientId(result.client.id);
+    const created = result.client;
+    setClients(prev => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+    setSelectedClientId(created.id);
     setShowNewClient(false);
   }
 
@@ -169,13 +172,15 @@ export function AddProjectModal({ clients: initialClients = [], onClose }: Props
             </button>
           </div>
 
-          <form key="project-form" onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
             {/* Project Name */}
             <div>
               <label className="block text-xs text-gray-600 mb-1">Project Name *</label>
               <input
                 name="name"
                 required
+                value={projectName}
+                onChange={e => setProjectName(e.target.value)}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
                 placeholder="Project name"
               />
