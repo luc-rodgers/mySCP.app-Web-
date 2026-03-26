@@ -48,6 +48,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [hasBeenEdited, setHasBeenEdited] = useState(false);
   const [wasSubmittedWhenEditStarted, setWasSubmittedWhenEditStarted] = useState(false);
+  const [summaryFromEdit, setSummaryFromEdit] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [stateFilter, setStateFilter] = useState<'QLD' | 'NSW'>('QLD');
   const prevProjectsLengthRef = useRef(entry.projects.length);
@@ -294,10 +295,20 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
       <TimeCardSummaryModal
         entry={entry}
         isOpen={showSummaryModal}
-        onClose={() => { setShowSummaryModal(false); onModalClose?.(); }}
+        onClose={() => {
+          setShowSummaryModal(false);
+          if (summaryFromEdit) {
+            // Cancel pressed before confirming submit — reopen the edit form
+            setSummaryFromEdit(false);
+            setShowModal(true);
+          } else {
+            onModalClose?.();
+          }
+        }}
         onSubmit={(signature) => {
           onStatusChange(entry.id, 'submitted');
           setShowSummaryModal(false);
+          setSummaryFromEdit(false);
           setIsEditMode(false);
           setWasSubmittedWhenEditStarted(false);
           setHasBeenEdited(false);
@@ -499,6 +510,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                 className="w-full mt-4 !bg-white hover:!bg-gray-50 !text-gray-900 !border-2 !border-gray-400 cursor-pointer font-semibold"
                 onClick={() => {
                   handleCloseModal();
+                  setSummaryFromEdit(true);
                   setShowSummaryModal(true);
                 }}
               >
@@ -506,7 +518,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                 Submit
               </Button>
             )}
-            
+
             {/* Done Editing Button - Visible when in edit mode */}
             {isEditMode && (
               <Button
@@ -514,6 +526,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                 onClick={() => {
                   setIsEditMode(false);
                   setShowModal(false);
+                  setSummaryFromEdit(true);
                   setShowSummaryModal(true);
                 }}
               >
