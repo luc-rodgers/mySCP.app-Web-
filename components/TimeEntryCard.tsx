@@ -682,6 +682,11 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                             <option key={h} value={h.toString()}>{h} {h === 1 ? 'hr' : 'hrs'}</option>
                           ))}
                         </Select>
+                        {totalHours > 0 && (
+                          <div className="mt-3 text-center text-2xl font-bold text-gray-900">
+                            {totalHours} hrs
+                          </div>
+                        )}
                       </div>
                     </>
                   )}

@@ -283,6 +283,17 @@ export default function TimesheetClient({ supabaseEmployee, userEmail, activePro
   };
 
   const handleUpdateProject = (entryId: string, projectId: string, updated: Partial<Project>) => {
+    // Handle placeholder IDs — find the real entry by date
+    if (entryId.startsWith("placeholder-")) {
+      const date = entryId.replace("placeholder-", "");
+      const existing = entries.find((e) => e.date === date);
+      if (existing) {
+        const upd = { ...existing, projects: existing.projects.map((p) => p.id === projectId ? { ...p, ...updated } : p) };
+        setEntries((prev) => prev.map((e) => e.id === existing.id ? upd : e));
+        upsertEntry(upd);
+      }
+      return;
+    }
     setEntries((prev) => prev.map((e) => {
       if (e.id !== entryId) return e;
       const upd = { ...e, projects: e.projects.map((p) => p.id === projectId ? { ...p, ...updated } : p) };
