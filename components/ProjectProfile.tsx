@@ -175,7 +175,7 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
           pouringTypes,
           nonPouringTypes,
           entryData: { ...entry, id: row.id, date: row.date, status: row.status,
-            referenceNumber: row.reference_number ?? undefined,
+            timeCardNumber: row.reference_number ?? (entry as any)?.timeCardNumber ?? undefined,
             employeeName: emp ? `${emp.first_name} ${emp.last_name}` : 'Unknown' } as TimeEntry,
         };
       });
