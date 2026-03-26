@@ -41,18 +41,18 @@ export async function inviteEmployee(employeeId: string): Promise<InviteEmployee
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.myscp.app";
 
-  // If the employee already has a linked auth account, send a magic link instead
+  // If the employee already has a linked auth account, send a magic link email via OTP
   if (employee.user_id) {
-    const { error: linkError } = await admin.auth.admin.generateLink({
-      type: 'magiclink',
+    const { error: otpError } = await supabase.auth.signInWithOtp({
       email: employee.email,
-      options: { redirectTo: `${siteUrl}/timesheet` },
+      options: { emailRedirectTo: `${siteUrl}/timesheet`, shouldCreateUser: false },
     });
-    if (linkError) return { success: false, error: linkError.message };
+    if (otpError) return { success: false, error: otpError.message };
     revalidatePath("/employees");
     return { success: true };
   }
 
+  // No account yet — send a fresh invite
   const { data: authData, error: authError } = await admin.auth.admin.inviteUserByEmail(
     employee.email,
     { redirectTo: `${siteUrl}/auth/callback` }
