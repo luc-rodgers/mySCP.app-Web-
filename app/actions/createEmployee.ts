@@ -10,7 +10,8 @@ export type CreateEmployeeResult =
 
 export async function createEmployee(
   formData: FormData,
-  sendInvite: boolean = true
+  sendInvite: boolean = true,
+  setPassword: boolean = false
 ): Promise<CreateEmployeeResult> {
   // Verify caller is an admin
   const supabase = await createClient();
@@ -35,6 +36,7 @@ export async function createEmployee(
   const title = (formData.get("title") as string)?.trim() || null;
   const employmentType = (formData.get("employmentType") as string) || "Casual";
   const phone = (formData.get("phone") as string)?.trim() || null;
+  const password = (formData.get("password") as string)?.trim() || null;
 
   if (!firstName || !lastName) {
     return { success: false, error: "First name and last name are required." };
@@ -44,7 +46,57 @@ export async function createEmployee(
     return { success: false, error: "Email is required to send an invite." };
   }
 
+  if (setPassword && (!email || !password)) {
+    return { success: false, error: "Email and password are required." };
+  }
+
+  if (setPassword && password && password.length < 6) {
+    return { success: false, error: "Password must be at least 6 characters." };
+  }
+
   const admin = createAdminClient();
+
+  // Create account with manual password — no email sent
+  if (setPassword && email && password) {
+    const { data: existing } = await supabase
+      .from("employees")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
+    if (existing) {
+      return { success: false, error: "An employee with this email already exists." };
+    }
+
+    const { data: authData, error: authError } = await admin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true, // mark as confirmed — no email sent
+    });
+
+    if (authError) {
+      return { success: false, error: authError.message };
+    }
+
+    const { error: empError } = await admin.from("employees").insert({
+      user_id: authData.user.id,
+      first_name: firstName,
+      last_name: lastName,
+      email,
+      phone,
+      role,
+      title,
+      employment_type: employmentType,
+      active_status: "active",
+    });
+
+    if (empError) {
+      await admin.auth.admin.deleteUser(authData.user.id);
+      return { success: false, error: empError.message };
+    }
+
+    revalidatePath("/employees");
+    return { success: true };
+  }
 
   if (sendInvite && email) {
     // Check for duplicate email before touching Auth
