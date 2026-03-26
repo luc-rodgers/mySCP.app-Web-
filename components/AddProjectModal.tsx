@@ -87,7 +87,7 @@ export function AddProjectModal({ clients: initialClients = [], onClose }: Props
               </button>
             </div>
 
-            <form onSubmit={handleCreateClient} className="px-6 py-5 space-y-4">
+            <form key="client-form" onSubmit={handleCreateClient} className="px-6 py-5 space-y-4">
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Client Name *</label>
                 <input
@@ -169,7 +169,7 @@ export function AddProjectModal({ clients: initialClients = [], onClose }: Props
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          <form key="project-form" onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
             {/* Project Name */}
             <div>
               <label className="block text-xs text-gray-600 mb-1">Project Name *</label>
