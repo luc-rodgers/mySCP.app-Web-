@@ -613,15 +613,20 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                     <span className="text-sm font-medium text-gray-700">|</span>
                     <span className="text-sm font-medium text-gray-900">{typeTitle}</span>
                   </div>
-                  <button
-                    onClick={() => {
-                      if (!isLocked) onDeleteProject(entry.id, project.id);
-                      setSelectedProjectId(null);
-                    }}
-                    className="text-red-400 hover:text-red-600 text-xs cursor-pointer"
-                  >
-                    Delete
-                  </button>
+                  <div className="flex items-center gap-3">
+                    {project.type === 'leave' && totalHours > 0 && (
+                      <span className="text-sm font-semibold text-gray-900">{totalHours} hrs</span>
+                    )}
+                    <button
+                      onClick={() => {
+                        if (!isLocked) onDeleteProject(entry.id, project.id);
+                        setSelectedProjectId(null);
+                      }}
+                      className="text-red-400 hover:text-red-600 text-xs cursor-pointer"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
 
                 {/* Depot time reference bar — not shown for leave entries */}
