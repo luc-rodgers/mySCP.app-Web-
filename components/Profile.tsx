@@ -1,5 +1,5 @@
 "use client"
-import { Mail, Phone, Clock, Settings, ChevronDown, ChevronUp, Car, Droplets, Wrench } from 'lucide-react';
+import { Mail, Phone, Clock, Settings, ChevronDown, ChevronUp, Car, Droplets, Wrench, AlertTriangle } from 'lucide-react';
 import { Employee, TimeEntry } from '@/lib/types';
 import { useState, useRef, useEffect } from 'react';
 import { TimeCardSummaryModal } from './TimeCardSummaryModal';
@@ -386,25 +386,26 @@ export function Profile({
               weekSet.add(mon.toISOString().split('T')[0]);
             });
             const avgPerWeek = weekSet.size > 0 ? totalNonAlloc / weekSet.size : 0;
+            if (totalNonAlloc === 0) return null;
             return (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+              <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-5">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Non-Allocated Hours</p>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center bg-gray-50 rounded-xl p-4">
-                    <p className="text-2xl font-bold text-gray-900">{totalNonAlloc.toFixed(1)}</p>
-                    <p className="text-xs text-gray-400 mt-1">Total hrs</p>
+                  <div className="text-center bg-red-50 rounded-xl p-4">
+                    <div className="flex items-center justify-center gap-1.5 mb-1">
+                      <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+                      <p className="text-2xl font-bold text-gray-900">{totalNonAlloc.toFixed(1)}</p>
+                    </div>
+                    <p className="text-xs text-gray-400">Total hrs</p>
                   </div>
-                  <div className="text-center bg-gray-50 rounded-xl p-4">
-                    <p className="text-2xl font-bold text-gray-900">{avgPerWeek.toFixed(1)}</p>
-                    <p className="text-xs text-gray-400 mt-1">Avg hrs / week</p>
+                  <div className="text-center bg-red-50 rounded-xl p-4">
+                    <div className="flex items-center justify-center gap-1.5 mb-1">
+                      <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+                      <p className="text-2xl font-bold text-gray-900">{avgPerWeek.toFixed(1)}</p>
+                    </div>
+                    <p className="text-xs text-gray-400">Avg hrs / week</p>
                   </div>
                 </div>
-                {totalNonAlloc > 0 && (
-                  <p className="text-xs text-gray-400 mt-3 text-center">Time between sign on/off not assigned to an activity</p>
-                )}
-                {totalNonAlloc === 0 && (
-                  <p className="text-xs text-green-500 mt-3 text-center font-medium">All hours fully allocated</p>
-                )}
               </div>
             );
           })()}
