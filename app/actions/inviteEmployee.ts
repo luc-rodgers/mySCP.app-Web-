@@ -46,24 +46,13 @@ export async function inviteEmployee(employeeId: string): Promise<InviteEmployee
     const { data: authUser } = await admin.auth.admin.getUserById(employee.user_id);
     const isConfirmed = !!authUser?.user?.email_confirmed_at;
 
-    if (isConfirmed) {
-      // Confirmed user — send a magic link OTP email
-      const { error: otpError } = await admin.auth.admin.generateLink({
-        type: 'magiclink',
-        email: employee.email,
-        options: { redirectTo: `${siteUrl}/timesheet` },
-      });
-      if (otpError) return { success: false, error: otpError.message };
-      revalidatePath("/employees");
-      return { success: true };
-    }
-
-    // Unconfirmed — delete stale auth user and re-invite fresh
+    // Whether confirmed or not — delete the stale auth user and re-invite fresh.
+    // This guarantees a real invite email is sent with the correct redirect URL.
     await admin.auth.admin.deleteUser(employee.user_id);
     await admin.from("employees").update({ user_id: null }).eq("id", employeeId);
   }
 
-  // No confirmed account — send a fresh invite email
+  // Send a fresh invite email
   const { data: authData, error: authError } = await admin.auth.admin.inviteUserByEmail(
     employee.email,
     { redirectTo: `${siteUrl}/auth/callback` }
