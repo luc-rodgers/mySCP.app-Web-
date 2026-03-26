@@ -40,9 +40,12 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  // Leave-only entries don't require sign on/off
+  const isLeaveOnly = entry.projects.length > 0 && entry.projects.every(p => p.type === 'leave');
+
   // Check for missing times
-  const missingSignOn = !entry.depotStart;
-  const missingSignOff = !entry.depotFinish;
+  const missingSignOn = !isLeaveOnly && !entry.depotStart;
+  const missingSignOff = !isLeaveOnly && !entry.depotFinish;
   const hasMissingTimes = missingSignOn || missingSignOff;
 
   // Check yard work entries have an activity type selected
@@ -364,8 +367,8 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
             )}
           </div>
 
-          {/* Sign On / Sign Off / Total Hours - Single Row */}
-          <div className={`bg-gray-50 p-4 rounded-lg border ${hasMissingTimes && !viewOnly ? 'border-red-400' : 'border-gray-200'}`}>
+          {/* Sign On / Sign Off / Total Hours - Hidden for leave-only entries */}
+          {!isLeaveOnly && <div className={`bg-gray-50 p-4 rounded-lg border ${hasMissingTimes && !viewOnly ? 'border-red-400' : 'border-gray-200'}`}>
             <div className="flex items-center justify-between gap-4">
               <div className="text-center flex-1">
                 <div className="text-xs text-gray-500 mb-1">Sign On</div>
@@ -406,12 +409,12 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                 )}
               </div>
             </div>
-          </div>
+          </div>}
 
           {/* Projects Summary */}
           {entry.projects.length > 0 && (
             <div>
-              <h3 className="text-sm text-gray-500 mb-2">Projects & Work</h3>
+              <h3 className="text-sm text-gray-500 mb-2">{isLeaveOnly ? 'Leave' : 'Projects & Work'}</h3>
               <div className="space-y-3">
                 {entry.projects.map((project, index) => {
                   // Sort sub-activities chronologically by start time
@@ -443,6 +446,21 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
 
                   const weatherHours = calculateWeatherHours(project.weatherStart, project.weatherEnd);
                   
+                  // Handle Leave type
+                  if (project.type === 'leave') {
+                    const leaveHours = parseFloat(project.leaveTotalHours || '0');
+                    return (
+                      <div key={project.id} className="border rounded-lg p-4 bg-white">
+                        <div className="flex justify-between items-center">
+                          <div className="text-base font-bold">{project.leaveType || 'Leave'}</div>
+                          {leaveHours > 0 && (
+                            <div className="text-lg font-bold text-blue-600">{leaveHours.toFixed(2)} hrs</div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }
+
                   // Handle RDO type differently
                   if (project.type === 'rdo') {
                     return (
