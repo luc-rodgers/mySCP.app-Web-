@@ -41,18 +41,29 @@ export async function inviteEmployee(employeeId: string): Promise<InviteEmployee
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.myscp.app";
 
-  // If the employee already has a linked auth account, send a magic link email via OTP
+  // If the employee has a linked auth account, check if it's confirmed
   if (employee.user_id) {
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      email: employee.email,
-      options: { emailRedirectTo: `${siteUrl}/timesheet`, shouldCreateUser: false },
-    });
-    if (otpError) return { success: false, error: otpError.message };
-    revalidatePath("/employees");
-    return { success: true };
+    const { data: authUser } = await admin.auth.admin.getUserById(employee.user_id);
+    const isConfirmed = !!authUser?.user?.email_confirmed_at;
+
+    if (isConfirmed) {
+      // Confirmed user — send a magic link OTP email
+      const { error: otpError } = await admin.auth.admin.generateLink({
+        type: 'magiclink',
+        email: employee.email,
+        options: { redirectTo: `${siteUrl}/timesheet` },
+      });
+      if (otpError) return { success: false, error: otpError.message };
+      revalidatePath("/employees");
+      return { success: true };
+    }
+
+    // Unconfirmed — delete stale auth user and re-invite fresh
+    await admin.auth.admin.deleteUser(employee.user_id);
+    await admin.from("employees").update({ user_id: null }).eq("id", employeeId);
   }
 
-  // No account yet — send a fresh invite
+  // No confirmed account — send a fresh invite email
   const { data: authData, error: authError } = await admin.auth.admin.inviteUserByEmail(
     employee.email,
     { redirectTo: `${siteUrl}/auth/callback` }
