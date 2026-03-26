@@ -609,7 +609,7 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
             phone: localEmployee.phone,
             classification: localEmployee.classification,
             employmentType: localEmployee.employmentType,
-            role: 'user',
+            role: localEmployee.role ?? 'user',
             activeStatus: localEmployee.status ?? 'active',
           }}
           isAdmin={isAdmin}
@@ -622,6 +622,7 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
               phone: updated.phone ?? localEmployee.phone,
               classification: updated.classification ?? localEmployee.classification,
               employmentType: updated.employmentType ?? localEmployee.employmentType,
+              role: updated.role ?? localEmployee.role,
               status: updated.activeStatus === 'retired' ? 'retired' : 'active',
             };
             setLocalEmployee(merged);
