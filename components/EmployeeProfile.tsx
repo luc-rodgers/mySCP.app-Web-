@@ -533,16 +533,6 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
             );
           })()}
 
-          <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Activity</p>
-            <div className="md:hidden">
-              <WorkHeatmap entries={entries} calculateHours={calculateTotalHours} weeksCount={13} />
-            </div>
-            <div className="hidden md:block">
-              <WorkHeatmap entries={entries} calculateHours={calculateTotalHours} weeksCount={52} />
-            </div>
-          </div>
-
           {/* Non-Allocated Hours */}
           {(() => {
             const subHrs = (s: string, f: string) => {
@@ -594,6 +584,16 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
               </div>
             );
           })()}
+
+          <div>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Activity</p>
+            <div className="md:hidden">
+              <WorkHeatmap entries={entries} calculateHours={calculateTotalHours} weeksCount={13} />
+            </div>
+            <div className="hidden md:block">
+              <WorkHeatmap entries={entries} calculateHours={calculateTotalHours} weeksCount={52} />
+            </div>
+          </div>
         </div>
       )}
 
