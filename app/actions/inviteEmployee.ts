@@ -46,10 +46,10 @@ export async function inviteEmployee(employeeId: string): Promise<InviteEmployee
     const { data: authUser } = await admin.auth.admin.getUserById(employee.user_id);
     const isConfirmed = !!authUser?.user?.email_confirmed_at;
 
-    // Whether confirmed or not — delete the stale auth user and re-invite fresh.
-    // This guarantees a real invite email is sent with the correct redirect URL.
-    await admin.auth.admin.deleteUser(employee.user_id);
+    // Clear user_id FIRST before deleting auth user, otherwise the ON DELETE CASCADE
+    // on the employees table will wipe the entire employee record.
     await admin.from("employees").update({ user_id: null }).eq("id", employeeId);
+    await admin.auth.admin.deleteUser(employee.user_id);
   }
 
   // Send a fresh invite email
