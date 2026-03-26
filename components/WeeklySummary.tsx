@@ -161,6 +161,72 @@ export function WeeklySummary({ entries, employee, onBack }: WeeklySummaryProps)
   const weekStart = formatDate(weekDates[0]);
   const weekEnd = formatDate(weekDates[6]);
 
+  const exportToCSV = () => {
+    const esc = (v: string | number | undefined | null) => {
+      const s = String(v ?? '');
+      return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+
+    const headers = [
+      'Weekday', 'Date', 'Start', 'On-Site', 'Off-Site', 'Site Name',
+      'Finish', 'Gross Hrs', 'Lunch Taken', 'Lunch Deduct (Y)', 'No Claim (N)',
+      'Net Hrs', 'Ord. Time', 'OT x2', 'Lunch Penalty',
+      'Inclement Wx', 'Prod Allow.', 'Site Allow.', 'Height Allow.',
+      'Meal Allow. ≥10h', 'Crib Break ≥10h', 'Travel', 'RDO (Hrs)', 'Leave (Hrs)', 'Comments',
+    ];
+
+    const rows: string[][] = [
+      [`Weekly Timesheet Summary`],
+      [`Employee`, esc(employee.name), esc(employee.classification)],
+      [`Week`, esc(`${weekStart} – ${weekEnd}`)],
+      [],
+      headers.map(esc),
+    ];
+
+    dayRows.forEach(row => {
+      // First slot row
+      rows.push([
+        esc(row.weekday), esc(row.date), esc(row.start),
+        esc(row.slots[0].onSite), esc(row.slots[0].offSite), esc(row.slots[0].siteName),
+        esc(row.finish), esc(row.grossHours || ''), esc(row.timeLunchTaken),
+        esc(row.lunchDeduct), esc(row.noClaim), esc(row.netHours || ''),
+        esc(row.ordinaryTime || ''), esc(row.overtimeX2 || ''), esc(row.lunchPenalty || ''),
+        esc(row.inclementWeather), esc(row.prodAllowance), esc(row.siteAllowance),
+        esc(row.heightAllowance), esc(row.mealAllowance), esc(row.cribBreak),
+        esc(row.travel), esc(row.rdo), esc(row.leaveHours), esc(row.comments),
+      ]);
+      // Second slot row (if has data)
+      if (row.slots[1].siteName || row.slots[1].onSite) {
+        rows.push([
+          '', '', '',
+          esc(row.slots[1].onSite), esc(row.slots[1].offSite), esc(row.slots[1].siteName),
+          '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+        ]);
+      }
+    });
+
+    // Totals row
+    rows.push([
+      'Total', '', '', '', '', '', '',
+      esc(totals.grossHours.toFixed(2)), '', '', '',
+      esc(totals.netHours.toFixed(2)), esc(totals.ordinaryTime.toFixed(2)),
+      esc(totals.overtimeX2.toFixed(2)), esc(totals.lunchPenalty > 0 ? totals.lunchPenalty.toFixed(2) : ''),
+      '', '', '', '', '', '', '', '', '', '',
+    ]);
+
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const safeName = employee.name.replace(/\s+/g, '_');
+    const filename = `${safeName}_timesheet_${formatDateKey(weekDates[0])}.csv`;
+    const dataUri = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+    const a = document.createElement('a');
+    a.setAttribute('href', dataUri);
+    a.setAttribute('download', filename);
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   // shared td class
   const td = "px-2 py-1.5 text-center border-r border-gray-200";
   const tdL = "px-2 py-1.5 text-left border-r border-gray-200";
@@ -174,7 +240,7 @@ export function WeeklySummary({ entries, employee, onBack }: WeeklySummaryProps)
             <Button onClick={onBack} variant="ghost" size="sm" className="gap-2">
               <ArrowLeft className="w-4 h-4" />Back
             </Button>
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button variant="outline" size="sm" className="gap-2" onClick={exportToCSV}>
               <Download className="w-4 h-4" />Export
             </Button>
           </div>
