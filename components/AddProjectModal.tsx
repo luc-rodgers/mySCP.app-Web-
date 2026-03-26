@@ -42,12 +42,17 @@ export function AddProjectModal({ clients: initialClients = [], onClose }: Props
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const formData = new FormData(e.currentTarget);
-    const result = await createProject(formData);
-    setLoading(false);
-    if (!result.success) { setError(result.error); return; }
-    router.refresh();
-    onClose();
+    try {
+      const formData = new FormData(e.currentTarget);
+      const result = await createProject(formData);
+      if (!result.success) { setError(result.error); return; }
+      router.refresh();
+      onClose();
+    } catch (err: any) {
+      setError(err?.message ?? "An unexpected error occurred.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleCreateClient(e: React.FormEvent<HTMLFormElement>) {
