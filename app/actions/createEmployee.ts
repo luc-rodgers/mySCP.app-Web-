@@ -85,9 +85,16 @@ export async function createEmployee(
       return { success: false, error: empError.message };
     }
   } else {
-    // Profile only — no auth user yet
+    // Profile only — check if an auth user already exists for this email (e.g. pending invite)
+    let existingUserId: string | null = null;
+    if (email) {
+      const { data: { users } } = await admin.auth.admin.listUsers({ perPage: 1000 });
+      const match = users.find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
+      if (match) existingUserId = match.id;
+    }
+
     const { error: empError } = await admin.from("employees").insert({
-      user_id: null,
+      user_id: existingUserId,
       first_name: firstName,
       last_name: lastName,
       email: email || null,
