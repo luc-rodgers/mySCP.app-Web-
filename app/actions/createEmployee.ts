@@ -85,7 +85,19 @@ export async function createEmployee(
       return { success: false, error: empError.message };
     }
   } else {
-    // Profile only — check if an auth user already exists for this email (e.g. pending invite)
+    // Profile only — check for duplicate email first
+    if (email) {
+      const { data: existing } = await supabase
+        .from("employees")
+        .select("id")
+        .eq("email", email)
+        .maybeSingle();
+      if (existing) {
+        return { success: false, error: "An employee with this email already exists." };
+      }
+    }
+
+    // Check if an auth user already exists for this email (e.g. pending invite)
     let existingUserId: string | null = null;
     if (email) {
       const { data: { users } } = await admin.auth.admin.listUsers({ perPage: 1000 });
