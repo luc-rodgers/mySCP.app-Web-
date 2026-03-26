@@ -32,6 +32,8 @@ interface ProjectsProps {
 
 export function Projects({ initialProjects = [], isAdmin = false, clients = [] }: ProjectsProps) {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
+
+  useEffect(() => { setProjects(initialProjects); }, [initialProjects]);
   const [showCompleted, setShowCompleted] = useState(false);
   const [stateFilter, setStateFilter] = useState<'QLD' | 'NSW'>('QLD');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);

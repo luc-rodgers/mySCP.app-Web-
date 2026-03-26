@@ -23,6 +23,8 @@ interface EmployeesProps {
 
 export function Employees({ initialEmployees, isAdmin = false }: EmployeesProps) {
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees ?? []);
+
+  useEffect(() => { setEmployees(initialEmployees ?? []); }, [initialEmployees]);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [showRetired, setShowRetired] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);

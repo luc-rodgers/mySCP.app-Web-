@@ -38,6 +38,8 @@ interface ClientsProps {
 
 export function Clients({ initialClients = [], allProjects = [], isAdmin = false }: ClientsProps) {
   const [clients, setClients] = useState<Client[]>(initialClients);
+
+  useEffect(() => { setClients(initialClients); }, [initialClients]);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
