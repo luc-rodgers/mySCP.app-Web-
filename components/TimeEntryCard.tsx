@@ -505,6 +505,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                   placeholder="Any extra info about today's work..."
                   value={entry.remarks ?? ''}
                   disabled={isLocked}
+                  autoComplete="off"
                   onChange={(e) => onUpdateEntry(entry.id, { remarks: e.target.value })}
                   className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-gray-200 bg-white text-gray-800 placeholder-gray-400"
                 />
