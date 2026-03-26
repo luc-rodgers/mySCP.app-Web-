@@ -24,7 +24,7 @@ export async function createProject(
   }
 
   const name = (formData.get("name") as string)?.trim();
-  const clientName = (formData.get("clientName") as string)?.trim() || null;
+  const clientId = (formData.get("clientId") as string)?.trim() || null;
   const streetAddress = (formData.get("streetAddress") as string)?.trim() || null;
   const address = (formData.get("address") as string)?.trim() || null;
   const state = (formData.get("state") as string) || null;
@@ -33,31 +33,6 @@ export async function createProject(
 
   if (!name) {
     return { success: false, error: "Project name is required." };
-  }
-
-  // Resolve client: find existing or create new
-  let clientId: string | null = null;
-  if (clientName) {
-    const { data: existing } = await supabase
-      .from("clients")
-      .select("id")
-      .ilike("name", clientName)
-      .maybeSingle();
-
-    if (existing) {
-      clientId = existing.id;
-    } else {
-      const { data: newClient, error: clientError } = await supabase
-        .from("clients")
-        .insert({ name: clientName })
-        .select("id")
-        .single();
-
-      if (clientError) {
-        return { success: false, error: `Could not create client: ${clientError.message}` };
-      }
-      clientId = newClient.id;
-    }
   }
 
   const { error } = await supabase.from("projects").insert({

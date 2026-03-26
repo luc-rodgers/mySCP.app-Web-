@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export type CreateClientResult =
-  | { success: true }
+  | { success: true; client: { id: string; name: string } }
   | { success: false; error: string };
 
 export async function createClientAction(
@@ -44,16 +44,16 @@ export async function createClientAction(
     return { success: false, error: "A client with this name already exists." };
   }
 
-  const { error } = await supabase.from("clients").insert({
+  const { data: newClient, error } = await supabase.from("clients").insert({
     name,
     contact_name: contactName,
     email,
     phone,
     address,
-  });
+  }).select("id, name").single();
 
   if (error) return { success: false, error: error.message };
 
   revalidatePath("/clients");
-  return { success: true };
+  return { success: true, client: { id: newClient.id, name: newClient.name } };
 }
