@@ -547,7 +547,7 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                                       {/* Activity details */}
                                       <div className="p-2 rounded bg-yellow-50 border border-yellow-200">
                                         <div className="text-xs font-semibold mb-1">
-                                          🏗️ Yard Work Activity
+                                          Yard Work Activity
                                         </div>
                                         <div className="text-xs text-gray-700">
                                           {project.project}
@@ -675,10 +675,10 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                                           }`}>
                                             <div className="text-xs font-semibold mb-1">
                                               {subActivity.type === 'pouring' 
-                                                ? '⚙️ Pouring Work' 
+                                                ? 'Pouring Work'
                                                 : subActivity.type === 'travel'
-                                                ? '🚗 Travel To/From'
-                                                : '🔧 Non-Pouring Work'}
+                                                ? 'Travel To/From'
+                                                : 'Non-Pouring Work'}
                                             </div>
                                             {subActivity.type !== 'travel' && (
                                               <div className="text-xs text-gray-700 mb-1">
