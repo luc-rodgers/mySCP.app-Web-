@@ -19,6 +19,7 @@ export default async function EmployeesPage() {
     id: r.id,
     name: `${r.first_name} ${r.last_name}`,
     classification: r.title ?? r.role ?? "Employee",
+    role: r.role ?? "user",
     employmentType: r.employment_type ?? "Casual",
     email: r.email ?? "",
     phone: r.phone ?? "",

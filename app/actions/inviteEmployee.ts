@@ -35,15 +35,23 @@ export async function inviteEmployee(employeeId: string): Promise<InviteEmployee
     return { success: false, error: "Employee not found." };
   }
 
-  if (employee.user_id) {
-    return { success: false, error: "Employee already has an account." };
-  }
-
   if (!employee.email) {
     return { success: false, error: "Employee has no email address." };
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.myscp.app";
+
+  // If the employee already has a linked auth account, send a magic link instead
+  if (employee.user_id) {
+    const { error: linkError } = await admin.auth.admin.generateLink({
+      type: 'magiclink',
+      email: employee.email,
+      options: { redirectTo: `${siteUrl}/timesheet` },
+    });
+    if (linkError) return { success: false, error: linkError.message };
+    revalidatePath("/employees");
+    return { success: true };
+  }
 
   const { data: authData, error: authError } = await admin.auth.admin.inviteUserByEmail(
     employee.email,

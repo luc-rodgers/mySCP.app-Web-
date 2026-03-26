@@ -200,7 +200,7 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
                     >
                       Edit Employee
                     </button>
-                    {!localEmployee.hasAccount && localEmployee.email && (
+                    {localEmployee.email && (
                       <button
                         onClick={async () => {
                           setShowMenu(false);
@@ -219,7 +219,8 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
                         }}
                         className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-2"
                       >
-                        <UserPlus className="w-4 h-4" /> Send Invite
+                        <UserPlus className="w-4 h-4" />
+                        {localEmployee.hasAccount ? 'Resend Invite' : 'Send Invite'}
                       </button>
                     )}
                   </div>
