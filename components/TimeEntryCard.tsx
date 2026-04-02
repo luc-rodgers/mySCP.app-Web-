@@ -1,5 +1,5 @@
 "use client"
-import { Clock, MoreVertical, Plus, Trash2, X, Utensils, CloudRain, Check, Briefcase, Truck, Plane, Car, Droplet, Hammer, AlertTriangle, ChevronRight } from 'lucide-react';
+import { Clock, MoreVertical, Plus, Trash2, X, Utensils, CloudRain, Check, Briefcase, Truck, Plane, Car, Droplet, Hammer, AlertTriangle, ChevronRight, ChevronDown } from 'lucide-react';
 import { TimeEntry, Project, SubActivity } from '@/lib/types';
 import { useState, useRef, useEffect } from 'react';
 import { Card } from './ui/card';
@@ -53,6 +53,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
   const [summaryFromEdit, setSummaryFromEdit] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [stateFilter, setStateFilter] = useState<'QLD' | 'NSW'>('QLD');
+  const [collapsedActivities, setCollapsedActivities] = useState<Set<string>>(new Set());
   const prevProjectsLengthRef = useRef(entry.projects.length);
 
   // Auto-open detail modal when a new project is added
@@ -745,72 +746,110 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                                 const nonPouringOptions = ['Clean Pump', 'Installation Boom', 'Installation Pump', 'Installation Other', 'Dismantle Boom', 'Dismantle Pump', 'Dismantle Other', 'Climb Boom', 'Preparation to Climb Boom', 'Pipeline Installation', 'Pipeline Relocation', 'Transfer Line Relocation', 'Install HD Bolts', 'Install Crucifix/Base', 'Maintenance', 'Inspections'];
                                 const ActivityIcon = isTravel ? Car : isPouring ? Droplet : Hammer;
                                 const activityLabel = isTravel ? 'Travel' : isPouring ? 'Pouring' : 'Non-Pouring';
-                                return (
-                                  <div key={sa.id} className="border border-gray-200 rounded-xl bg-gray-50 p-3 space-y-2 md:rounded-lg md:p-2 md:space-y-0 md:flex md:items-center md:gap-4">
+                                const isCollapsed = collapsedActivities.has(sa.id);
+                                const collapseActivity = () => setCollapsedActivities(prev => new Set([...prev, sa.id]));
+                                const expandActivity = () => setCollapsedActivities(prev => { const n = new Set(prev); n.delete(sa.id); return n; });
 
-                                    {/* ── Mobile header: centered label + absolute delete ── */}
-                                    <div className="relative flex items-center justify-center md:hidden">
-                                      <div className="flex items-center gap-1.5 text-gray-700">
-                                        <ActivityIcon className="w-4 h-4" />
-                                        <span className="text-sm font-medium">{activityLabel}</span>
+                                return (
+                                  <div key={sa.id} className="border border-gray-200 rounded-xl bg-gray-50 overflow-hidden md:rounded-lg">
+
+                                    {/* ── Mobile: collapsed summary row ── */}
+                                    {isCollapsed && (
+                                      <button
+                                        onClick={expandActivity}
+                                        className="md:hidden w-full flex items-center gap-2 px-3 py-3 text-left active:bg-gray-100"
+                                      >
+                                        <ActivityIcon className="w-4 h-4 text-gray-500 shrink-0" />
+                                        <span className="text-sm font-medium text-gray-700">{activityLabel}</span>
+                                        {sa.activityType && (
+                                          <span className="text-sm text-gray-400 truncate">· {sa.activityType}</span>
+                                        )}
+                                        <div className="ml-auto flex items-center gap-1 text-xs text-gray-500 shrink-0">
+                                          <span>{sa.start || '--'}</span>
+                                          <span className="text-gray-300">→</span>
+                                          <span>{sa.finish || '--'}</span>
+                                        </div>
+                                        <ChevronDown className="w-4 h-4 text-gray-300 shrink-0 ml-1" />
+                                      </button>
+                                    )}
+
+                                    {/* ── Full expanded content: always on desktop, conditionally on mobile ── */}
+                                    <div className={`p-3 space-y-2 md:p-2 md:space-y-0 md:flex md:items-center md:gap-4 ${isCollapsed ? 'hidden md:flex' : ''}`}>
+
+                                      {/* ── Mobile header: centered label + absolute delete ── */}
+                                      <div className="relative flex items-center justify-center md:hidden">
+                                        <div className="flex items-center gap-1.5 text-gray-700">
+                                          <ActivityIcon className="w-4 h-4" />
+                                          <span className="text-sm font-medium">{activityLabel}</span>
+                                        </div>
+                                        {!isLocked && (
+                                          <button onClick={() => handleDeleteSubActivity(entry.id, project.id, sa.id)} className="absolute right-0 text-red-400 hover:text-red-600 cursor-pointer">
+                                            <Trash2 className="w-4 h-4" />
+                                          </button>
+                                        )}
                                       </div>
+
+                                      {/* ── Desktop label (fixed width) ── */}
+                                      <div className="hidden md:flex items-center gap-1 text-gray-600 w-28 shrink-0">
+                                        <ActivityIcon className="w-3 h-3 shrink-0" />
+                                        <span className="text-xs font-medium">{activityLabel}</span>
+                                      </div>
+
+                                      {/* ── Type dropdown ── */}
+                                      {!isTravel ? (
+                                        <Select
+                                          value={sa.activityType || ''}
+                                          className="h-10 text-sm w-full md:h-8 md:text-xs md:flex-1 md:min-w-0"
+                                          onChange={(e) => handleUpdateSubActivity(entry.id, project.id, sa.id, { activityType: e.target.value })}
+                                          disabled={isLocked}
+                                        >
+                                          <option value="">Select type...</option>
+                                          {(isPouring ? pouringOptions : nonPouringOptions).map(o => <option key={o} value={o}>{o}</option>)}
+                                        </Select>
+                                      ) : (
+                                        <div className="hidden md:block md:flex-1" />
+                                      )}
+
+                                      {/* ── Start / Finish — mobile: 2-col grid with labels; desktop: compact inline ── */}
+                                      <div className="grid grid-cols-2 gap-2 md:hidden">
+                                        <div>
+                                          <label className="block text-[10px] text-gray-400 mb-1 text-center">Start</label>
+                                          <TimePicker value={sa.start || ''} onChange={(v) => handleUpdateSubActivity(entry.id, project.id, sa.id, { start: v })} disabled={isLocked} className="justify-center" />
+                                        </div>
+                                        <div>
+                                          <label className="block text-[10px] text-gray-400 mb-1 text-center">Finish</label>
+                                          <TimePicker value={sa.finish || ''} onChange={(v) => handleUpdateSubActivity(entry.id, project.id, sa.id, { finish: v })} disabled={isLocked} className="justify-center" />
+                                        </div>
+                                      </div>
+                                      <div className="hidden md:flex md:items-center md:gap-4 md:shrink-0">
+                                        <div className="flex flex-col items-center gap-0.5">
+                                          <span className="text-[10px] text-gray-400">Start</span>
+                                          <TimePicker value={sa.start || ''} onChange={(v) => handleUpdateSubActivity(entry.id, project.id, sa.id, { start: v })} disabled={isLocked} compact />
+                                        </div>
+                                        <span className="text-gray-300 text-sm mt-3">→</span>
+                                        <div className="flex flex-col items-center gap-0.5">
+                                          <span className="text-[10px] text-gray-400">Finish</span>
+                                          <TimePicker value={sa.finish || ''} onChange={(v) => handleUpdateSubActivity(entry.id, project.id, sa.id, { finish: v })} disabled={isLocked} compact />
+                                        </div>
+                                      </div>
+
+                                      {/* ── Desktop delete ── */}
                                       {!isLocked && (
-                                        <button onClick={() => handleDeleteSubActivity(entry.id, project.id, sa.id)} className="absolute right-0 text-red-400 hover:text-red-600 cursor-pointer">
-                                          <Trash2 className="w-4 h-4" />
+                                        <button onClick={() => handleDeleteSubActivity(entry.id, project.id, sa.id)} className="hidden md:block text-red-400 hover:text-red-600 cursor-pointer shrink-0">
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                      )}
+
+                                      {/* ── Mobile: collapse / done button ── */}
+                                      {!isLocked && (
+                                        <button
+                                          onClick={collapseActivity}
+                                          className="md:hidden w-full flex items-center justify-center py-3 mt-1 rounded-xl bg-gray-900 text-white active:bg-gray-700 cursor-pointer"
+                                        >
+                                          <Check className="w-6 h-6" />
                                         </button>
                                       )}
                                     </div>
-
-                                    {/* ── Desktop label (fixed width) ── */}
-                                    <div className="hidden md:flex items-center gap-1 text-gray-600 w-28 shrink-0">
-                                      <ActivityIcon className="w-3 h-3 shrink-0" />
-                                      <span className="text-xs font-medium">{activityLabel}</span>
-                                    </div>
-
-                                    {/* ── Type dropdown ── */}
-                                    {!isTravel ? (
-                                      <Select
-                                        value={sa.activityType || ''}
-                                        className="h-10 text-sm w-full md:h-8 md:text-xs md:flex-1 md:min-w-0"
-                                        onChange={(e) => handleUpdateSubActivity(entry.id, project.id, sa.id, { activityType: e.target.value })}
-                                        disabled={isLocked}
-                                      >
-                                        <option value="">Select type...</option>
-                                        {(isPouring ? pouringOptions : nonPouringOptions).map(o => <option key={o} value={o}>{o}</option>)}
-                                      </Select>
-                                    ) : (
-                                      <div className="hidden md:block md:flex-1" />
-                                    )}
-
-                                    {/* ── Start / Finish — mobile: 2-col grid with labels; desktop: compact inline ── */}
-                                    <div className="grid grid-cols-2 gap-2 md:hidden">
-                                      <div>
-                                        <label className="block text-[10px] text-gray-400 mb-1 text-center">Start</label>
-                                        <TimePicker value={sa.start || ''} onChange={(v) => handleUpdateSubActivity(entry.id, project.id, sa.id, { start: v })} disabled={isLocked} className="justify-center" />
-                                      </div>
-                                      <div>
-                                        <label className="block text-[10px] text-gray-400 mb-1 text-center">Finish</label>
-                                        <TimePicker value={sa.finish || ''} onChange={(v) => handleUpdateSubActivity(entry.id, project.id, sa.id, { finish: v })} disabled={isLocked} className="justify-center" />
-                                      </div>
-                                    </div>
-                                    <div className="hidden md:flex md:items-center md:gap-4 md:shrink-0">
-                                      <div className="flex flex-col items-center gap-0.5">
-                                        <span className="text-[10px] text-gray-400">Start</span>
-                                        <TimePicker value={sa.start || ''} onChange={(v) => handleUpdateSubActivity(entry.id, project.id, sa.id, { start: v })} disabled={isLocked} compact />
-                                      </div>
-                                      <span className="text-gray-300 text-sm mt-3">→</span>
-                                      <div className="flex flex-col items-center gap-0.5">
-                                        <span className="text-[10px] text-gray-400">Finish</span>
-                                        <TimePicker value={sa.finish || ''} onChange={(v) => handleUpdateSubActivity(entry.id, project.id, sa.id, { finish: v })} disabled={isLocked} compact />
-                                      </div>
-                                    </div>
-
-                                    {/* ── Desktop delete ── */}
-                                    {!isLocked && (
-                                      <button onClick={() => handleDeleteSubActivity(entry.id, project.id, sa.id)} className="hidden md:block text-red-400 hover:text-red-600 cursor-pointer shrink-0">
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </button>
-                                    )}
                                   </div>
                                 );
                               })}
