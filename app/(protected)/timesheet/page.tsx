@@ -8,13 +8,13 @@ export default async function TimesheetPage() {
 
   const [{ data: employee }, { data: projects }] = await Promise.all([
     supabase.from("employees").select("*").eq("user_id", user?.id).single(),
-    supabase.from("projects").select("name, state").eq("status", "active").order("name"),
+    supabase.from("projects").select("id, name, state").eq("status", "active").order("name"),
   ]);
 
-  const activeProjectNames = (projects ?? []).map((p: { name: string }) => p.name);
+  const activeProjectNames = (projects ?? []).map((p: { id: string; name: string }) => ({ id: p.id, name: p.name }));
   const projectsByState = {
-    QLD: (projects ?? []).filter((p: { name: string; state: string | null }) => !p.state || p.state === 'QLD').map((p: { name: string }) => p.name),
-    NSW: (projects ?? []).filter((p: { name: string; state: string | null }) => !p.state || p.state === 'NSW').map((p: { name: string }) => p.name),
+    QLD: (projects ?? []).filter((p: { id: string; name: string; state: string | null }) => !p.state || p.state === 'QLD').map((p: { id: string; name: string }) => ({ id: p.id, name: p.name })),
+    NSW: (projects ?? []).filter((p: { id: string; name: string; state: string | null }) => !p.state || p.state === 'NSW').map((p: { id: string; name: string }) => ({ id: p.id, name: p.name })),
   };
 
   return (

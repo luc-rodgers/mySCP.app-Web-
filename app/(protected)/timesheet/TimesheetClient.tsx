@@ -18,11 +18,13 @@ type SupabaseEmployee = {
   phone?: string;
 } | null;
 
+type ProjectOption = { id: string; name: string };
+
 type Props = {
   supabaseEmployee: SupabaseEmployee;
   userEmail: string;
-  activeProjects: string[];
-  projectsByState?: { QLD: string[]; NSW: string[] };
+  activeProjects: ProjectOption[];
+  projectsByState?: { QLD: ProjectOption[]; NSW: ProjectOption[] };
 };
 
 export default function TimesheetClient({ supabaseEmployee, userEmail, activeProjects, projectsByState }: Props) {
