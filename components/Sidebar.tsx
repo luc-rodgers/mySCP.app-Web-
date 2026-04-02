@@ -13,7 +13,7 @@ import {
   X,
   Menu,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 
@@ -44,6 +44,7 @@ export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const touchStartX = useRef<number | null>(null);
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -126,6 +127,13 @@ export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
         className={`fixed top-0 left-0 h-full bg-white border-r border-gray-200 w-64 transform transition-transform duration-300 ease-in-out z-40 shadow-sm ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0 md:static md:w-[280px]`}
+        onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+        onTouchEnd={(e) => {
+          if (touchStartX.current === null) return;
+          const delta = touchStartX.current - e.changedTouches[0].clientX;
+          if (delta > 50) setIsOpen(false);
+          touchStartX.current = null;
+        }}
       >
         {sidebarContent}
       </aside>
