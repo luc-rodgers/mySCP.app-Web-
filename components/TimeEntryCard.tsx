@@ -15,9 +15,11 @@ import { TimeCardSummaryModal } from './TimeCardSummaryModal';
 import { SubActivitySection } from './SubActivitySection';
 import { TimePicker } from './ui/TimePicker';
 
+type ProjectOption = { id: string; name: string };
+
 interface TimeEntryCardProps {
   entry: TimeEntry;
-  activeProjects: string[];
+  activeProjects: ProjectOption[];
   onDelete: (id: string) => void;
   onStatusChange: (id: string, status: TimeEntry['status']) => void;
   onAddProject: (entryId: string, type?: 'project' | 'yardwork' | 'leave') => void;
@@ -38,7 +40,7 @@ interface TimeEntryCardProps {
   /** Called when the modal is closed — lets parent wrappers know to unmount */
   onModalClose?: () => void;
   /** Projects grouped by state for the QLD/NSW toggle filter */
-  projectsByState?: { QLD: string[]; NSW: string[] };
+  projectsByState?: { QLD: ProjectOption[]; NSW: ProjectOption[] };
 }
 
 export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete, onStatusChange, onAddProject, onDeleteProject, onUpdateProject, onUpdateEntry, onAddSubActivity, onUpdateSubActivity, onDeleteSubActivity, defaultOpen = false, defaultEditMode, defaultSummaryOpen = false, hideHeader = false, onModalClose }: TimeEntryCardProps) {
@@ -511,6 +513,10 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                   value={entry.remarks ?? ''}
                   disabled={isLocked}
                   autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  data-form-type="other"
                   onChange={(e) => onUpdateEntry(entry.id, { remarks: e.target.value })}
                   className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-gray-200 bg-white text-gray-800 placeholder-gray-400"
                 />
@@ -518,23 +524,18 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
             )}
 
             {entry.status !== 'submitted' && entry.status !== 'approved' && (
-              <div className="flex items-center gap-3 mt-4">
-                <div className="text-sm font-semibold text-gray-700 whitespace-nowrap">
-                  {totalHours > 0 ? `${totalHours} hrs` : '—'}
-                </div>
-                <Button
-                  variant="outline"
-                  className="flex-1 !bg-white hover:!bg-gray-50 !text-gray-900 !border-2 !border-gray-400 cursor-pointer font-semibold"
-                  onClick={() => {
-                    handleCloseModal();
-                    setSummaryFromEdit(true);
-                    setShowSummaryModal(true);
-                  }}
-                >
-                  <FileCheck className="w-4 h-4 mr-2" />
-                  Submit
-                </Button>
-              </div>
+              <Button
+                variant="outline"
+                className="w-full mt-4 !bg-white hover:!bg-gray-50 !text-gray-900 !border-2 !border-gray-400 cursor-pointer font-semibold"
+                onClick={() => {
+                  handleCloseModal();
+                  setSummaryFromEdit(true);
+                  setShowSummaryModal(true);
+                }}
+              >
+                <FileCheck className="w-4 h-4 mr-2" />
+                Submit
+              </Button>
             )}
 
             {/* Done Editing Button - Visible when in edit mode */}
@@ -599,10 +600,8 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
             const project = entry.projects.find(p => p.id === selectedProjectId);
             if (!project) return null;
 
-            const projectOptions = ['***Unknown Project***', ...activeProjects];
-            const getProjectOptions = () => project.type === 'yardwork'
-              ? ['Clean Pump', 'Inspections', 'Maintenance', 'Organize Yard', 'Equipment Prep for Site', 'Deliveries', 'Other']
-              : projectOptions;
+            const projectOptions: ProjectOption[] = [{ id: 'unknown', name: '***Unknown Project***' }, ...activeProjects];
+            const yardWorkOptions = ['Clean Pump', 'Inspections', 'Maintenance', 'Organize Yard', 'Equipment Prep for Site', 'Deliveries', 'Other'];
 
 
             const typeTitle = project.type === 'leave' ? 'Leave'
@@ -701,16 +700,24 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                             <label className="block text-xs text-gray-500 mb-1.5">Project Name</label>
                             <div className="flex gap-2 items-center">
                               <Select
-                                value={project.project || ''}
+                                value={project.projectId || ''}
                                 className="flex-1 h-11 text-sm font-semibold cursor-pointer !border !border-gray-300 !bg-white"
-                                onChange={(e) => onUpdateProject(entry.id, project.id, { project: e.target.value })}
+                                onChange={(e) => {
+                                  const opts = projectsByState
+                                    ? (stateFilter === 'QLD' ? projectsByState.QLD : projectsByState.NSW)
+                                    : activeProjects;
+                                  const all = [{ id: 'unknown', name: '***Unknown Project***' }, ...opts];
+                                  const found = all.find(p => p.id === e.target.value);
+                                  if (found) onUpdateProject(entry.id, project.id, { project: found.name, projectId: found.id });
+                                }}
                                 disabled={isLocked}
                               >
                                 <option value="">Select Project</option>
                                 {(projectsByState
                                   ? (stateFilter === 'QLD' ? projectsByState.QLD : projectsByState.NSW)
                                   : activeProjects
-                                ).map(p => <option key={p} value={p}>{p}</option>)}
+                                ).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                <option value="unknown">***Unknown Project***</option>
                               </Select>
                               {projectsByState && (
                                 <div className="flex bg-gray-100 rounded-lg p-0.5 shrink-0">
@@ -852,7 +859,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                               disabled={isLocked}
                             >
                               <option value="">Select Yard Work Type</option>
-                              {getProjectOptions().map(p => <option key={p} value={p}>{p}</option>)}
+                              {yardWorkOptions.map(p => <option key={p} value={p}>{p}</option>)}
                             </Select>
                           </div>
 
@@ -934,7 +941,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                                 <span className="text-sm font-medium">Lunch Penalty</span>
                               </div>
                               <div>
-                                <label className="block text-[10px] text-gray-400 mb-1 text-center">Time</label>
+                                <label className="block text-[10px] text-gray-400 mb-1 text-center">What time did you have lunch?</label>
                                 <TimePicker
                                   value={project.lunchPenaltyTime || ''}
                                   onChange={(v) => onUpdateProject(entry.id, project.id, { lunchPenaltyTime: v })}
@@ -1007,7 +1014,9 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                     <div className="text-lg font-bold text-gray-900">
                       {(() => {
                         let total = 0;
-                        if (project.type === 'yardwork') {
+                        if (project.type === 'leave') {
+                          total = parseFloat((project as any).leaveTotalHours || '0');
+                        } else if (project.type === 'yardwork') {
                           if (project.siteStart && project.siteFinish) {
                             const [sh, sm] = project.siteStart.split(':').map(Number);
                             const [fh, fm] = project.siteFinish.split(':').map(Number);
