@@ -32,7 +32,7 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
 
   const [localEmployee, setLocalEmployee] = useState(employee);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
-  const [activeProjects, setActiveProjects] = useState<string[]>([]);
+  const [activeProjects, setActiveProjects] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [showEdit, setShowEdit] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -66,7 +66,7 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
           .order('date', { ascending: false }),
         supabase
           .from('projects')
-          .select('name')
+          .select('id, name')
           .eq('status', 'active')
           .order('name'),
       ]);
@@ -90,7 +90,7 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
       }
 
       if (projectRows) {
-        setActiveProjects(projectRows.map((p: { name: string }) => p.name));
+        setActiveProjects(projectRows.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name })));
       }
 
       setLoading(false);
@@ -269,10 +269,10 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
                 </div>
               )}
               {localEmployee.phone && (
-                <div className="flex items-center gap-2">
+                <a href={`tel:${localEmployee.phone}`} className="flex items-center gap-2 hover:text-gray-700">
                   <Phone className="w-4 h-4 text-gray-400 shrink-0" />
                   <span>{localEmployee.phone}</span>
-                </div>
+                </a>
               )}
             </div>
           )}
