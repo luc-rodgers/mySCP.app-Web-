@@ -150,7 +150,7 @@ export function Employees({ initialEmployees, isAdmin = false }: EmployeesProps)
             <div className="col-span-2">Position</div>
             <div className="col-span-2">Type</div>
             <div className="col-span-1">Contact</div>
-            <div className="col-span-1">Account</div>
+            <div className="col-span-1 text-center">Account</div>
           </div>
           <div className="divide-y divide-gray-100">
             {filteredEmployees.map((employee) => (
@@ -166,7 +166,7 @@ export function Employees({ initialEmployees, isAdmin = false }: EmployeesProps)
                   {employee.email && <Mail className="w-4 h-4 text-gray-400" />}
                   {employee.phone && <Phone className="w-4 h-4 text-gray-400" />}
                 </div>
-                <div className="col-span-1">
+                <div className="col-span-1 flex justify-center">
                   {employee.hasAccount
                     ? <CheckCircle2 className="w-4 h-4 text-green-500" />
                     : <CircleDashed className="w-4 h-4 text-gray-300" />}

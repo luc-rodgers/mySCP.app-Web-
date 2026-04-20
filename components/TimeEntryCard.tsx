@@ -546,7 +546,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                 onClick={() => {
                   setIsEditMode(false);
                   setShowModal(false);
-                  setSummaryFromEdit(true);
+                  setSummaryFromEdit(false);
                   setShowSummaryModal(true);
                 }}
               >

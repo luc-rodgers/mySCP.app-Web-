@@ -9,6 +9,7 @@ import {
   Users,
   Briefcase,
   Building2,
+  ClipboardList,
   LogOut,
   X,
   Menu,
@@ -20,9 +21,10 @@ import Image from "next/image";
 const allMenuItems = [
   { id: "profile",    label: "Profile",    icon: User,      href: "/profile",    adminOnly: false },
   { id: "timesheet",  label: "Timesheet",  icon: Clock,     href: "/timesheet",  adminOnly: false },
-  { id: "employees",  label: "Employees",  icon: Users,     href: "/employees",  adminOnly: true  },
-  { id: "projects",   label: "Projects",   icon: Briefcase, href: "/projects",   adminOnly: true  },
-  { id: "clients",    label: "Clients",    icon: Building2, href: "/clients",    adminOnly: true  },
+  { id: "timesheets", label: "Timesheets", icon: ClipboardList, href: "/timesheets", adminOnly: true  },
+  { id: "employees",  label: "Employees",  icon: Users,         href: "/employees",  adminOnly: true  },
+  { id: "projects",   label: "Projects",   icon: Briefcase,     href: "/projects",   adminOnly: true  },
+  { id: "clients",    label: "Clients",    icon: Building2,     href: "/clients",    adminOnly: true  },
 ];
 
 function SCPLogo() {

@@ -50,7 +50,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Restrict admin-only routes for non-admin users
-  const adminOnlyRoutes = ["/employees", "/projects", "/clients", "/equipment"];
+  const adminOnlyRoutes = ["/timesheets", "/employees", "/projects", "/clients", "/equipment"];
   if (adminOnlyRoutes.some((r) => pathname.startsWith(r))) {
     const { data: employee } = await supabase
       .from("employees")
