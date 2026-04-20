@@ -30,37 +30,30 @@ export async function updateEmployee(
     return { success: false, error: "Unauthorised" };
   }
 
-  const firstName = (formData.get("firstName") as string)?.trim();
-  const lastName = (formData.get("lastName") as string)?.trim();
   const email = (formData.get("email") as string)?.trim().toLowerCase() || null;
   const phone = (formData.get("phone") as string)?.trim() || null;
-
-  if (!firstName || !lastName) {
-    return { success: false, error: "First name and last name are required." };
-  }
-
   const title = (formData.get("title") as string)?.trim() || null;
   const employmentType = formData.get("employmentType") as string;
-  const role = formData.get("role") as string;
-  const activeStatus = formData.get("activeStatus") as string;
 
+  // Fields editable by own profile or admin
   const updates: Record<string, unknown> = {
-    first_name: firstName,
-    last_name: lastName,
     email,
     phone,
+    title,
+    employment_type: employmentType || "Casual",
   };
 
-  // Classification, employment type and status: own profile OR admin
-  if (isOwnProfile || isAdmin) {
-    updates.title = title;
-    updates.employment_type = employmentType || "Casual";
-    updates.active_status = activeStatus || "active";
-  }
-
-  // Role change: admin only (prevents users from promoting themselves)
+  // Admin-only fields
   if (isAdmin) {
-    updates.role = role || "user";
+    const firstName = (formData.get("firstName") as string)?.trim();
+    const lastName = (formData.get("lastName") as string)?.trim();
+    if (!firstName || !lastName) {
+      return { success: false, error: "First name and last name are required." };
+    }
+    updates.first_name = firstName;
+    updates.last_name = lastName;
+    updates.role = (formData.get("role") as string) || "operator";
+    updates.active_status = (formData.get("activeStatus") as string) || "active";
   }
 
   const { error } = await supabase

@@ -505,7 +505,7 @@ export function Profile({
             role,
             activeStatus: 'active',
           }}
-          isAdmin={true}
+          isAdmin={role === 'admin'}
           onClose={() => setShowEdit(false)}
         />
       )}

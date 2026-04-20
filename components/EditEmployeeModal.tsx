@@ -62,7 +62,7 @@ export function EditEmployeeModal({ employee, isAdmin, onClose, onSaved }: Props
       lastName:       (formData.get('lastName')       as string)?.trim() || employee.lastName,
       email:          (formData.get('email')          as string)?.trim() || employee.email,
       phone:          (formData.get('phone')          as string)?.trim() || employee.phone,
-      classification: (formData.get('classification') as string) || employee.classification,
+      classification: (formData.get('title')          as string) || employee.classification,
       employmentType: (formData.get('employmentType') as string) || employee.employmentType,
       role:           (formData.get('role')           as string) || employee.role,
       activeStatus:   (formData.get('activeStatus')   as string) || employee.activeStatus,
@@ -91,27 +91,32 @@ export function EditEmployeeModal({ employee, isAdmin, onClose, onSaved }: Props
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-          {/* Name row */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs text-gray-600 mb-1">First Name *</label>
-              <input
-                name="firstName"
-                required
-                defaultValue={employee.firstName}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-600 mb-1">Last Name *</label>
-              <input
-                name="lastName"
-                required
-                defaultValue={employee.lastName}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
-              />
-            </div>
-          </div>
+          {/* Admin-only fields */}
+          {isAdmin && (
+            <>
+              {/* Name row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">First Name *</label>
+                  <input
+                    name="firstName"
+                    required
+                    defaultValue={employee.firstName}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Last Name *</label>
+                  <input
+                    name="lastName"
+                    required
+                    defaultValue={employee.lastName}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Email */}
           <div>
@@ -137,50 +142,48 @@ export function EditEmployeeModal({ employee, isAdmin, onClose, onSaved }: Props
             />
           </div>
 
-          {/* Admin-only fields */}
+          {/* Position */}
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Position</label>
+            <select
+              name="title"
+              defaultValue={employee.classification}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
+            >
+              <option value="">Select position</option>
+              {CLASSIFICATIONS.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Employment Type */}
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Employment Type</label>
+            <select
+              name="employmentType"
+              defaultValue={employee.employmentType}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
+            >
+              <option value="Casual">Casual</option>
+              <option value="Permanent">Permanent</option>
+            </select>
+          </div>
+
+          {/* Admin-only: App Access + Status */}
           {isAdmin && (
-            <>
-              {/* Position */}
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-gray-600 mb-1">Position</label>
+                <label className="block text-xs text-gray-600 mb-1">App Access</label>
                 <select
-                  name="title"
-                  defaultValue={employee.classification}
+                  name="role"
+                  defaultValue={employee.role}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
                 >
-                  {CLASSIFICATIONS.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
+                  <option value="operator">Operator</option>
+                  <option value="admin">Admin</option>
                 </select>
               </div>
-
-              {/* Employment type + Role */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Employment Type</label>
-                  <select
-                    name="employmentType"
-                    defaultValue={employee.employmentType}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
-                  >
-                    <option value="Casual">Casual</option>
-                    <option value="Permanent">Permanent</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">App Access</label>
-                  <select
-                    name="role"
-                    defaultValue={employee.role}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
-                  >
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Active Status */}
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Status</label>
                 <select
@@ -192,7 +195,7 @@ export function EditEmployeeModal({ employee, isAdmin, onClose, onSaved }: Props
                   <option value="retired">Retired</option>
                 </select>
               </div>
-            </>
+            </div>
           )}
 
           {/* Error */}

@@ -49,6 +49,22 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Restrict admin-only routes for non-admin users
+  const adminOnlyRoutes = ["/employees", "/projects", "/clients", "/equipment"];
+  if (adminOnlyRoutes.some((r) => pathname.startsWith(r))) {
+    const { data: employee } = await supabase
+      .from("employees")
+      .select("role")
+      .eq("user_id", user.id)
+      .single();
+
+    if (employee?.role !== "admin") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/timesheet";
+      return NextResponse.redirect(url);
+    }
+  }
+
   return supabaseResponse;
 }
 

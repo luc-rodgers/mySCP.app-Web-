@@ -17,12 +17,12 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 
-const menuItems = [
-  { id: "profile", label: "Profile", icon: User, href: "/profile" },
-  { id: "timesheet", label: "Timesheet", icon: Clock, href: "/timesheet" },
-  { id: "employees", label: "Employees", icon: Users, href: "/employees" },
-  { id: "projects", label: "Projects", icon: Briefcase, href: "/projects" },
-  { id: "clients", label: "Clients", icon: Building2, href: "/clients" },
+const allMenuItems = [
+  { id: "profile",    label: "Profile",    icon: User,      href: "/profile",    adminOnly: false },
+  { id: "timesheet",  label: "Timesheet",  icon: Clock,     href: "/timesheet",  adminOnly: false },
+  { id: "employees",  label: "Employees",  icon: Users,     href: "/employees",  adminOnly: true  },
+  { id: "projects",   label: "Projects",   icon: Briefcase, href: "/projects",   adminOnly: true  },
+  { id: "clients",    label: "Clients",    icon: Building2, href: "/clients",    adminOnly: true  },
 ];
 
 function SCPLogo() {
@@ -62,7 +62,7 @@ export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-2 space-y-2 overflow-y-auto">
-        {menuItems.map(({ id, label, icon: Icon, href }) => {
+        {allMenuItems.filter(item => !item.adminOnly || isAdmin).map(({ id, label, icon: Icon, href }) => {
           const isActive = pathname === href;
           return (
             <Link
