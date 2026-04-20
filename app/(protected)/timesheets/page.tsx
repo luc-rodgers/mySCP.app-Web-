@@ -16,11 +16,18 @@ export default async function TimesheetsPage() {
 
   if (caller?.role !== "admin") redirect("/timesheet");
 
-  const { data: rows } = await supabase
-    .from("time_entries")
-    .select("id, date, status, reference_number, data, employee_id, employees(first_name, last_name)")
-    .eq("status", "submitted")
-    .order("date", { ascending: false });
+  const [{ data: rows }, { data: projectRows }] = await Promise.all([
+    supabase
+      .from("time_entries")
+      .select("id, date, status, reference_number, data, employee_id, employees(first_name, last_name)")
+      .eq("status", "submitted")
+      .order("date", { ascending: false }),
+    supabase
+      .from("projects")
+      .select("id, name, state")
+      .eq("status", "active")
+      .order("name"),
+  ]);
 
   const entries: (TimeEntry & { employeeId: string })[] = (rows ?? []).map((row: any) => ({
     ...(row.data as Partial<TimeEntry>),
@@ -34,5 +41,11 @@ export default async function TimesheetsPage() {
     employeeId: row.employee_id,
   }));
 
-  return <PendingTimesheets entries={entries} />;
+  const activeProjects = (projectRows ?? []).map((p: any) => ({ id: p.id, name: p.name }));
+  const projectsByState = {
+    QLD: (projectRows ?? []).filter((p: any) => !p.state || p.state === "QLD").map((p: any) => ({ id: p.id, name: p.name })),
+    NSW: (projectRows ?? []).filter((p: any) => p.state === "NSW").map((p: any) => ({ id: p.id, name: p.name })),
+  };
+
+  return <PendingTimesheets entries={entries} activeProjects={activeProjects} projectsByState={projectsByState} />;
 }
