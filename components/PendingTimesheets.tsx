@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { TimeEntry } from "@/lib/types";
 import { TimeCardSummaryModal } from "./TimeCardSummaryModal";
 import { approveTimeEntry } from "@/app/actions/approveTimeEntry";
-import { ClipboardList, Clock, Users, Eye, Printer, Download, CheckCircle, Loader2 } from "lucide-react";
+import { ClipboardList, Clock, Users, Eye, Printer, Download, CheckCircle, Loader2, AlertTriangle } from "lucide-react";
 
 interface Props {
   entries: (TimeEntry & { employeeId: string })[];
@@ -17,6 +17,47 @@ function calcHours(entry: TimeEntry): number {
   const total = (fh * 60 + fm - sh * 60 - sm) / 60;
   const hasLunch = (entry.projects ?? []).some((p) => p.lunch);
   return Math.max(0, total - (hasLunch ? 0.5 : 0));
+}
+
+function subHrs(start: string, finish: string): number {
+  if (!start || !finish) return 0;
+  const [sh, sm] = start.split(":").map(Number);
+  const [fh, fm] = finish.split(":").map(Number);
+  return Math.max(0, (fh * 60 + fm - sh * 60 - sm) / 60);
+}
+
+interface Flags {
+  weather: boolean;
+  lunchPenalty: boolean;
+  unallocatedHours: number;
+}
+
+function getFlags(entry: TimeEntry): Flags {
+  const depotHrs = calcHours(entry);
+  let hasWeather = false;
+  let hasLunchPenalty = false;
+  let allocated = 0;
+
+  (entry.projects ?? []).forEach((p) => {
+    if (p.weather) hasWeather = true;
+    if (p.lunchPenalty) hasLunchPenalty = true;
+    if (p.type === "yardwork") {
+      allocated += subHrs(p.siteStart, p.siteFinish);
+      if (p.lunch) allocated -= 0.5;
+    } else if (p.type === "leave") {
+      allocated += parseFloat(p.leaveTotalHours || "0");
+    } else {
+      (p.subActivities ?? []).forEach((sa) => {
+        allocated += subHrs(sa.start, sa.finish);
+      });
+    }
+  });
+
+  return {
+    weather: hasWeather,
+    lunchPenalty: hasLunchPenalty,
+    unallocatedHours: depotHrs > 0 ? Math.max(0, depotHrs - allocated) : 0,
+  };
 }
 
 function formatDate(dateStr: string): string {
@@ -261,19 +302,51 @@ export function PendingTimesheets({ entries: initialEntries }: Props) {
             <div className="divide-y divide-gray-100">
               {dayEntries.map((entry) => {
                 const hours = calcHours(entry);
+                const flags = getFlags(entry);
                 const isApproving = approvingId === entry.id;
+                const hasOrangeFlag = flags.weather || flags.lunchPenalty;
+                const hasRedFlag = flags.unallocatedHours > 0.05;
 
                 return (
                   <div key={entry.id} className="flex items-center justify-between px-5 py-3.5">
                     {/* Employee info */}
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900">{entry.employeeName}</p>
-                      <div className="flex items-center gap-3 mt-0.5">
+                      {/* Name · TS# · Hours */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-medium text-gray-900">{entry.employeeName}</span>
                         {entry.timeCardNumber && (
-                          <span className="text-xs text-gray-400 font-mono">{entry.timeCardNumber}</span>
+                          <>
+                            <span className="text-gray-300">·</span>
+                            <span className="text-sm text-gray-400 font-mono">{entry.timeCardNumber}</span>
+                          </>
                         )}
-                        <span className="text-xs text-gray-400">{hours.toFixed(1)} hrs</span>
+                        <span className="text-gray-300">·</span>
+                        <span className="text-sm text-gray-500">{hours.toFixed(1)} hrs</span>
                       </div>
+
+                      {/* Warning tags */}
+                      {(hasOrangeFlag || hasRedFlag) && (
+                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                          {flags.weather && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-600 border border-orange-200">
+                              <AlertTriangle className="w-3 h-3" />
+                              Inclement Weather
+                            </span>
+                          )}
+                          {flags.lunchPenalty && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-600 border border-orange-200">
+                              <AlertTriangle className="w-3 h-3" />
+                              Lunch Penalty
+                            </span>
+                          )}
+                          {hasRedFlag && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-600 border border-red-200">
+                              <AlertTriangle className="w-3 h-3" />
+                              {flags.unallocatedHours.toFixed(1)}h Unallocated
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Actions */}
