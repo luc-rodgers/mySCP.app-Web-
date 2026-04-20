@@ -5,10 +5,12 @@ import { Button } from './ui/button';
 import { FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 
+type ProjectOption = { id: string; name: string };
+
 interface TimeEntryListProps {
   entries: TimeEntry[];
-  activeProjects: string[];
-  projectsByState?: { QLD: string[]; NSW: string[] };
+  activeProjects: ProjectOption[];
+  projectsByState?: { QLD: ProjectOption[]; NSW: ProjectOption[] };
   onDelete: (id: string) => void;
   onStatusChange: (id: string, status: TimeEntry['status']) => void;
   onAddProject: (entryId: string, type?: 'project' | 'yardwork' | 'leave') => void;

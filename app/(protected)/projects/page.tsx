@@ -22,7 +22,7 @@ export default async function ProjectsPage() {
   (timeEntries ?? []).forEach((entry: any) => {
     const projects = entry.data?.projects ?? [];
     projects.forEach((p: any) => {
-      if (!p.project) return;
+      if (!p.projectId) return;
       const subs = p.subActivities ?? [];
       let hrs = 0;
       subs.forEach((sa: any) => {
@@ -31,7 +31,7 @@ export default async function ProjectsPage() {
         const [fh, fm] = sa.finish.split(':').map(Number);
         hrs += Math.max(0, (fh * 60 + fm - sh * 60 - sm) / 60);
       });
-      hoursPerProject[p.project] = (hoursPerProject[p.project] ?? 0) + hrs;
+      hoursPerProject[p.projectId] = (hoursPerProject[p.projectId] ?? 0) + hrs;
     });
   });
 
@@ -45,7 +45,7 @@ export default async function ProjectsPage() {
     status: (r.status === "completed" ? "completed" : "active") as "active" | "completed",
     startDate: r.start_date ?? "",
     endDate: r.end_date ?? "",
-    hoursLogged: hoursPerProject[r.name] ?? 0,
+    hoursLogged: hoursPerProject[r.id] ?? 0,
     projectValue: r.project_value ?? undefined,
   }));
 

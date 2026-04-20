@@ -122,7 +122,7 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
       if (error || !data) { setLoadingHistory(false); return; }
 
       const filtered = data.filter((row: any) =>
-        (row.data?.projects ?? []).some((p: any) => p.project === editedProject.name)
+        (row.data?.projects ?? []).some((p: any) => p.projectId === editedProject.id)
       );
 
       function subHours(siteStart: string, siteFinish: string): number {
@@ -136,7 +136,7 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
         const entry = row.data as any;
         const emp = Array.isArray(row.employees) ? row.employees[0] : row.employees;
         const projectActivities = (entry.projects ?? [])
-          .filter((p: any) => p.project === editedProject.name)
+          .filter((p: any) => p.projectId === editedProject.id)
           .flatMap((p: any) => p.subActivities ?? []);
 
         const travelHrs = projectActivities

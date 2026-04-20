@@ -12,8 +12,8 @@ interface ProfileProps {
   entries?: TimeEntry[];
   employeeId: string;
   employeeDbId?: string;
-  activeProjects?: string[];
-  projectsByState?: { QLD: string[]; NSW: string[] };
+  activeProjects?: { id: string; name: string }[];
+  projectsByState?: { QLD: { id: string; name: string }[]; NSW: { id: string; name: string }[] };
   firstName: string;
   lastName: string;
   classification: string;

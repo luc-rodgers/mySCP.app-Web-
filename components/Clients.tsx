@@ -166,9 +166,8 @@ export function Clients({ initialClients = [], allProjects = [], isAdmin = false
         <div className="hidden md:block">
           <div className="grid grid-cols-12 gap-4 bg-gray-50 px-4 py-3 border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
             <div className="col-span-3">Client Name</div>
-            <div className="col-span-2">Contact</div>
-            <div className="col-span-3">Email</div>
-            <div className="col-span-3">Address</div>
+            <div className="col-span-3">Contact</div>
+            <div className="col-span-5">Address</div>
             <div className="col-span-1 text-right">Projects</div>
           </div>
           <div className="divide-y divide-gray-100">
@@ -179,9 +178,8 @@ export function Clients({ initialClients = [], allProjects = [], isAdmin = false
                 className="w-full grid grid-cols-12 gap-4 items-center text-sm px-4 py-4 hover:bg-gray-50 transition-colors text-left cursor-pointer"
               >
                 <div className="col-span-3 text-gray-900">{client.name}</div>
-                <div className="col-span-2 text-gray-500">{client.contact || '—'}</div>
-                <div className="col-span-3 text-gray-500">{client.email || '—'}</div>
-                <div className="col-span-3 text-gray-500">{client.address || '—'}</div>
+                <div className="col-span-3 text-gray-500">{client.contact || '—'}</div>
+                <div className="col-span-5 text-gray-500">{client.address || '—'}</div>
                 <div className="col-span-1 text-right text-gray-900">{client.activeProjects}</div>
               </button>
             ))}

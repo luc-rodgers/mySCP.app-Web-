@@ -10,6 +10,7 @@ export interface Project {
   id: string;
   type: string;
   project: string;
+  projectId?: string;
   siteStart: string;
   siteFinish: string;
   subActivities: SubActivity[];

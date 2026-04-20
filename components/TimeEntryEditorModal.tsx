@@ -5,11 +5,13 @@ import { TimeEntry, Project, SubActivity } from "@/lib/types";
 import { TimeEntryCard } from "./TimeEntryCard";
 import { createClient } from "@/lib/supabase/client";
 
+type ProjectOption = { id: string; name: string };
+
 interface Props {
   initialEntry: TimeEntry;
   employeeDbId: string;
-  activeProjects: string[];
-  projectsByState?: { QLD: string[]; NSW: string[] };
+  activeProjects: ProjectOption[];
+  projectsByState?: { QLD: ProjectOption[]; NSW: ProjectOption[] };
   onClose: () => void;
   /** Open in view mode instead of edit mode */
   viewOnly?: boolean;
