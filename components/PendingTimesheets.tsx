@@ -142,47 +142,68 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
           </div>
           <div className="divide-y divide-gray-100">
             {entry.projects.map((proj, i) => {
-              if (proj.type === "leave") return (
-                <div key={i} className="px-4 py-3 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Leave — {proj.leaveType ?? ""}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{proj.leaveStart} – {proj.leaveFinish}</p>
+              if (proj.type === "leave") {
+                const leaveHrs = parseFloat(proj.leaveTotalHours || "0");
+                return (
+                  <div key={i} className="px-4 py-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Leave — {proj.leaveType ?? ""}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{proj.leaveStart} – {proj.leaveFinish}</p>
+                    </div>
+                    <span className="text-sm font-semibold text-gray-700">{leaveHrs.toFixed(2)} hrs</span>
                   </div>
-                  <span className="text-sm text-gray-500">{proj.leaveTotalHours ?? "—"} hrs</span>
-                </div>
-              );
-              if (proj.type === "yardwork") return (
-                <div key={i} className="px-4 py-3 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Yard Work</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{proj.siteStart} – {proj.siteFinish}</p>
+                );
+              }
+              if (proj.type === "yardwork") {
+                const yardHrs = subHrs(proj.siteStart, proj.siteFinish) - (proj.lunch ? 0.5 : 0);
+                return (
+                  <div key={i} className="px-4 py-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Yard Work</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{proj.siteStart} – {proj.siteFinish}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {proj.lunch && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Lunch</span>}
+                      {proj.lunchPenalty && <span className="text-xs px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">Lunch Penalty</span>}
+                      <span className="text-sm font-semibold text-gray-700">{Math.max(0, yardHrs).toFixed(2)} hrs</span>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    {proj.lunch && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Lunch</span>}
-                    {proj.lunchPenalty && <span className="text-xs px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">Lunch Penalty</span>}
-                  </div>
-                </div>
-              );
+                );
+              }
+              // Regular project
+              const projHrs = (proj.subActivities ?? []).reduce((sum, sa) => sum + subHrs(sa.start, sa.finish), 0);
               return (
                 <div key={i} className="px-4 py-3">
-                  <p className="text-sm font-medium text-gray-900 mb-1.5">{proj.project || "Unnamed Project"}</p>
+                  {/* Project header with total */}
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-medium text-gray-900">{proj.project || "Unnamed Project"}</p>
+                    <span className="text-sm font-semibold text-gray-700">{projHrs.toFixed(2)} hrs</span>
+                  </div>
                   {(proj.subActivities ?? []).length > 0 ? (
                     <div className="space-y-1">
-                      {proj.subActivities.map((sa, j) => (
-                        <div key={j} className="flex items-center justify-between text-xs text-gray-500 pl-3 border-l-2 border-gray-200">
-                          <span className="capitalize">{sa.type}{sa.activityType ? ` — ${sa.activityType}` : ""}</span>
-                          <span>{sa.start} – {sa.finish}</span>
-                        </div>
-                      ))}
+                      {proj.subActivities.map((sa, j) => {
+                        const saHrs = subHrs(sa.start, sa.finish);
+                        return (
+                          <div key={j} className="flex items-center justify-between text-xs text-gray-500 pl-3 border-l-2 border-gray-200">
+                            <span className="capitalize">{sa.type}{sa.activityType ? ` — ${sa.activityType}` : ""}</span>
+                            <span className="flex items-center gap-3">
+                              <span className="text-gray-400">{sa.start} – {sa.finish}</span>
+                              <span className="font-medium text-gray-600 w-14 text-right">{saHrs.toFixed(2)} hrs</span>
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-xs text-gray-400 pl-3">No sub-activities</p>
                   )}
-                  <div className="flex gap-2 mt-2">
-                    {proj.weather && <span className="text-xs px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">Weather: {proj.weatherType ?? "Yes"}</span>}
-                    {proj.lunch && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Lunch</span>}
-                    {proj.lunchPenalty && <span className="text-xs px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">Lunch Penalty</span>}
-                  </div>
+                  {(proj.weather || proj.lunch || proj.lunchPenalty) && (
+                    <div className="flex gap-2 mt-2">
+                      {proj.weather && <span className="text-xs px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">Weather: {proj.weatherType ?? "Yes"}</span>}
+                      {proj.lunch && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Lunch</span>}
+                      {proj.lunchPenalty && <span className="text-xs px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">Lunch Penalty</span>}
+                    </div>
+                  )}
                 </div>
               );
             })}
