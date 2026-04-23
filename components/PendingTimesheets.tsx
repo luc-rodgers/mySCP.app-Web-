@@ -273,8 +273,11 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">Pending Timesheets</h1>
-        <span className="text-sm text-gray-400">{entries.length} card{entries.length !== 1 ? "s" : ""} awaiting approval</span>
+        <h1 className="text-xl font-bold text-gray-900 pl-10 md:pl-0">Pending Timesheets</h1>
+        <span className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-semibold">
+          <ClipboardList className="w-3.5 h-3.5" />
+          {entries.length}
+        </span>
       </div>
 
       {sortedDates.map((date) => {
