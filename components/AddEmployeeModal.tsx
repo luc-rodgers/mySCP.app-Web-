@@ -174,41 +174,45 @@ export function AddEmployeeModal({ onClose }: Props) {
           )}
 
           {/* Actions */}
-          <div className="flex gap-3 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              className="border border-gray-200 text-gray-700 rounded-lg px-4 py-2 text-sm hover:bg-gray-50 transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              disabled={!!loading}
-              onClick={() => handleSubmit(false)}
-              className="flex-1 flex items-center justify-center gap-2 border border-gray-900 text-gray-900 rounded-lg px-4 py-2 text-sm hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer"
-            >
-              <User className="w-4 h-4" />
-              {loading === 'profile' ? 'Saving…' : 'Save Profile'}
-            </button>
-            <button
-              type="button"
-              disabled={!!loading}
-              onClick={() => handleSubmit(true)}
-              className="flex-1 flex items-center justify-center gap-2 bg-gray-900 text-white rounded-lg px-4 py-2 text-sm hover:bg-gray-700 transition-colors disabled:opacity-50 cursor-pointer"
-            >
-              <UserPlus className="w-4 h-4" />
-              {loading === 'invite' ? 'Sending…' : 'Send Invite'}
-            </button>
-            <button
-              type="button"
-              disabled={!!loading}
-              onClick={() => handleSubmit(false, true)}
-              className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white rounded-lg px-4 py-2 text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 cursor-pointer"
-            >
-              <KeyRound className="w-4 h-4" />
-              {loading === 'password' ? 'Saving…' : 'Set Password'}
-            </button>
+          <div className="flex flex-col gap-2 pt-1">
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 border border-gray-200 text-gray-700 rounded-lg px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!!loading}
+                onClick={() => handleSubmit(false)}
+                className="flex-1 flex items-center justify-center gap-2 border border-gray-900 text-gray-900 rounded-lg px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                <User className="w-4 h-4" />
+                {loading === 'profile' ? 'Saving…' : 'Save Profile'}
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={!!loading}
+                onClick={() => handleSubmit(true)}
+                className="flex-1 flex items-center justify-center gap-2 bg-gray-900 text-white rounded-lg px-4 py-2.5 text-sm hover:bg-gray-700 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                <UserPlus className="w-4 h-4" />
+                {loading === 'invite' ? 'Sending…' : 'Send Invite'}
+              </button>
+              <button
+                type="button"
+                disabled={!!loading}
+                onClick={() => handleSubmit(false, true)}
+                className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white rounded-lg px-4 py-2.5 text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                <KeyRound className="w-4 h-4" />
+                {loading === 'password' ? 'Saving…' : 'Set Password'}
+              </button>
+            </div>
           </div>
         </form>
       </div>
