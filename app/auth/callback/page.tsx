@@ -22,34 +22,33 @@ export default function AuthCallbackPage() {
       const tokenHash = searchParams.get("token_hash");
       const queryType = searchParams.get("type");
 
-      const flowType = hashType || queryType;
-
-      if (flowType === "invite") {
-        await supabase.auth.signOut();
-      }
-
-      let error = null;
+      let success = false;
 
       if (accessToken && refreshToken) {
-        const { error: e } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
-        error = e;
+        const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+        success = !error;
       } else if (code) {
-        const { error: e } = await supabase.auth.exchangeCodeForSession(code);
-        error = e;
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        success = !error;
       } else if (tokenHash && queryType) {
-        const { error: e } = await supabase.auth.verifyOtp({ type: queryType as "invite" | "recovery", token_hash: tokenHash });
-        error = e;
-      } else {
-        router.push("/login?error=The+link+is+invalid+or+has+expired.");
+        const { error } = await supabase.auth.verifyOtp({ type: queryType as "invite" | "recovery", token_hash: tokenHash });
+        success = !error;
+      }
+
+      if (success) {
+        router.push("/auth/set-password");
         return;
       }
 
-      if (error) {
-        router.push("/login?error=The+link+is+invalid+or+has+expired.");
+      // Token already used or expired — check if the session from the first click
+      // is still active so the employee can still complete their password setup.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        router.push("/auth/set-password");
         return;
       }
 
-      router.push("/auth/set-password");
+      router.push("/login?error=The+link+is+invalid+or+has+expired.");
     }
 
     handleCallback();
