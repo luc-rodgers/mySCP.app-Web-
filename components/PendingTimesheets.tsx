@@ -4,11 +4,10 @@ import { useState, useTransition } from "react";
 import { TimeEntry } from "@/lib/types";
 import { TimeEntryEditorModal } from "./TimeEntryEditorModal";
 import { approveTimeEntry } from "@/app/actions/approveTimeEntry";
-import { deleteTimeEntry } from "@/app/actions/deleteTimeEntry";
 import {
   ClipboardList, Clock, Users, Printer, Download,
   CheckCircle, Loader2, AlertTriangle, ChevronDown, ChevronUp,
-  Pencil, Trash2,
+  Pencil,
 } from "lucide-react";
 
 interface ProjectOption { id: string; name: string; }
@@ -116,6 +115,7 @@ function printTimecard(entry: TimeEntry) {
 // Inline expanded detail view
 function TimecardDetail({ entry }: { entry: TimeEntry }) {
   const hours = calcHours(entry);
+  const { unallocatedHours } = getFlags(entry);
   return (
     <div className="px-5 pb-5 pt-2 border-t border-gray-100 bg-gray-50/50 space-y-4">
       {/* Times row */}
@@ -135,13 +135,13 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
       </div>
 
       {/* Work detail */}
-      {(entry.projects ?? []).length > 0 && (
+      {((entry.projects ?? []).length > 0 || unallocatedHours > 0.05) && (
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
           <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-100">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Work Detail</p>
           </div>
           <div className="divide-y divide-gray-100">
-            {entry.projects.map((proj, i) => {
+            {(entry.projects ?? []).map((proj, i) => {
               if (proj.type === "leave") {
                 const leaveHrs = parseFloat(proj.leaveTotalHours || "0");
                 return (
@@ -207,6 +207,12 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
                 </div>
               );
             })}
+            {unallocatedHours > 0.05 && (
+              <div className="px-4 py-3 flex items-center justify-between bg-red-50">
+                <p className="text-sm font-medium text-red-600">Unallocated Time</p>
+                <span className="text-sm font-semibold text-red-600">{unallocatedHours.toFixed(2)} hrs</span>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -226,7 +232,6 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
   const [entries, setEntries] = useState(initialEntries);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingEntry, setEditingEntry] = useState<(TimeEntry & { employeeId: string }) | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
@@ -242,20 +247,7 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
       const result = await approveTimeEntry(entry.id);
       setApprovingId(null);
       if (result.success) {
-        setEntries((prev) => prev.filter((e) => e.id !== entry.id));
-        setExpandedId(null);
-      }
-    });
-  }
-
-  function handleDelete(entry: TimeEntry & { employeeId: string }) {
-    setDeletingId(entry.id);
-    startTransition(async () => {
-      const result = await deleteTimeEntry(entry.id);
-      setDeletingId(null);
-      if (result.success) {
-        setEntries((prev) => prev.filter((e) => e.id !== entry.id));
-        setExpandedId(null);
+        setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "approved" } : e));
       }
     });
   }
@@ -302,7 +294,7 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
                 const flags = getFlags(entry);
                 const isExpanded = expandedId === entry.id;
                 const isApproving = approvingId === entry.id;
-                const isDeleting = deletingId === entry.id;
+                const isApproved = entry.status === "approved";
                 const hasOrangeFlag = flags.weather || flags.lunchPenalty;
                 const hasRedFlag = flags.unallocatedHours > 0.05;
 
@@ -323,6 +315,11 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
                           )}
                           <span className="text-gray-300">·</span>
                           <span className="text-sm text-gray-500">{hours.toFixed(1)} hrs</span>
+                          {isApproved && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                              <CheckCircle className="w-3 h-3" />Approved
+                            </span>
+                          )}
                         </div>
                         {/* Warning tags */}
                         {(hasOrangeFlag || hasRedFlag) && (
@@ -376,34 +373,27 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
                         {/* Action buttons */}
                         <div className="flex items-center gap-3 px-5 py-4 border-t border-gray-100 bg-gray-50/50">
                           {/* Approve */}
-                          <button
-                            onClick={() => handleApprove(entry)}
-                            disabled={isApproving || isDeleting}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors disabled:opacity-50 cursor-pointer"
-                          >
-                            {isApproving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                            {isApproving ? "Approving…" : "Approve"}
-                          </button>
+                          {!isApproved && (
+                            <button
+                              onClick={() => handleApprove(entry)}
+                              disabled={isApproving}
+                              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors disabled:opacity-50 cursor-pointer"
+                            >
+                              {isApproving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                              {isApproving ? "Approving…" : "Approve"}
+                            </button>
+                          )}
 
                           {/* Edit */}
                           <button
                             onClick={() => setEditingEntry(entry)}
-                            disabled={isApproving || isDeleting}
+                            disabled={isApproving}
                             className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-100 text-sm font-medium transition-colors disabled:opacity-50 cursor-pointer"
                           >
                             <Pencil className="w-4 h-4" />
                             Edit
                           </button>
 
-                          {/* Delete */}
-                          <button
-                            onClick={() => handleDelete(entry)}
-                            disabled={isApproving || isDeleting}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 text-sm font-medium transition-colors disabled:opacity-50 cursor-pointer ml-auto"
-                          >
-                            {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                            {isDeleting ? "Deleting…" : "Delete"}
-                          </button>
                         </div>
                       </>
                     )}

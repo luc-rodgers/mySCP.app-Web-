@@ -20,7 +20,7 @@ export default async function TimesheetsPage() {
     supabase
       .from("time_entries")
       .select("id, date, status, reference_number, data, employee_id, employees(first_name, last_name)")
-      .eq("status", "submitted")
+      .in("status", ["submitted", "approved"])
       .order("date", { ascending: false }),
     supabase
       .from("projects")
