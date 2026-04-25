@@ -8,7 +8,7 @@ import { approveTimeEntry } from "@/app/actions/approveTimeEntry";
 import {
   ClipboardList, Clock, Users, Printer, Download,
   CheckCircle, Loader2, AlertTriangle, ChevronDown, ChevronUp,
-  Pencil, ChevronLeft, ChevronRight, CalendarDays,
+  Pencil, ChevronLeft, ChevronRight, CalendarDays, MoreHorizontal,
 } from "lucide-react";
 
 interface ProjectOption { id: string; name: string; }
@@ -281,6 +281,7 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingEntry, setEditingEntry] = useState<(TimeEntry & { employeeId: string }) | null>(null);
   const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   // Sync entries when server props change (week navigation)
@@ -485,21 +486,54 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
                           )}
                         </div>
 
-                        <div className="flex items-center gap-1 ml-4 shrink-0">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); printTimecard(entry); }}
-                            title="Print / Save as PDF"
-                            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition-colors"
-                          >
-                            <Printer className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); exportCSV(entry); }}
-                            title="Export CSV"
-                            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition-colors"
-                          >
-                            <Download className="w-4 h-4" />
-                          </button>
+                        <div className="flex items-center gap-2 ml-4 shrink-0">
+                          {/* Approve / Approved — always visible on the row */}
+                          {isApproved ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                              <CheckCircle className="w-3 h-3" />Approved
+                            </span>
+                          ) : (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleApprove(entry); }}
+                              disabled={isApproving}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer"
+                            >
+                              {isApproving ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
+                              {isApproving ? "…" : "Approve"}
+                            </button>
+                          )}
+
+                          {/* Three-dot menu */}
+                          <div className="relative">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === entry.id ? null : entry.id); }}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition-colors cursor-pointer"
+                            >
+                              <MoreHorizontal className="w-4 h-4" />
+                            </button>
+                            {openMenuId === entry.id && (
+                              <>
+                                <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); }} />
+                                <div className="absolute right-0 top-9 z-20 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 overflow-hidden">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); printTimecard(entry); setOpenMenuId(null); }}
+                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                                  >
+                                    <Printer className="w-4 h-4 text-gray-400" />
+                                    Print / Save PDF
+                                  </button>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); exportCSV(entry); setOpenMenuId(null); }}
+                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                                  >
+                                    <Download className="w-4 h-4 text-gray-400" />
+                                    Export CSV
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+
                           <div className="w-8 h-8 flex items-center justify-center text-gray-400">
                             {isEntryExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                           </div>
@@ -510,16 +544,6 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
                         <>
                           <TimecardDetail entry={entry} />
                           <div className="flex items-center gap-3 px-5 py-4 border-t border-gray-100 bg-gray-50/50">
-                            {!isApproved && (
-                              <button
-                                onClick={() => handleApprove(entry)}
-                                disabled={isApproving}
-                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors disabled:opacity-50 cursor-pointer"
-                              >
-                                {isApproving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                                {isApproving ? "Approving…" : "Approve"}
-                              </button>
-                            )}
                             <button
                               onClick={() => setEditingEntry(entry)}
                               disabled={isApproving}
