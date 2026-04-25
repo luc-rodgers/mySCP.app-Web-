@@ -13,7 +13,7 @@ interface Employee {
   phone: string;
   hoursThisWeek: number;
   status: 'active' | 'retired';
-  hasAccount?: boolean;
+  accountStatus?: 'none' | 'pending' | 'confirmed';
 }
 
 interface EmployeesProps {
@@ -167,8 +167,10 @@ export function Employees({ initialEmployees, isAdmin = false }: EmployeesProps)
                   {employee.phone && <Phone className="w-4 h-4 text-gray-400" />}
                 </div>
                 <div className="col-span-1 flex justify-center">
-                  {employee.hasAccount
+                  {employee.accountStatus === 'confirmed'
                     ? <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    : employee.accountStatus === 'pending'
+                    ? <CircleDashed className="w-4 h-4 text-amber-400" />
                     : <CircleDashed className="w-4 h-4 text-gray-300" />}
                 </div>
               </button>

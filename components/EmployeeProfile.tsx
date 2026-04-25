@@ -18,7 +18,7 @@ interface Employee {
   phone: string;
   hoursThisWeek: number;
   status?: string;
-  hasAccount?: boolean;
+  accountStatus?: 'none' | 'pending' | 'confirmed';
 }
 
 interface EmployeeProfileProps {
@@ -209,9 +209,10 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
                           const result = await inviteEmployee(localEmployee.id);
                           setInviting(false);
                           if (result.success) {
-                            setLocalEmployee(e => ({ ...e, hasAccount: true }));
-                            onUpdate?.({ ...localEmployee, hasAccount: true });
-                            setInviteMessage({ ok: true, text: 'Invite sent!' });
+                            const newStatus = result.action === 'reset' ? 'confirmed' : 'pending';
+                            setLocalEmployee(e => ({ ...e, accountStatus: newStatus }));
+                            onUpdate?.({ ...localEmployee, accountStatus: newStatus });
+                            setInviteMessage({ ok: true, text: result.action === 'reset' ? 'Password reset sent!' : 'Invite sent!' });
                           } else {
                             setInviteMessage({ ok: false, text: result.error });
                           }
@@ -220,7 +221,9 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
                         className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-2"
                       >
                         <UserPlus className="w-4 h-4" />
-                        {localEmployee.hasAccount ? 'Resend Invite' : 'Send Invite'}
+                        {localEmployee.accountStatus === 'confirmed' ? 'Send Pswd Reset'
+                          : localEmployee.accountStatus === 'pending' ? 'Resend Invite'
+                          : 'Send Invite'}
                       </button>
                     )}
                   </div>
@@ -237,8 +240,10 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
               </div>
               {isAdmin && (
                 <div className="absolute bottom-0 right-0">
-                  {localEmployee.hasAccount
+                  {localEmployee.accountStatus === 'confirmed'
                     ? <CheckCircle2 className="w-4 h-4 text-green-500 bg-white rounded-full" />
+                    : localEmployee.accountStatus === 'pending'
+                    ? <CircleDashed className="w-4 h-4 text-amber-400 bg-white rounded-full" />
                     : <div className="w-4 h-4 rounded-full border-2 border-dashed border-red-400 bg-white" />}
                 </div>
               )}

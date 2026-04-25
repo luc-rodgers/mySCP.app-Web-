@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export type InviteEmployeeResult =
-  | { success: true }
+  | { success: true; action: 'invite' | 'reset' }
   | { success: false; error: string };
 
 export async function inviteEmployee(employeeId: string): Promise<InviteEmployeeResult> {
@@ -48,16 +48,16 @@ export async function inviteEmployee(employeeId: string): Promise<InviteEmployee
 
     if (isConfirmed) {
       // Account already active — send a password reset instead of a new invite
-      const { error: resetError } = await admin.auth.admin.generateLink({
-        type: "recovery",
-        email: employee.email,
-        options: { redirectTo: `${siteUrl}/auth/callback` },
-      });
+      const regularClient = await createClient();
+      const { error: resetError } = await regularClient.auth.resetPasswordForEmail(
+        employee.email,
+        { redirectTo: `${siteUrl}/auth/callback` }
+      );
       if (resetError) {
         return { success: false, error: resetError.message };
       }
       revalidatePath("/employees");
-      return { success: true };
+      return { success: true, action: 'reset' };
     }
 
     // Not yet confirmed — clear and re-invite
@@ -89,5 +89,5 @@ export async function inviteEmployee(employeeId: string): Promise<InviteEmployee
   }
 
   revalidatePath("/employees");
-  return { success: true };
+  return { success: true, action: 'invite' };
 }
