@@ -26,6 +26,12 @@ export async function GET(request: NextRequest) {
       }
     );
 
+    // Clear any existing session so an already-logged-in user doesn't
+    // accidentally block the invited user from claiming their account.
+    if (type === "invite") {
+      await supabase.auth.signOut();
+    }
+
     const { error } = await supabase.auth.verifyOtp({
       type: type as "invite" | "recovery",
       token_hash,

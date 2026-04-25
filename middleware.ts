@@ -31,6 +31,11 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // Allow auth routes (invite callback, set password, forgot password)
+  if (pathname.startsWith("/auth/")) {
+    return supabaseResponse;
+  }
+
   // Allow access to login page
   if (pathname === "/login") {
     // If already authenticated, redirect to profile
