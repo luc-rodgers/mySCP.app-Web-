@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 
 export default function ForgotPasswordPage() {
@@ -37,22 +38,21 @@ export default function ForgotPasswordPage() {
       style={{ backgroundColor: "#f3f3f5" }}
     >
       <div className="w-full max-w-sm">
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-[#030213] mb-4 shadow-md">
-            <span className="text-white font-bold text-xl leading-none">
-              <span className="text-red-500">S</span>CP
-            </span>
-          </div>
-          <h1 className="text-2xl font-semibold text-[#030213]">MySCP</h1>
-          <p className="text-sm text-[#717182] mt-1">Specialised Concrete Pumping</p>
-        </div>
-
         {/* Card */}
         <div
-          className="bg-white rounded-[0.625rem] shadow-sm border p-8"
+          className="bg-white rounded-[0.625rem] shadow-sm border pt-8 pb-8 px-8"
           style={{ borderColor: "var(--border)" }}
         >
+          <div className="flex justify-center mb-6">
+            <Image
+              src="/myscp.jpeg"
+              alt="MySCP"
+              width={220}
+              height={90}
+              className="object-contain"
+              priority
+            />
+          </div>
           {sent ? (
             <div className="text-center">
               <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
