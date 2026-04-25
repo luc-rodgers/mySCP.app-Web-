@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { X, UserPlus, User, KeyRound } from "lucide-react";
+import { X } from "lucide-react";
 import { createEmployee } from "@/app/actions/createEmployee";
 import { useRouter } from "next/navigation";
 
@@ -25,16 +25,16 @@ interface Props {
 export function AddEmployeeModal({ onClose }: Props) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
-  const [loading, setLoading] = useState<false | 'profile' | 'invite' | 'password'>(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(sendInvite: boolean, setPassword: boolean = false) {
+  async function handleSubmit() {
     if (!formRef.current) return;
-    setLoading(setPassword ? 'password' : sendInvite ? 'invite' : 'profile');
+    setLoading(true);
     setError(null);
 
     const formData = new FormData(formRef.current);
-    const result = await createEmployee(formData, sendInvite, setPassword);
+    const result = await createEmployee(formData, false, false);
 
     setLoading(false);
 
@@ -153,19 +153,6 @@ export function AddEmployeeModal({ onClose }: Props) {
             />
           </div>
 
-          {/* Password (optional — set manually instead of invite) */}
-          <div>
-            <label className="block text-xs text-gray-600 mb-1">
-              Password <span className="text-gray-400">(optional — use instead of invite)</span>
-            </label>
-            <input
-              name="password"
-              type="password"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
-              placeholder="Min. 6 characters"
-            />
-          </div>
-
           {/* Error */}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2">
@@ -174,45 +161,22 @@ export function AddEmployeeModal({ onClose }: Props) {
           )}
 
           {/* Actions */}
-          <div className="flex flex-col gap-2 pt-1">
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 border border-gray-200 text-gray-700 rounded-lg px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={!!loading}
-                onClick={() => handleSubmit(false)}
-                className="flex-1 flex items-center justify-center gap-2 border border-gray-900 text-gray-900 rounded-lg px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer"
-              >
-                <User className="w-4 h-4" />
-                {loading === 'profile' ? 'Saving…' : 'Save Profile'}
-              </button>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                disabled={!!loading}
-                onClick={() => handleSubmit(true)}
-                className="flex-1 flex items-center justify-center gap-2 bg-gray-900 text-white rounded-lg px-4 py-2.5 text-sm hover:bg-gray-700 transition-colors disabled:opacity-50 cursor-pointer"
-              >
-                <UserPlus className="w-4 h-4" />
-                {loading === 'invite' ? 'Sending…' : 'Send Invite'}
-              </button>
-              <button
-                type="button"
-                disabled={!!loading}
-                onClick={() => handleSubmit(false, true)}
-                className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white rounded-lg px-4 py-2.5 text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 cursor-pointer"
-              >
-                <KeyRound className="w-4 h-4" />
-                {loading === 'password' ? 'Saving…' : 'Set Password'}
-              </button>
-            </div>
+          <div className="flex gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 border border-gray-200 text-gray-700 rounded-lg px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={handleSubmit}
+              className="flex-1 bg-gray-900 text-white rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-gray-700 transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              {loading ? 'Saving…' : 'Save'}
+            </button>
           </div>
         </form>
       </div>
