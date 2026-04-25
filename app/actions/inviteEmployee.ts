@@ -46,6 +46,21 @@ export async function inviteEmployee(employeeId: string): Promise<InviteEmployee
     const { data: authUser } = await admin.auth.admin.getUserById(employee.user_id);
     const isConfirmed = !!authUser?.user?.email_confirmed_at;
 
+    if (isConfirmed) {
+      // Account already active — send a password reset instead of a new invite
+      const { error: resetError } = await admin.auth.admin.generateLink({
+        type: "recovery",
+        email: employee.email,
+        options: { redirectTo: `${siteUrl}/auth/callback` },
+      });
+      if (resetError) {
+        return { success: false, error: resetError.message };
+      }
+      revalidatePath("/employees");
+      return { success: true };
+    }
+
+    // Not yet confirmed — clear and re-invite
     // Clear user_id FIRST before deleting auth user, otherwise the ON DELETE CASCADE
     // on the employees table will wipe the entire employee record.
     await admin.from("employees").update({ user_id: null }).eq("id", employeeId);
