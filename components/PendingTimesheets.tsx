@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { TimeEntry } from "@/lib/types";
 import { TimeEntryEditorModal } from "./TimeEntryEditorModal";
@@ -282,6 +283,7 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
   const [editingEntry, setEditingEntry] = useState<(TimeEntry & { employeeId: string }) | null>(null);
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
   const [, startTransition] = useTransition();
 
   // Sync entries when server props change (week navigation)
@@ -504,35 +506,22 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
                           )}
 
                           {/* Three-dot menu */}
-                          <div className="relative">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === entry.id ? null : entry.id); }}
-                              className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition-colors cursor-pointer"
-                            >
-                              <MoreHorizontal className="w-4 h-4" />
-                            </button>
-                            {openMenuId === entry.id && (
-                              <>
-                                <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); }} />
-                                <div className="absolute right-0 top-9 z-20 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 overflow-hidden">
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); printTimecard(entry); setOpenMenuId(null); }}
-                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
-                                  >
-                                    <Printer className="w-4 h-4 text-gray-400" />
-                                    Print / Save PDF
-                                  </button>
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); exportCSV(entry); setOpenMenuId(null); }}
-                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
-                                  >
-                                    <Download className="w-4 h-4 text-gray-400" />
-                                    Export CSV
-                                  </button>
-                                </div>
-                              </>
-                            )}
-                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (openMenuId === entry.id) {
+                                setOpenMenuId(null);
+                                setMenuPos(null);
+                              } else {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                                setOpenMenuId(entry.id);
+                              }
+                            }}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition-colors cursor-pointer"
+                          >
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
 
                           <div className="w-8 h-8 flex items-center justify-center text-gray-400">
                             {isEntryExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -563,6 +552,44 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
           </div>
         );
       })}
+
+      {/* Three-dot dropdown — rendered in a portal to escape overflow:hidden */}
+      {openMenuId && menuPos && createPortal(
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => { setOpenMenuId(null); setMenuPos(null); }}
+          />
+          <div
+            className="fixed z-50 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 overflow-hidden"
+            style={{ top: menuPos.top, right: menuPos.right }}
+          >
+            {(() => {
+              const entry = entries.find((e) => e.id === openMenuId);
+              if (!entry) return null;
+              return (
+                <>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); printTimecard(entry); setOpenMenuId(null); setMenuPos(null); }}
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    <Printer className="w-4 h-4 text-gray-400" />
+                    Print / Save PDF
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); exportCSV(entry); setOpenMenuId(null); setMenuPos(null); }}
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    <Download className="w-4 h-4 text-gray-400" />
+                    Export CSV
+                  </button>
+                </>
+              );
+            })()}
+          </div>
+        </>,
+        document.body
+      )}
 
       {editingEntry && (
         <TimeEntryEditorModal
