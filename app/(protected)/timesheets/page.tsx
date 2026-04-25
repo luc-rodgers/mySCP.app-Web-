@@ -3,7 +3,39 @@ import { redirect } from "next/navigation";
 import { PendingTimesheets } from "@/components/PendingTimesheets";
 import { TimeEntry } from "@/lib/types";
 
-export default async function TimesheetsPage() {
+function getMondayStr(refStr?: string): string {
+  let y: number, m: number, d: number;
+  if (refStr && /^\d{4}-\d{2}-\d{2}$/.test(refStr)) {
+    [y, m, d] = refStr.split("-").map(Number);
+  } else {
+    const now = new Date();
+    [y, m, d] = [now.getFullYear(), now.getMonth() + 1, now.getDate()];
+  }
+  const date = new Date(y, m - 1, d);
+  const day = date.getDay(); // 0=Sun
+  const diff = day === 0 ? -6 : 1 - day;
+  date.setDate(date.getDate() + diff);
+  return toDateStr(date);
+}
+
+function addDaysStr(dateStr: string, days: number): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return toDateStr(new Date(y, m - 1, d + days));
+}
+
+function toDateStr(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function todayStr(): string {
+  return toDateStr(new Date());
+}
+
+export default async function TimesheetsPage({
+  searchParams,
+}: {
+  searchParams?: { week?: string };
+}) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
@@ -16,11 +48,17 @@ export default async function TimesheetsPage() {
 
   if (caller?.role !== "admin") redirect("/timesheet");
 
+  const weekStart = getMondayStr(searchParams?.week);
+  const weekEnd = addDaysStr(weekStart, 6);
+  const today = todayStr();
+
   const [{ data: rows }, { data: projectRows }] = await Promise.all([
     supabase
       .from("time_entries")
       .select("id, date, status, reference_number, data, employee_id, employees(first_name, last_name)")
       .in("status", ["submitted", "approved"])
+      .gte("date", weekStart)
+      .lte("date", weekEnd)
       .order("date", { ascending: false }),
     supabase
       .from("projects")
@@ -47,5 +85,13 @@ export default async function TimesheetsPage() {
     NSW: (projectRows ?? []).filter((p: any) => p.state === "NSW").map((p: any) => ({ id: p.id, name: p.name })),
   };
 
-  return <PendingTimesheets entries={entries} activeProjects={activeProjects} projectsByState={projectsByState} />;
+  return (
+    <PendingTimesheets
+      entries={entries}
+      activeProjects={activeProjects}
+      projectsByState={projectsByState}
+      weekStart={weekStart}
+      today={today}
+    />
+  );
 }
