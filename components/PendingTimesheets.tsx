@@ -452,39 +452,12 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
                         className={`flex items-center justify-between px-5 py-3.5 cursor-pointer hover:bg-gray-50 transition-colors ${isEntryExpanded ? "bg-gray-50" : ""}`}
                         onClick={() => setExpandedId(isEntryExpanded ? null : entry.id)}
                       >
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-sm font-medium text-gray-900">{entry.employeeName}</span>
-                            {entry.timeCardNumber && (
-                              <><span className="text-gray-300">·</span>
-                              <span className="text-sm text-gray-400 font-mono">{entry.timeCardNumber}</span></>
-                            )}
-                            <span className="text-gray-300">·</span>
-                            <span className="text-sm text-gray-500">{hours.toFixed(1)} hrs</span>
-                            {isApproved && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-                                <CheckCircle className="w-3 h-3" />Approved
-                              </span>
-                            )}
-                          </div>
-                          {(hasOrangeFlag || hasRedFlag) && (
-                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                              {flags.weather && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-600 border border-orange-200">
-                                  <AlertTriangle className="w-3 h-3" />Inclement Weather
-                                </span>
-                              )}
-                              {flags.lunchPenalty && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-600 border border-orange-200">
-                                  <AlertTriangle className="w-3 h-3" />Lunch Penalty
-                                </span>
-                              )}
-                              {hasRedFlag && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-600 border border-red-200">
-                                  <AlertTriangle className="w-3 h-3" />{flags.unallocatedHours.toFixed(1)}h Unallocated
-                                </span>
-                              )}
-                            </div>
+                        <div className="min-w-0 flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-900">{entry.employeeName}</span>
+                          <span className="text-gray-300">·</span>
+                          <span className="text-sm text-gray-500">{hours.toFixed(1)} hrs</span>
+                          {hasRedFlag && (
+                            <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
                           )}
                         </div>
 
