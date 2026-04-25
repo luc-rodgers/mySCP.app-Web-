@@ -1,7 +1,6 @@
 "use client"
 import { ArrowLeft, Mail, Phone, Clock, Settings, ChevronDown, ChevronUp, Car, Droplets, Wrench, UserPlus, CheckCircle2, CircleDashed, AlertTriangle } from 'lucide-react';
 import { inviteEmployee } from '@/app/actions/inviteEmployee';
-import { deleteEmployee } from '@/app/actions/deleteEmployee';
 import { TimeEntry } from '@/lib/types';
 import { useState, useRef, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -39,8 +38,6 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
   const [showMenu, setShowMenu] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [inviteMessage, setInviteMessage] = useState<{ ok: boolean; text: string } | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [selectedTimeCard, setSelectedTimeCard] = useState<TimeEntry | null>(null);
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
   const [activeTab, setActiveTab] = useState<'history' | 'stats'>('history');
@@ -203,12 +200,6 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
                     >
                       Edit Employee
                     </button>
-                    <button
-                      onClick={() => { setConfirmDelete(true); setShowMenu(false); }}
-                      className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
-                    >
-                      Delete Employee
-                    </button>
                     {localEmployee.email && (
                       <button
                         onClick={async () => {
@@ -292,38 +283,6 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
           )}
         </div>
       </div>
-
-      {/* Delete confirmation */}
-      {confirmDelete && (
-        <div className="mx-4 mb-4 rounded-xl border border-red-200 bg-red-50 p-4">
-          <p className="text-sm font-semibold text-red-700 mb-1">Delete {localEmployee.name}?</p>
-          <p className="text-xs text-red-500 mb-3">This will permanently remove their profile and account. This cannot be undone.</p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setConfirmDelete(false)}
-              className="flex-1 text-sm px-3 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-white transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              disabled={deleting}
-              onClick={async () => {
-                setDeleting(true);
-                const result = await deleteEmployee(localEmployee.id);
-                setDeleting(false);
-                if (result.success) {
-                  onBack();
-                } else {
-                  setConfirmDelete(false);
-                }
-              }}
-              className="flex-1 text-sm px-3 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors cursor-pointer"
-            >
-              {deleting ? 'Deleting…' : 'Yes, Delete'}
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Tab toggle */}
       <div className="mx-4 mb-4">
@@ -647,6 +606,7 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
       {/* Modals */}
       {showEdit && (
         <EditEmployeeModal
+          onDeleted={onBack}
           employee={{
             id: localEmployee.id,
             firstName,

@@ -22,6 +22,17 @@ export async function deleteEmployee(employeeId: string): Promise<DeleteEmployee
     return { success: false, error: "Unauthorised" };
   }
 
+  // Prevent admins from deleting their own account
+  const { data: callerEmployee } = await supabase
+    .from("employees")
+    .select("id")
+    .eq("user_id", user?.id)
+    .single();
+
+  if (callerEmployee?.id === employeeId) {
+    return { success: false, error: "You cannot delete your own account." };
+  }
+
   const admin = createAdminClient();
 
   const { data: employee, error: fetchError } = await admin

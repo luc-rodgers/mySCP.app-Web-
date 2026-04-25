@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { updateEmployee } from "@/app/actions/updateEmployee";
+import { deleteEmployee } from "@/app/actions/deleteEmployee";
 import { useRouter } from "next/navigation";
 
 const CLASSIFICATIONS = [
@@ -35,12 +36,15 @@ interface Props {
   isAdmin: boolean;
   onClose: () => void;
   onSaved?: (updated: Partial<EmployeeData>) => void;
+  onDeleted?: () => void;
 }
 
-export function EditEmployeeModal({ employee, isAdmin, onClose, onSaved }: Props) {
+export function EditEmployeeModal({ employee, isAdmin, onClose, onSaved, onDeleted }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -222,6 +226,53 @@ export function EditEmployeeModal({ employee, isAdmin, onClose, onSaved }: Props
               {loading ? "Saving…" : "Save Changes"}
             </button>
           </div>
+
+          {/* Delete — admin only */}
+          {isAdmin && (
+            <div className="pt-2 border-t border-gray-100 mt-2">
+              {!confirmDelete ? (
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(true)}
+                  className="w-full text-sm text-red-500 hover:text-red-700 py-1.5 transition-colors cursor-pointer"
+                >
+                  Delete Employee
+                </button>
+              ) : (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-sm font-semibold text-red-700 mb-1">Delete {employee.firstName} {employee.lastName}?</p>
+                  <p className="text-xs text-red-500 mb-3">This will permanently remove their profile and account. This cannot be undone.</p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDelete(false)}
+                      className="flex-1 text-sm px-3 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-white transition-colors cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={deleting}
+                      onClick={async () => {
+                        setDeleting(true);
+                        const result = await deleteEmployee(employee.id);
+                        setDeleting(false);
+                        if (result.success) {
+                          onDeleted?.();
+                        } else {
+                          setError(result.error);
+                          setConfirmDelete(false);
+                        }
+                      }}
+                      className="flex-1 text-sm px-3 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors cursor-pointer"
+                    >
+                      {deleting ? 'Deleting…' : 'Yes, Delete'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </form>
       </div>
     </div>
