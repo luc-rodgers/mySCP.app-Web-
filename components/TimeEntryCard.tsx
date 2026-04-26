@@ -487,7 +487,16 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                 disabled={isLocked}
                 className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
-                <Briefcase className="w-4 h-4 shrink-0" />
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="9" y1="22" x2="9" y2="5" />
+                  <line x1="9" y1="5" x2="21" y2="5" />
+                  <line x1="9" y1="5" x2="3" y2="5" />
+                  <line x1="21" y1="5" x2="21" y2="14" />
+                  <path d="M19 14 Q19 17 21 17 Q23 17 23 14" />
+                  <line x1="5" y1="22" x2="13" y2="22" />
+                  <line x1="3" y1="5" x2="9" y2="3" />
+                  <line x1="21" y1="5" x2="9" y2="3" />
+                </svg>
                 <span>Project</span>
               </button>
               <button
