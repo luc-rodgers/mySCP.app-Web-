@@ -504,9 +504,6 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
               className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
-                {isToday && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-gray-900 text-white font-semibold shrink-0">Today</span>
-                )}
                 <span className="text-sm font-semibold text-gray-900 text-left">{formatDayHeader(date)}</span>
               </div>
               <div className="flex items-center gap-3 shrink-0">
