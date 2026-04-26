@@ -32,7 +32,7 @@ export async function createEmployee(
   const firstName = (formData.get("firstName") as string)?.trim();
   const lastName = (formData.get("lastName") as string)?.trim();
   const email = (formData.get("email") as string)?.trim().toLowerCase();
-  const role = (formData.get("role") as string) || "operator";
+  const role = (formData.get("role") as string) || "user";
   const title = (formData.get("title") as string)?.trim() || null;
   const employmentType = (formData.get("employmentType") as string) || "Casual";
   const phone = (formData.get("phone") as string)?.trim() || null;

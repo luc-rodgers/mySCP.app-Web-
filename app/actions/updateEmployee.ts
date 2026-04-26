@@ -52,7 +52,7 @@ export async function updateEmployee(
     }
     updates.first_name = firstName;
     updates.last_name = lastName;
-    updates.role = (formData.get("role") as string) || "operator";
+    updates.role = (formData.get("role") as string) || "user";
     updates.active_status = (formData.get("activeStatus") as string) || "active";
   }
 
