@@ -552,7 +552,7 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
                           <span className="text-sm font-medium text-gray-900">{entry.employeeName}</span>
                           <span className="text-gray-300">·</span>
                           <span className="text-sm text-gray-500">{hours.toFixed(1)} hrs</span>
-                          {hasRedFlag && (
+                          {hasRedFlag && !isApproved && (
                             <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
                           )}
                         </div>
