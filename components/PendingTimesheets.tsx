@@ -510,14 +510,20 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
                 )}
                 <span className="text-sm font-semibold text-gray-900 text-left">{formatDayHeader(date)}</span>
               </div>
-              <div className="flex items-center gap-4 shrink-0">
+              <div className="flex items-center gap-3 shrink-0">
                 <div className="flex items-center gap-3 text-xs text-gray-400">
+                  {pendingCount === 0 ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                      <CheckCircle className="w-3 h-3" />All Approved
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                      Pending {pendingCount}
+                    </span>
+                  )}
                   <span className="flex items-center gap-1.5">
                     <Users className="w-3.5 h-3.5" />
                     {dayEntries.length} {dayEntries.length === 1 ? "card" : "cards"}
-                    {pendingCount > 0 && (
-                      <span className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold">{pendingCount}</span>
-                    )}
                   </span>
                   <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />{dayHours.toFixed(1)} hrs</span>
                 </div>
