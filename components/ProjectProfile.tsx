@@ -1,5 +1,5 @@
 "use client"
-import { ArrowLeft, MapPin, DollarSign, Edit2, X, Check, Trash2, Car, Droplets, Wrench, Loader2, Settings } from 'lucide-react';
+import { ArrowLeft, MapPin, DollarSign, Edit2, X, Check, CheckCircle, Trash2, Car, Droplets, Wrench, Loader2, Settings } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -57,15 +57,20 @@ const PROJECT_VALUE_OPTIONS = [
 ];
 
 function HistoryStatusBadge({ status }: { status: string }) {
+  if (status === 'approved') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+        <CheckCircle className="w-3 h-3" /><span className="hidden md:inline">Approved</span>
+      </span>
+    );
+  }
   const styles: Record<string, string> = {
     draft:     'bg-amber-500 text-white border-amber-500',
     submitted: 'bg-[#030213] text-white border-[#030213]',
-    approved:  'bg-green-100 text-green-700 border-green-200',
   };
   const labels: Record<string, string> = {
     draft:     'Draft',
     submitted: 'Pending',
-    approved:  'Approved',
   };
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${styles[status] ?? styles.draft}`}>
