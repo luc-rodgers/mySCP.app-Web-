@@ -547,6 +547,12 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
                           <span className="text-sm font-medium text-gray-900">{entry.employeeName}</span>
                           <span className="text-gray-300">·</span>
                           <span className="text-sm text-gray-500">{hours.toFixed(1)} hrs</span>
+                          {hasRedFlag && (
+                            <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2 ml-4 shrink-0">
                           {isApproved ? (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
                               <CheckCircle className="w-3 h-3" />Approved
@@ -556,12 +562,7 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
                               Pending
                             </span>
                           )}
-                          {hasRedFlag && (
-                            <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
-                          )}
-                        </div>
 
-                        <div className="flex items-center gap-2 ml-4 shrink-0">
                           {/* Three-dot menu */}
                           <button
                             onClick={(e) => {
