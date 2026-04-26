@@ -741,6 +741,11 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                             </div>
                           </div>
 
+                          {/* Activity instruction */}
+                          {!isLocked && (
+                            <p className="text-xs text-gray-400 text-center pt-1">Choose an activity</p>
+                          )}
+
                           {/* Sub-activity cards */}
                           {(project.subActivities || []).length > 0 && (
                             <div className="space-y-3">
@@ -865,7 +870,6 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                           {/* Activity buttons — always visible below any cards */}
                           {!isLocked && (
                             <div>
-                              <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">Add Activity</p>
                               <div className="grid grid-cols-3 gap-2">
                                 <button
                                   onClick={() => handleAddSubActivity(entry.id, project.id, 'travel')}
@@ -948,8 +952,6 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                       {/* Options — Lunch / Lunch Penalty / Inclement Weather */}
                       {project.type === 'project' && (
                         <div className="space-y-2">
-                          <p className="text-[10px] text-gray-400 uppercase tracking-wider">Options</p>
-
                           {/* Toggle buttons row */}
                           <div className="flex gap-2">
                             <button
