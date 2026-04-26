@@ -5,6 +5,7 @@ import { X, Plus, ArrowLeft } from "lucide-react";
 import { createProject } from "@/app/actions/createProject";
 import { createClientAction } from "@/app/actions/createClientAction";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/Toast";
 
 const PROJECT_VALUE_OPTIONS = [
   ">$50m-$80m",
@@ -27,6 +28,7 @@ interface Props {
 
 export function AddProjectModal({ clients: initialClients = [], onClose }: Props) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [clients, setClients] = useState<Client[]>(initialClients);
@@ -47,6 +49,7 @@ export function AddProjectModal({ clients: initialClients = [], onClose }: Props
       const result = await createProject(formData);
       if (!result.success) { setError(result.error); return; }
       router.refresh();
+      showToast("Project created");
       onClose();
     } catch (err: any) {
       setError(err?.message ?? "An unexpected error occurred.");

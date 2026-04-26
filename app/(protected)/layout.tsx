@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Sidebar from "@/components/Sidebar";
+import { ToastProvider } from "@/components/Toast";
 
 export default async function ProtectedLayout({
   children,
@@ -25,11 +26,13 @@ export default async function ProtectedLayout({
   const isAdmin = employee?.role?.toLowerCase() === "admin";
 
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: "#f3f3f5" }}>
-      <Sidebar isAdmin={isAdmin} />
-      <main className="flex-1 min-h-screen">
-        <div className="max-w-6xl mx-auto w-full px-6 py-6">{children}</div>
-      </main>
-    </div>
+    <ToastProvider>
+      <div className="flex min-h-screen" style={{ backgroundColor: "#f3f3f5" }}>
+        <Sidebar isAdmin={isAdmin} />
+        <main className="flex-1 min-h-screen">
+          <div className="max-w-6xl mx-auto w-full px-6 py-6">{children}</div>
+        </main>
+      </div>
+    </ToastProvider>
   );
 }
