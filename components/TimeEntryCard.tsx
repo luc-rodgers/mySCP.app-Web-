@@ -300,7 +300,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
         {/* Status badge */}
         {entry.status === 'approved' ? (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-            <CheckCircle className="w-3 h-3" />Approved
+            <CheckCircle className="w-3 h-3" /><span className="hidden md:inline">Approved</span>
           </span>
         ) : (hasDraftData || entry.status === 'submitted') && (
           <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(entry.status)}`}>
