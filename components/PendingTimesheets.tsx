@@ -308,8 +308,14 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
   // Build all 7 days of the week in order
   const weekDays = Array.from({ length: 7 }, (_, i) => addDaysStr(weekStart, i));
 
-  // Only show days that have entries
-  const activeDays = weekDays.filter((d) => grouped[d]?.length > 0);
+  // Today first, then remaining days newest → oldest
+  const activeDays = weekDays
+    .filter((d) => grouped[d]?.length > 0)
+    .sort((a, b) => {
+      if (a === today) return -1;
+      if (b === today) return 1;
+      return b.localeCompare(a);
+    });
 
   const totalEntries = entries.length;
   const totalHours = entries.reduce((sum, e) => sum + calcHours(e), 0);
