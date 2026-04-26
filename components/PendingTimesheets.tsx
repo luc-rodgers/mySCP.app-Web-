@@ -241,9 +241,9 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
                       {proj.subActivities.map((sa, j) => {
                         const saHrs = subHrs(sa.start, sa.finish);
                         return (
-                          <div key={j} className="flex items-center justify-between text-xs text-gray-500 pl-3 border-l-2 border-gray-200">
+                          <div key={j} className="flex items-start justify-between text-xs text-gray-500 pl-3 border-l-2 border-gray-200">
                             <span className="capitalize">{sa.type}{sa.activityType ? ` — ${sa.activityType}` : ""}</span>
-                            <span className="flex items-center gap-3">
+                            <span className="flex items-center gap-3 shrink-0 ml-2">
                               <span className="text-gray-400">{sa.start} – {sa.finish}</span>
                               <span className="font-medium text-gray-600 w-14 text-right">{saHrs.toFixed(2)} hrs</span>
                             </span>
