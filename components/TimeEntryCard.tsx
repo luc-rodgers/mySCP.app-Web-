@@ -478,6 +478,9 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
             )}
 
             {/* Add Project Buttons */}
+            {!isLocked && (
+              <p className="text-xs text-gray-400 text-center mt-4 mb-2">Choose the type of work you performed today</p>
+            )}
             <div className="flex gap-2 mb-3">
               <button
                 onClick={() => handleAddProject(entry.id)}
