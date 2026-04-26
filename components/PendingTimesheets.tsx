@@ -10,9 +10,12 @@ import {
   ClipboardList, Clock, Users, Printer, Download,
   CheckCircle, Loader2, AlertTriangle, ChevronDown, ChevronUp,
   Pencil, ChevronLeft, ChevronRight, CalendarDays, MoreHorizontal,
+  Plus, X,
 } from "lucide-react";
 
 interface ProjectOption { id: string; name: string; }
+
+interface EmployeeOption { id: string; name: string; }
 
 interface Props {
   entries: (TimeEntry & { employeeId: string })[];
@@ -20,6 +23,7 @@ interface Props {
   projectsByState: { QLD: ProjectOption[]; NSW: ProjectOption[] };
   weekStart: string;
   today: string;
+  employees: EmployeeOption[];
 }
 
 // ── Date helpers ────────────────────────────────────────────────────────────
@@ -272,7 +276,7 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
 
 // ── Main component ───────────────────────────────────────────────────────────
 
-export function PendingTimesheets({ entries: initialEntries, activeProjects, projectsByState, weekStart, today }: Props) {
+export function PendingTimesheets({ entries: initialEntries, activeProjects, projectsByState, weekStart, today, employees }: Props) {
   const router = useRouter();
   const [entries, setEntries] = useState(initialEntries);
   const [expandedDays, setExpandedDays] = useState<Set<string>>(() => {
@@ -284,6 +288,10 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
+  const [showNewPicker, setShowNewPicker] = useState(false);
+  const [newEmployeeId, setNewEmployeeId] = useState("");
+  const [newDate, setNewDate] = useState(today);
+  const [newEntryTarget, setNewEntryTarget] = useState<{ employeeId: string; entry: TimeEntry } | null>(null);
   const [, startTransition] = useTransition();
 
   // Sync entries when server props change (week navigation)
@@ -349,13 +357,90 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
       {/* Page header */}
       <div className="flex items-center justify-between pl-10 md:pl-0">
         <h1 className="text-xl font-bold text-gray-900">Timesheets</h1>
-        {totalEntries > 0 && (
-          <div className="flex items-center gap-3 text-xs text-gray-500">
-            <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />{totalEntries} cards</span>
-            <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />{totalHours.toFixed(1)} hrs</span>
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {totalEntries > 0 && (
+            <div className="flex items-center gap-3 text-xs text-gray-500">
+              <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />{totalEntries} cards</span>
+              <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />{totalHours.toFixed(1)} hrs</span>
+            </div>
+          )}
+          <button
+            onClick={() => { setNewEmployeeId(""); setNewDate(today); setShowNewPicker(true); }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-700 transition-colors cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            New Timesheet
+          </button>
+        </div>
       </div>
+
+      {/* Employee + date picker modal */}
+      {showNewPicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowNewPicker(false)} />
+          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-sm z-10 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <h2 className="text-gray-900 font-medium">New Timesheet</h2>
+              <button onClick={() => setShowNewPicker(false)} className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Employee *</label>
+                <select
+                  value={newEmployeeId}
+                  onChange={(e) => setNewEmployeeId(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
+                >
+                  <option value="">Select employee</option>
+                  {employees.map((emp) => (
+                    <option key={emp.id} value={emp.id}>{emp.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Date *</label>
+                <input
+                  type="date"
+                  value={newDate}
+                  onChange={(e) => setNewDate(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
+                />
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowNewPicker(false)}
+                  className="flex-1 border border-gray-200 text-gray-700 rounded-lg px-4 py-2 text-sm hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={!newEmployeeId || !newDate}
+                  onClick={() => {
+                    const blankEntry: TimeEntry = {
+                      id: crypto.randomUUID(),
+                      date: newDate,
+                      status: "submitted",
+                      depotStart: "",
+                      depotFinish: "",
+                      projects: [],
+                      employeeName: employees.find((e) => e.id === newEmployeeId)?.name ?? "",
+                    };
+                    setNewEntryTarget({ employeeId: newEmployeeId, entry: blankEntry });
+                    setShowNewPicker(false);
+                  }}
+                  className="flex-1 bg-gray-900 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-700 transition-colors disabled:opacity-40 cursor-pointer"
+                >
+                  Create
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Week navigator */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex items-center justify-between gap-2">
@@ -581,6 +666,19 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
             setEntries((prev) => prev.filter((e) => e.id !== editingEntry.id));
             setEditingEntry(null);
             setExpandedId(null);
+          }}
+        />
+      )}
+
+      {newEntryTarget && (
+        <TimeEntryEditorModal
+          initialEntry={newEntryTarget.entry}
+          employeeDbId={newEntryTarget.employeeId}
+          activeProjects={activeProjects}
+          projectsByState={projectsByState}
+          onClose={() => {
+            setNewEntryTarget(null);
+            router.refresh();
           }}
         />
       )}
