@@ -509,10 +509,12 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
               <div className="flex items-center gap-2.5">
                 <span className="text-sm font-semibold text-gray-900 text-left">{formatDayHeader(date)}</span>
                 {pendingCount === 0 ? (
-                  <CheckCircle className="w-5 h-5 text-green-500 md:hidden" />
-                  <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-                    <CheckCircle className="w-3 h-3" />All Approved
-                  </span>
+                  <>
+                    <CheckCircle className="w-5 h-5 text-green-500 md:hidden" />
+                    <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                      <CheckCircle className="w-3 h-3" />All Approved
+                    </span>
+                  </>
                 ) : (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
                     <span className="hidden md:inline">Pending </span>{pendingCount}
@@ -560,10 +562,12 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
 
                         <div className="flex items-center gap-2 ml-4 shrink-0">
                           {isApproved ? (
-                            <CheckCircle className="w-5 h-5 text-green-500 md:hidden" />
-                            <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-                              <CheckCircle className="w-3 h-3" />Approved
-                            </span>
+                            <>
+                              <CheckCircle className="w-5 h-5 text-green-500 md:hidden" />
+                              <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                                <CheckCircle className="w-3 h-3" />Approved
+                              </span>
+                            </>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
                               Pending
