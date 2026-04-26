@@ -1051,7 +1051,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
 
                 {/* Layer 2 Footer - total hours + done */}
                 <div className="px-4 pt-4 pb-8 border-t border-gray-100 shrink-0 flex items-center gap-4">
-                  <div className="text-center min-w-[72px]">
+                  <div className="flex-1 text-center">
                     <div className="text-xs text-gray-400 mb-0.5">Total</div>
                     <div className="text-2xl font-bold text-gray-900">
                       {(() => {
@@ -1078,13 +1078,13 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                       })()}
                     </div>
                   </div>
-                  <Button
-                    className="flex-1 h-14 text-base bg-gray-900 hover:bg-gray-700 text-white cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  <button
                     onClick={() => setSelectedProjectId(null)}
                     disabled={project.type === 'yardwork' && !project.project}
+                    className="w-32 h-14 flex items-center justify-center rounded-xl bg-gray-900 text-white text-base font-medium active:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
                     Done
-                  </Button>
+                  </button>
                 </div>
               </div>
             );
