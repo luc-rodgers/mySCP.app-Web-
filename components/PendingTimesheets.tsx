@@ -553,22 +553,6 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
                         </div>
 
                         <div className="flex items-center gap-2 ml-4 shrink-0">
-                          {/* Approve / Approved — always visible on the row */}
-                          {isApproved ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-                              <CheckCircle className="w-3 h-3" />Approved
-                            </span>
-                          ) : (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleApprove(entry); }}
-                              disabled={isApproving}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer"
-                            >
-                              {isApproving ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
-                              {isApproving ? "…" : "Approve"}
-                            </button>
-                          )}
-
                           {/* Three-dot menu */}
                           <button
                             onClick={(e) => {
@@ -597,6 +581,20 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
                         <>
                           <TimecardDetail entry={entry} />
                           <div className="flex items-center gap-3 px-5 py-4 border-t border-gray-100 bg-gray-50/50">
+                            {!isApproved ? (
+                              <button
+                                onClick={() => handleApprove(entry)}
+                                disabled={isApproving}
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors disabled:opacity-50 cursor-pointer"
+                              >
+                                {isApproving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                                {isApproving ? "Approving…" : "Approve"}
+                              </button>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium bg-green-50 text-green-700 border border-green-200">
+                                <CheckCircle className="w-4 h-4" />Approved
+                              </span>
+                            )}
                             <button
                               onClick={() => setEditingEntry(entry)}
                               disabled={isApproving}
