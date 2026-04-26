@@ -170,7 +170,7 @@ export function Employees({ initialEmployees, isAdmin = false }: EmployeesProps)
                   {employee.accountStatus === 'confirmed'
                     ? <CheckCircle2 className="w-4 h-4 text-green-500" />
                     : employee.accountStatus === 'pending'
-                    ? <div className="w-4 h-4 rounded-full border-2 border-amber-400 bg-white flex items-center justify-center"><Mail className="w-2 h-2 text-amber-400" /></div>
+                    ? <div className="w-4 h-4 rounded-full border-2 border-blue-400 bg-white flex items-center justify-center"><Mail className="w-2 h-2 text-blue-400" /></div>
                     : <CircleDashed className="w-4 h-4 text-gray-300" />}
                 </div>
               </button>
