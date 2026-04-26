@@ -369,7 +369,7 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
         <h1 className="text-xl font-bold text-gray-900">Timesheets</h1>
         <div className="flex items-center gap-3">
           {totalEntries > 0 && (
-            <div className="flex items-center gap-3 text-xs text-gray-500">
+            <div className="hidden md:flex items-center gap-3 text-xs text-gray-500">
               <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />{totalEntries} cards</span>
               <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />{totalHours.toFixed(1)} hrs</span>
             </div>
