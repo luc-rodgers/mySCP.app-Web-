@@ -289,10 +289,7 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
 export function PendingTimesheets({ entries: initialEntries, activeProjects, projectsByState, weekStart, today, employees }: Props) {
   const router = useRouter();
   const [entries, setEntries] = useState(initialEntries);
-  const [expandedDays, setExpandedDays] = useState<Set<string>>(() => {
-    const weekEnd = addDaysStr(weekStart, 6);
-    return today >= weekStart && today <= weekEnd ? new Set([today]) : new Set();
-  });
+  const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingEntry, setEditingEntry] = useState<(TimeEntry & { employeeId: string }) | null>(null);
   const [approvingId, setApprovingId] = useState<string | null>(null);
@@ -308,8 +305,7 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
   useEffect(() => {
     setEntries(initialEntries);
     setExpandedId(null);
-    const weekEnd = addDaysStr(weekStart, 6);
-    setExpandedDays(today >= weekStart && today <= weekEnd ? new Set([today]) : new Set());
+    setExpandedDays(new Set());
   }, [weekStart, initialEntries, today]);
 
   const currentWeekMonday = getMondayStr(today);
