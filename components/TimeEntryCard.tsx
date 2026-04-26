@@ -1,5 +1,5 @@
 "use client"
-import { Clock, MoreVertical, Plus, Trash2, X, Utensils, CloudRain, Check, Briefcase, Truck, Plane, Car, Droplet, Hammer, AlertTriangle, ChevronRight, ChevronDown } from 'lucide-react';
+import { Clock, MoreVertical, Plus, Trash2, X, Utensils, CloudRain, Check, CheckCircle, Briefcase, Truck, Plane, Car, Droplet, Hammer, AlertTriangle, ChevronRight, ChevronDown } from 'lucide-react';
 import { TimeEntry, Project, SubActivity } from '@/lib/types';
 import { useState, useRef, useEffect } from 'react';
 import { Card } from './ui/card';
@@ -298,7 +298,11 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
         )}
 
         {/* Status badge */}
-        {(hasDraftData || entry.status === 'submitted' || entry.status === 'approved') && (
+        {entry.status === 'approved' ? (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+            <CheckCircle className="w-3 h-3" />Approved
+          </span>
+        ) : (hasDraftData || entry.status === 'submitted') && (
           <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(entry.status)}`}>
             {getStatusLabel(entry.status)}
           </span>
