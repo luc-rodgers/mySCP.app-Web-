@@ -243,7 +243,7 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
                   {localEmployee.accountStatus === 'confirmed'
                     ? <CheckCircle2 className="w-4 h-4 text-green-500 bg-white rounded-full" />
                     : localEmployee.accountStatus === 'pending'
-                    ? <div className="w-4 h-4 rounded-full border-2 border-amber-400 bg-white flex items-center justify-center"><Mail className="w-2 h-2 text-amber-400" /></div>
+                    ? <div className="w-4 h-4 rounded-full border-2 border-blue-400 bg-white flex items-center justify-center"><Mail className="w-2 h-2 text-blue-400" /></div>
                     : <CircleDashed className="w-4 h-4 text-gray-300 bg-white rounded-full" />}
                 </div>
               )}
