@@ -58,7 +58,7 @@ function formatWeekRange(mondayStr: string): string {
 function formatDayHeader(dateStr: string): string {
   const [y, m, d] = dateStr.split("-").map(Number);
   return new Date(y, m - 1, d).toLocaleDateString("en-AU", {
-    day: "numeric", month: "long", year: "numeric",
+    day: "numeric", month: "long",
   });
 }
 
