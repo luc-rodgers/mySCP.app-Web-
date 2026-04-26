@@ -133,11 +133,11 @@ export function AddEmployeeModal({ onClose }: Props) {
               <label className="block text-xs text-gray-600 mb-1">App Access</label>
               <select
                 name="role"
-                defaultValue="operator"
+                defaultValue="user"
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
               >
                 <option value="admin">Admin</option>
-                <option value="operator">Operator</option>
+                <option value="user">Operator</option>
               </select>
             </div>
           </div>

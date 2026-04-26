@@ -77,7 +77,7 @@ export default async function ProfilePage() {
         lastName={emp?.last_name ?? ""}
         classification={emp?.title ?? ""}
         employmentType={emp?.employment_type ?? "Casual"}
-        role={emp?.role ?? "operator"}
+        role={emp?.role ?? "user"}
         showClaimAdmin={showClaimAdmin}
       />
     </div>
