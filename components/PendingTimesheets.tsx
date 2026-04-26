@@ -366,9 +366,9 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
           )}
           <button
             onClick={() => { setNewEmployeeId(""); setNewDate(today); setShowNewPicker(true); }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-700 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5" />
             New Timesheet
           </button>
         </div>
