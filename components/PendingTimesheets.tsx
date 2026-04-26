@@ -204,18 +204,28 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
                 );
               }
               if (proj.type === "yardwork") {
-                const yardHrs = subHrs(proj.siteStart, proj.siteFinish) - (proj.lunch ? 0.5 : 0);
+                const yardHrs = Math.max(0, subHrs(proj.siteStart, proj.siteFinish) - (proj.lunch ? 0.5 : 0));
                 return (
-                  <div key={i} className="px-4 py-3 flex items-center justify-between">
-                    <div>
+                  <div key={i} className="px-4 py-3">
+                    <div className="flex items-center justify-between mb-2">
                       <p className="text-sm font-medium text-gray-900">Yard Work</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{proj.siteStart} – {proj.siteFinish}</p>
+                      <span className="text-sm font-semibold text-gray-700">{yardHrs.toFixed(2)} hrs</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {proj.lunch && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Lunch</span>}
-                      {proj.lunchPenalty && <span className="text-xs px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">Lunch Penalty</span>}
-                      <span className="text-sm font-semibold text-gray-700">{Math.max(0, yardHrs).toFixed(2)} hrs</span>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs text-gray-500 pl-3 border-l-2 border-gray-200">
+                        <span>Yard Work</span>
+                        <span className="flex items-center gap-3">
+                          <span className="text-gray-400">{proj.siteStart} – {proj.siteFinish}</span>
+                          <span className="font-medium text-gray-600 w-14 text-right">{yardHrs.toFixed(2)} hrs</span>
+                        </span>
+                      </div>
                     </div>
+                    {(proj.lunch || proj.lunchPenalty) && (
+                      <div className="flex gap-2 mt-2">
+                        {proj.lunch && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Lunch</span>}
+                        {proj.lunchPenalty && <span className="text-xs px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">Lunch Penalty</span>}
+                      </div>
+                    )}
                   </div>
                 );
               }
