@@ -553,7 +553,7 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
                         <div className="flex items-center gap-2 ml-4 shrink-0">
                           {isApproved ? (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-                              <CheckCircle className="w-3 h-3" />Approved
+                              <CheckCircle className="w-3 h-3" /><span className="hidden md:inline">Approved</span>
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
@@ -599,8 +599,9 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
                                 {isApproving ? "Approving…" : "Approve"}
                               </button>
                             ) : (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium bg-green-50 text-green-700 border border-green-200">
-                                <CheckCircle className="w-4 h-4" />Approved
+                              <span className="inline-flex items-center gap-2">
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                                <span className="text-sm text-gray-400">By <span className="text-gray-600 font-medium">{entry.approvedBy || "Admin"}</span></span>
                               </span>
                             )}
                             <button
