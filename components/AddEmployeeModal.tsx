@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { X } from "lucide-react";
 import { createEmployee } from "@/app/actions/createEmployee";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/Toast";
 
 const CLASSIFICATIONS = [
   "CW1 - Line Hand",
@@ -24,6 +25,7 @@ interface Props {
 
 export function AddEmployeeModal({ onClose }: Props) {
   const router = useRouter();
+  const { showToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +46,7 @@ export function AddEmployeeModal({ onClose }: Props) {
     }
 
     router.refresh();
+    showToast("Employee created");
     onClose();
   }
 
@@ -137,7 +140,7 @@ export function AddEmployeeModal({ onClose }: Props) {
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
               >
                 <option value="admin">Admin</option>
-                <option value="user">Operator</option>
+                <option value="user">User</option>
               </select>
             </div>
           </div>
