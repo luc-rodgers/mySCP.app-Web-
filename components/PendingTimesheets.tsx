@@ -595,7 +595,7 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
                       {isEntryExpanded && (
                         <>
                           <TimecardDetail entry={entry} />
-                          <div className="flex items-center gap-3 px-5 py-4 border-t border-gray-100 bg-gray-50/50">
+                          <div className="flex items-center justify-between px-5 py-4 border-t border-gray-100 bg-gray-50/50">
                             {!isApproved ? (
                               <button
                                 onClick={() => handleApprove(entry)}
@@ -611,14 +611,22 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
                                 <span className="text-sm text-gray-400">By <span className="text-gray-600 font-medium">{entry.approvedBy || "Admin"}</span></span>
                               </span>
                             )}
-                            <button
-                              onClick={() => setEditingEntry(entry)}
-                              disabled={isApproving}
-                              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-100 text-sm font-medium transition-colors disabled:opacity-50 cursor-pointer"
-                            >
-                              <Pencil className="w-4 h-4" />
-                              Edit
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => setEditingEntry(entry)}
+                                disabled={isApproving}
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-100 text-sm font-medium transition-colors disabled:opacity-50 cursor-pointer"
+                              >
+                                <Pencil className="w-4 h-4" />
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => setExpandedId(null)}
+                                className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
                         </>
                       )}
