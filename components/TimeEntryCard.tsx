@@ -1050,10 +1050,10 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                 </div>
 
                 {/* Layer 2 Footer - total hours + done */}
-                <div className="p-4 border-t border-gray-100 shrink-0 flex items-center gap-4">
-                  <div className="text-center">
-                    <div className="text-xs text-gray-400">Total</div>
-                    <div className="text-lg font-bold text-gray-900">
+                <div className="px-4 pt-4 pb-8 border-t border-gray-100 shrink-0 flex items-center gap-4">
+                  <div className="text-center min-w-[72px]">
+                    <div className="text-xs text-gray-400 mb-0.5">Total</div>
+                    <div className="text-2xl font-bold text-gray-900">
                       {(() => {
                         let total = 0;
                         if (project.type === 'leave') {
@@ -1079,7 +1079,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                     </div>
                   </div>
                   <Button
-                    className="flex-1 bg-gray-900 hover:bg-gray-700 text-white cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="flex-1 h-14 text-base bg-gray-900 hover:bg-gray-700 text-white cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                     onClick={() => setSelectedProjectId(null)}
                     disabled={project.type === 'yardwork' && !project.project}
                   >
