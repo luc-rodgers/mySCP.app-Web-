@@ -846,9 +846,10 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                                       {!isLocked && (
                                         <button
                                           onClick={collapseActivity}
-                                          className="md:hidden w-full flex items-center justify-center py-3 mt-1 rounded-xl bg-gray-900 text-white active:bg-gray-700 cursor-pointer"
+                                          className="md:hidden w-full flex items-center justify-center gap-2 py-3 mt-1 rounded-xl bg-gray-900 text-white active:bg-gray-700 cursor-pointer"
                                         >
-                                          <Check className="w-6 h-6" />
+                                          <Check className="w-5 h-5" />
+                                          <span className="text-sm font-medium">Save</span>
                                         </button>
                                       )}
                                     </div>
