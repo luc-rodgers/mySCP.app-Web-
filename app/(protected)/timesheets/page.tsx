@@ -52,7 +52,7 @@ export default async function TimesheetsPage({
   const weekEnd = addDaysStr(weekStart, 6);
   const today = todayStr();
 
-  const [{ data: rows }, { data: projectRows }] = await Promise.all([
+  const [{ data: rows }, { data: projectRows }, { data: employeeRows }] = await Promise.all([
     supabase
       .from("time_entries")
       .select("id, date, status, reference_number, data, employee_id, employees(first_name, last_name)")
@@ -65,6 +65,11 @@ export default async function TimesheetsPage({
       .select("id, name, state")
       .eq("status", "active")
       .order("name"),
+    supabase
+      .from("employees")
+      .select("id, first_name, last_name")
+      .eq("active_status", "active")
+      .order("first_name"),
   ]);
 
   const entries: (TimeEntry & { employeeId: string })[] = (rows ?? []).map((row: any) => ({
@@ -84,6 +89,10 @@ export default async function TimesheetsPage({
     QLD: (projectRows ?? []).filter((p: any) => !p.state || p.state === "QLD").map((p: any) => ({ id: p.id, name: p.name })),
     NSW: (projectRows ?? []).filter((p: any) => p.state === "NSW").map((p: any) => ({ id: p.id, name: p.name })),
   };
+  const employees = (employeeRows ?? []).map((e: any) => ({
+    id: e.id,
+    name: `${e.first_name} ${e.last_name}`,
+  }));
 
   return (
     <PendingTimesheets
@@ -92,6 +101,7 @@ export default async function TimesheetsPage({
       projectsByState={projectsByState}
       weekStart={weekStart}
       today={today}
+      employees={employees}
     />
   );
 }

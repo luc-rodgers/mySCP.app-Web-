@@ -1,5 +1,5 @@
 "use client"
-import { Clock, MoreVertical, Plus, Trash2, X, Utensils, CloudRain, Check, Briefcase, Truck, Plane, Car, Droplet, Hammer, AlertTriangle, ChevronRight, ChevronDown } from 'lucide-react';
+import { Clock, MoreVertical, Plus, Trash2, X, Utensils, CloudRain, Check, CheckCircle, Briefcase, Truck, Plane, Car, Droplet, Hammer, AlertTriangle, ChevronRight, ChevronDown } from 'lucide-react';
 import { TimeEntry, Project, SubActivity } from '@/lib/types';
 import { useState, useRef, useEffect } from 'react';
 import { Card } from './ui/card';
@@ -66,7 +66,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
   }, [entry.projects.length]);
 
   const handleToggleExpanded = () => {
-    if (entry.status === 'submitted' && !isEditMode) {
+    if ((entry.status === 'submitted' || entry.status === 'approved') && !isEditMode) {
       setShowSummaryModal(true);
       return;
     }
@@ -298,7 +298,9 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
         )}
 
         {/* Status badge */}
-        {(hasDraftData || entry.status === 'submitted' || entry.status === 'approved') && (
+        {entry.status === 'approved' ? (
+          <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
+        ) : (hasDraftData || entry.status === 'submitted') && (
           <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(entry.status)}`}>
             {getStatusLabel(entry.status)}
           </span>
@@ -339,7 +341,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
           setShowSummaryModal(false);
           onDelete(entry.id);
         } : undefined}
-        viewOnly={entry.status === 'submitted' && !isEditMode}
+        viewOnly={(entry.status === 'submitted' || entry.status === 'approved') && !isEditMode}
         shouldShowSignature={!wasSubmittedWhenEditStarted || hasBeenEdited}
       />
 
@@ -451,7 +453,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                     ? (project.project || 'Yard Work')
                     : (project.project || 'Project');
 
-                  const typeLabel = project.type === 'leave' ? '🏖️ Leave'
+                  const typeLabel = project.type === 'leave' ? 'Leave'
                     : project.type === 'yardwork' ? '🚛 Yard Work'
                     : '📋 Project';
 
@@ -476,13 +478,25 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
             )}
 
             {/* Add Project Buttons */}
+            {!isLocked && (
+              <p className="text-xs text-gray-400 text-center mt-4 mb-2">Choose the type of work you performed today</p>
+            )}
             <div className="flex gap-2 mb-3">
               <button
                 onClick={() => handleAddProject(entry.id)}
                 disabled={isLocked}
                 className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
-                <Briefcase className="w-4 h-4 shrink-0" />
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="9" y1="22" x2="9" y2="5" />
+                  <line x1="9" y1="5" x2="21" y2="5" />
+                  <line x1="9" y1="5" x2="3" y2="5" />
+                  <line x1="21" y1="5" x2="21" y2="14" />
+                  <path d="M19 14 Q19 17 21 17 Q23 17 23 14" />
+                  <line x1="5" y1="22" x2="13" y2="22" />
+                  <line x1="3" y1="5" x2="9" y2="3" />
+                  <line x1="21" y1="5" x2="9" y2="3" />
+                </svg>
                 <span>Project</span>
               </button>
               <button
@@ -736,6 +750,11 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                             </div>
                           </div>
 
+                          {/* Activity instruction */}
+                          {!isLocked && (
+                            <p className="text-xs text-gray-400 text-center pt-1">Choose an activity</p>
+                          )}
+
                           {/* Sub-activity cards */}
                           {(project.subActivities || []).length > 0 && (
                             <div className="space-y-3">
@@ -844,9 +863,10 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                                       {!isLocked && (
                                         <button
                                           onClick={collapseActivity}
-                                          className="md:hidden w-full flex items-center justify-center py-3 mt-1 rounded-xl bg-gray-900 text-white active:bg-gray-700 cursor-pointer"
+                                          className="md:hidden w-full flex items-center justify-center gap-2 py-3 mt-1 rounded-xl bg-gray-900 text-white active:bg-gray-700 cursor-pointer"
                                         >
-                                          <Check className="w-6 h-6" />
+                                          <Check className="w-5 h-5" />
+                                          <span className="text-sm font-medium">Save</span>
                                         </button>
                                       )}
                                     </div>
@@ -859,7 +879,6 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                           {/* Activity buttons — always visible below any cards */}
                           {!isLocked && (
                             <div>
-                              <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">Add Activity</p>
                               <div className="grid grid-cols-3 gap-2">
                                 <button
                                   onClick={() => handleAddSubActivity(entry.id, project.id, 'travel')}
@@ -942,8 +961,6 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                       {/* Options — Lunch / Lunch Penalty / Inclement Weather */}
                       {project.type === 'project' && (
                         <div className="space-y-2">
-                          <p className="text-[10px] text-gray-400 uppercase tracking-wider">Options</p>
-
                           {/* Toggle buttons row */}
                           <div className="flex gap-2">
                             <button
@@ -1047,10 +1064,10 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                 </div>
 
                 {/* Layer 2 Footer - total hours + done */}
-                <div className="p-4 border-t border-gray-100 shrink-0 flex items-center gap-4">
-                  <div className="text-center">
-                    <div className="text-xs text-gray-400">Total</div>
-                    <div className="text-lg font-bold text-gray-900">
+                <div className="px-4 pt-4 pb-8 border-t border-gray-100 shrink-0 flex items-center gap-4">
+                  <div className="flex-1 text-center">
+                    <div className="text-xs text-gray-400 mb-0.5">Total</div>
+                    <div className="text-2xl font-bold text-gray-900">
                       {(() => {
                         let total = 0;
                         if (project.type === 'leave') {
@@ -1075,13 +1092,13 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                       })()}
                     </div>
                   </div>
-                  <Button
-                    className="flex-1 bg-gray-900 hover:bg-gray-700 text-white cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  <button
                     onClick={() => setSelectedProjectId(null)}
                     disabled={project.type === 'yardwork' && !project.project}
+                    className="w-32 h-14 flex items-center justify-center rounded-xl bg-gray-900 text-white text-base font-medium active:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
                     Done
-                  </Button>
+                  </button>
                 </div>
               </div>
             );

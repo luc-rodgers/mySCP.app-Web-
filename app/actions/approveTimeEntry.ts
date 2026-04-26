@@ -11,7 +11,7 @@ export async function approveTimeEntry(entryId: string): Promise<ApproveResult> 
 
   const { data: caller } = await supabase
     .from("employees")
-    .select("role")
+    .select("role, first_name, last_name")
     .eq("user_id", user?.id)
     .single();
 
@@ -19,9 +19,19 @@ export async function approveTimeEntry(entryId: string): Promise<ApproveResult> 
     return { success: false, error: "Unauthorised" };
   }
 
+  const approverName = caller ? `${caller.first_name} ${caller.last_name}`.trim() : "Admin";
+
+  const { data: existing } = await supabase
+    .from("time_entries")
+    .select("data")
+    .eq("id", entryId)
+    .single();
+
+  const updatedData = { ...(existing?.data as object ?? {}), approvedBy: approverName };
+
   const { error } = await supabase
     .from("time_entries")
-    .update({ status: "approved" })
+    .update({ status: "approved", data: updatedData })
     .eq("id", entryId)
     .eq("status", "submitted");
 

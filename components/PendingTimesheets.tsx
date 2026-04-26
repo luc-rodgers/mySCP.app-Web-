@@ -6,13 +6,17 @@ import { useRouter } from "next/navigation";
 import { TimeEntry } from "@/lib/types";
 import { TimeEntryEditorModal } from "./TimeEntryEditorModal";
 import { approveTimeEntry } from "@/app/actions/approveTimeEntry";
+import { useToast } from "@/components/Toast";
 import {
   ClipboardList, Clock, Users, Printer, Download,
   CheckCircle, Loader2, AlertTriangle, ChevronDown, ChevronUp,
   Pencil, ChevronLeft, ChevronRight, CalendarDays, MoreHorizontal,
+  Plus, X,
 } from "lucide-react";
 
 interface ProjectOption { id: string; name: string; }
+
+interface EmployeeOption { id: string; name: string; }
 
 interface Props {
   entries: (TimeEntry & { employeeId: string })[];
@@ -20,6 +24,7 @@ interface Props {
   projectsByState: { QLD: ProjectOption[]; NSW: ProjectOption[] };
   weekStart: string;
   today: string;
+  employees: EmployeeOption[];
 }
 
 // ── Date helpers ────────────────────────────────────────────────────────────
@@ -54,7 +59,7 @@ function formatWeekRange(mondayStr: string): string {
 function formatDayHeader(dateStr: string): string {
   const [y, m, d] = dateStr.split("-").map(Number);
   return new Date(y, m - 1, d).toLocaleDateString("en-AU", {
-    weekday: "long", day: "numeric", month: "long",
+    day: "numeric", month: "long",
   });
 }
 
@@ -200,18 +205,28 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
                 );
               }
               if (proj.type === "yardwork") {
-                const yardHrs = subHrs(proj.siteStart, proj.siteFinish) - (proj.lunch ? 0.5 : 0);
+                const yardHrs = Math.max(0, subHrs(proj.siteStart, proj.siteFinish) - (proj.lunch ? 0.5 : 0));
                 return (
-                  <div key={i} className="px-4 py-3 flex items-center justify-between">
-                    <div>
+                  <div key={i} className="px-4 py-3">
+                    <div className="flex items-center justify-between mb-2">
                       <p className="text-sm font-medium text-gray-900">Yard Work</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{proj.siteStart} – {proj.siteFinish}</p>
+                      <span className="text-sm font-semibold text-gray-700">{yardHrs.toFixed(2)} hrs</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {proj.lunch && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Lunch</span>}
-                      {proj.lunchPenalty && <span className="text-xs px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">Lunch Penalty</span>}
-                      <span className="text-sm font-semibold text-gray-700">{Math.max(0, yardHrs).toFixed(2)} hrs</span>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs text-gray-500 pl-3 border-l-2 border-gray-200">
+                        <span>Yard Work</span>
+                        <span className="flex items-center gap-3">
+                          <span className="text-gray-400">{proj.siteStart} – {proj.siteFinish}</span>
+                          <span className="font-medium text-gray-600 w-14 text-right">{yardHrs.toFixed(2)} hrs</span>
+                        </span>
+                      </div>
                     </div>
+                    {(proj.lunch || proj.lunchPenalty) && (
+                      <div className="flex gap-2 mt-2">
+                        {proj.lunch && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Lunch</span>}
+                        {proj.lunchPenalty && <span className="text-xs px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">Lunch Penalty</span>}
+                      </div>
+                    )}
                   </div>
                 );
               }
@@ -227,9 +242,9 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
                       {proj.subActivities.map((sa, j) => {
                         const saHrs = subHrs(sa.start, sa.finish);
                         return (
-                          <div key={j} className="flex items-center justify-between text-xs text-gray-500 pl-3 border-l-2 border-gray-200">
+                          <div key={j} className="flex items-start justify-between text-xs text-gray-500 pl-3 border-l-2 border-gray-200">
                             <span className="capitalize">{sa.type}{sa.activityType ? ` — ${sa.activityType}` : ""}</span>
-                            <span className="flex items-center gap-3">
+                            <span className="flex items-center gap-3 shrink-0 ml-2">
                               <span className="text-gray-400">{sa.start} – {sa.finish}</span>
                               <span className="font-medium text-gray-600 w-14 text-right">{saHrs.toFixed(2)} hrs</span>
                             </span>
@@ -272,27 +287,32 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
 
 // ── Main component ───────────────────────────────────────────────────────────
 
-export function PendingTimesheets({ entries: initialEntries, activeProjects, projectsByState, weekStart, today }: Props) {
+export function PendingTimesheets({ entries: initialEntries, activeProjects, projectsByState, weekStart, today, employees }: Props) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [entries, setEntries] = useState(initialEntries);
-  const [expandedDays, setExpandedDays] = useState<Set<string>>(() => {
-    const weekEnd = addDaysStr(weekStart, 6);
-    return today >= weekStart && today <= weekEnd ? new Set([today]) : new Set();
-  });
+  const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingEntry, setEditingEntry] = useState<(TimeEntry & { employeeId: string }) | null>(null);
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
+  const [showNewPicker, setShowNewPicker] = useState(false);
+  const [newEmployeeId, setNewEmployeeId] = useState("");
+  const [newDate, setNewDate] = useState(today);
+  const [newEntryTarget, setNewEntryTarget] = useState<{ employeeId: string; entry: TimeEntry } | null>(null);
   const [, startTransition] = useTransition();
 
-  // Sync entries when server props change (week navigation)
+  // Sync entries when server re-validates (approval, edits) — preserve expanded state
   useEffect(() => {
     setEntries(initialEntries);
+  }, [initialEntries]);
+
+  // Reset expanded state only on week navigation
+  useEffect(() => {
     setExpandedId(null);
-    const weekEnd = addDaysStr(weekStart, 6);
-    setExpandedDays(today >= weekStart && today <= weekEnd ? new Set([today]) : new Set());
-  }, [weekStart, initialEntries, today]);
+    setExpandedDays(new Set());
+  }, [weekStart]);
 
   const currentWeekMonday = getMondayStr(today);
   const isCurrentWeek = weekStart === currentWeekMonday;
@@ -340,6 +360,7 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
       setApprovingId(null);
       if (result.success) {
         setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "approved" } : e));
+        showToast(`${entry.employeeName}'s timesheet approved`);
       }
     });
   }
@@ -349,13 +370,90 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
       {/* Page header */}
       <div className="flex items-center justify-between pl-10 md:pl-0">
         <h1 className="text-xl font-bold text-gray-900">Timesheets</h1>
-        {totalEntries > 0 && (
-          <div className="flex items-center gap-3 text-xs text-gray-500">
-            <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />{totalEntries} cards</span>
-            <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />{totalHours.toFixed(1)} hrs</span>
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {totalEntries > 0 && (
+            <div className="hidden md:flex items-center gap-3 text-xs text-gray-500">
+              <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />{totalEntries} cards</span>
+              <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />{totalHours.toFixed(1)} hrs</span>
+            </div>
+          )}
+          <button
+            onClick={() => { setNewEmployeeId(""); setNewDate(today); setShowNewPicker(true); }}
+            className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Add Timesheet
+          </button>
+        </div>
       </div>
+
+      {/* Employee + date picker modal */}
+      {showNewPicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowNewPicker(false)} />
+          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-sm z-10 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <h2 className="text-gray-900 font-medium">Add Timesheet</h2>
+              <button onClick={() => setShowNewPicker(false)} className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Employee *</label>
+                <select
+                  value={newEmployeeId}
+                  onChange={(e) => setNewEmployeeId(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
+                >
+                  <option value="">Select employee</option>
+                  {employees.map((emp) => (
+                    <option key={emp.id} value={emp.id}>{emp.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Date *</label>
+                <input
+                  type="date"
+                  value={newDate}
+                  onChange={(e) => setNewDate(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
+                />
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowNewPicker(false)}
+                  className="flex-1 border border-gray-200 text-gray-700 rounded-lg px-4 py-2 text-sm hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={!newEmployeeId || !newDate}
+                  onClick={() => {
+                    const blankEntry: TimeEntry = {
+                      id: crypto.randomUUID(),
+                      date: newDate,
+                      status: "submitted",
+                      depotStart: "",
+                      depotFinish: "",
+                      projects: [],
+                      employeeName: employees.find((e) => e.id === newEmployeeId)?.name ?? "",
+                    };
+                    setNewEntryTarget({ employeeId: newEmployeeId, entry: blankEntry });
+                    setShowNewPicker(false);
+                  }}
+                  className="flex-1 bg-gray-900 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-700 transition-colors disabled:opacity-40 cursor-pointer"
+                >
+                  Create
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Week navigator */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex items-center justify-between gap-2">
@@ -370,20 +468,9 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
         <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
           <CalendarDays className="w-4 h-4 text-gray-400" />
           {formatWeekRange(weekStart)}
-          {isCurrentWeek && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-900 text-white font-semibold">This week</span>
-          )}
         </div>
 
         <div className="flex items-center gap-1">
-          {!isCurrentWeek && (
-            <button
-              onClick={() => router.push("/timesheets")}
-              className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
-            >
-              Today
-            </button>
-          )}
           <button
             onClick={() => router.push(`/timesheets?week=${nextWeek}`)}
             className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors cursor-pointer"
@@ -420,19 +507,23 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
               className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
-                {isToday && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-gray-900 text-white font-semibold shrink-0">Today</span>
-                )}
                 <span className="text-sm font-semibold text-gray-900 text-left">{formatDayHeader(date)}</span>
+                {pendingCount === 0 ? (
+                  <CheckCircle className="w-5 h-5 text-green-500 md:hidden" />
+                  <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                    <CheckCircle className="w-3 h-3" />All Approved
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                    <span className="hidden md:inline">Pending </span>{pendingCount}
+                  </span>
+                )}
               </div>
-              <div className="flex items-center gap-4 shrink-0">
+              <div className="flex items-center gap-3 shrink-0">
                 <div className="flex items-center gap-3 text-xs text-gray-400">
                   <span className="flex items-center gap-1.5">
                     <Users className="w-3.5 h-3.5" />
                     {dayEntries.length} {dayEntries.length === 1 ? "card" : "cards"}
-                    {pendingCount > 0 && (
-                      <span className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold">{pendingCount}</span>
-                    )}
                   </span>
                   <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />{dayHours.toFixed(1)} hrs</span>
                 </div>
@@ -462,26 +553,21 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
                           <span className="text-sm font-medium text-gray-900">{entry.employeeName}</span>
                           <span className="text-gray-300">·</span>
                           <span className="text-sm text-gray-500">{hours.toFixed(1)} hrs</span>
-                          {hasRedFlag && (
+                          {hasRedFlag && !isApproved && (
                             <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
                           )}
                         </div>
 
                         <div className="flex items-center gap-2 ml-4 shrink-0">
-                          {/* Approve / Approved — always visible on the row */}
                           {isApproved ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                            <CheckCircle className="w-5 h-5 text-green-500 md:hidden" />
+                            <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
                               <CheckCircle className="w-3 h-3" />Approved
                             </span>
                           ) : (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleApprove(entry); }}
-                              disabled={isApproving}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer"
-                            >
-                              {isApproving ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
-                              {isApproving ? "…" : "Approve"}
-                            </button>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                              Pending
+                            </span>
                           )}
 
                           {/* Three-dot menu */}
@@ -511,14 +597,27 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
                       {isEntryExpanded && (
                         <>
                           <TimecardDetail entry={entry} />
-                          <div className="flex items-center gap-3 px-5 py-4 border-t border-gray-100 bg-gray-50/50">
+                          <div className="flex items-center justify-between px-5 py-4 border-t border-gray-100 bg-gray-50/50">
+                            {!isApproved ? (
+                              <button
+                                onClick={() => handleApprove(entry)}
+                                disabled={isApproving}
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors disabled:opacity-50 cursor-pointer"
+                              >
+                                {isApproving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                                {isApproving ? "Approving…" : "Approve"}
+                              </button>
+                            ) : (
+                              <span className="inline-flex items-center gap-2">
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                                <span className="text-sm text-gray-400">By <span className="text-gray-600 font-medium">{entry.approvedBy || "Admin"}</span></span>
+                              </span>
+                            )}
                             <button
-                              onClick={() => setEditingEntry(entry)}
-                              disabled={isApproving}
-                              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-100 text-sm font-medium transition-colors disabled:opacity-50 cursor-pointer"
+                              onClick={() => setExpandedId(null)}
+                              className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
                             >
-                              <Pencil className="w-4 h-4" />
-                              Edit
+                              <X className="w-4 h-4" />
                             </button>
                           </div>
                         </>
@@ -548,6 +647,14 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
               if (!entry) return null;
               return (
                 <>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setEditingEntry(entry); setOpenMenuId(null); setMenuPos(null); }}
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    <Pencil className="w-4 h-4 text-gray-400" />
+                    Edit
+                  </button>
+                  <div className="border-t border-gray-100 my-1" />
                   <button
                     onClick={(e) => { e.stopPropagation(); printTimecard(entry); setOpenMenuId(null); setMenuPos(null); }}
                     className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
@@ -581,6 +688,19 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
             setEntries((prev) => prev.filter((e) => e.id !== editingEntry.id));
             setEditingEntry(null);
             setExpandedId(null);
+          }}
+        />
+      )}
+
+      {newEntryTarget && (
+        <TimeEntryEditorModal
+          initialEntry={newEntryTarget.entry}
+          employeeDbId={newEntryTarget.employeeId}
+          activeProjects={activeProjects}
+          projectsByState={projectsByState}
+          onClose={() => {
+            setNewEntryTarget(null);
+            router.refresh();
           }}
         />
       )}
