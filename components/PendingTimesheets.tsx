@@ -513,11 +513,11 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
                 <div className="flex items-center gap-3 text-xs text-gray-400">
                   {pendingCount === 0 ? (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-                      <CheckCircle className="w-3 h-3" />All Approved
+                      <CheckCircle className="w-3 h-3" /><span className="hidden md:inline">All Approved</span>
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
-                      Pending {pendingCount}
+                      <span className="hidden md:inline">Pending </span>{pendingCount}
                     </span>
                   )}
                   <span className="flex items-center gap-1.5">
