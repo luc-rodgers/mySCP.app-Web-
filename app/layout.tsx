@@ -50,8 +50,8 @@ export default function RootLayout({
         <link rel="apple-touch-startup-image" media="screen and (device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" href="/splash/splash-750x1334.png" />
         {/* Prevent black flash — paint white immediately before JS loads */}
         <style>{`
-          html { background-color: #030213; }
-          body { background-color: #030213; margin: 0; }
+          html { background-color: #ffffff; }
+          body { background-color: #ffffff; margin: 0; }
         `}</style>
       </head>
       <body>{children}</body>
