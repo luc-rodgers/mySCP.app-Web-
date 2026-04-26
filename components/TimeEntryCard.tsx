@@ -66,7 +66,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
   }, [entry.projects.length]);
 
   const handleToggleExpanded = () => {
-    if (entry.status === 'submitted' && !isEditMode) {
+    if ((entry.status === 'submitted' || entry.status === 'approved') && !isEditMode) {
       setShowSummaryModal(true);
       return;
     }
@@ -339,7 +339,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
           setShowSummaryModal(false);
           onDelete(entry.id);
         } : undefined}
-        viewOnly={entry.status === 'submitted' && !isEditMode}
+        viewOnly={(entry.status === 'submitted' || entry.status === 'approved') && !isEditMode}
         shouldShowSignature={!wasSubmittedWhenEditStarted || hasBeenEdited}
       />
 
