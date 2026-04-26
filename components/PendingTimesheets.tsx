@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { TimeEntry } from "@/lib/types";
 import { TimeEntryEditorModal } from "./TimeEntryEditorModal";
 import { approveTimeEntry } from "@/app/actions/approveTimeEntry";
+import { useToast } from "@/components/Toast";
 import {
   ClipboardList, Clock, Users, Printer, Download,
   CheckCircle, Loader2, AlertTriangle, ChevronDown, ChevronUp,
@@ -288,6 +289,7 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
 
 export function PendingTimesheets({ entries: initialEntries, activeProjects, projectsByState, weekStart, today, employees }: Props) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [entries, setEntries] = useState(initialEntries);
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -301,12 +303,16 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
   const [newEntryTarget, setNewEntryTarget] = useState<{ employeeId: string; entry: TimeEntry } | null>(null);
   const [, startTransition] = useTransition();
 
-  // Sync entries when server props change (week navigation)
+  // Sync entries when server re-validates (approval, edits) — preserve expanded state
   useEffect(() => {
     setEntries(initialEntries);
+  }, [initialEntries]);
+
+  // Reset expanded state only on week navigation
+  useEffect(() => {
     setExpandedId(null);
     setExpandedDays(new Set());
-  }, [weekStart, initialEntries, today]);
+  }, [weekStart]);
 
   const currentWeekMonday = getMondayStr(today);
   const isCurrentWeek = weekStart === currentWeekMonday;
@@ -354,6 +360,7 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
       setApprovingId(null);
       if (result.success) {
         setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "approved" } : e));
+        showToast(`${entry.employeeName}'s timesheet approved`);
       }
     });
   }
