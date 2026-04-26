@@ -465,20 +465,9 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
         <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
           <CalendarDays className="w-4 h-4 text-gray-400" />
           {formatWeekRange(weekStart)}
-          {isCurrentWeek && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-900 text-white font-semibold">This week</span>
-          )}
         </div>
 
         <div className="flex items-center gap-1">
-          {!isCurrentWeek && (
-            <button
-              onClick={() => router.push("/timesheets")}
-              className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
-            >
-              Today
-            </button>
-          )}
           <button
             onClick={() => router.push(`/timesheets?week=${nextWeek}`)}
             className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors cursor-pointer"
