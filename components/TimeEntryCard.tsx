@@ -453,7 +453,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                     ? (project.project || 'Yard Work')
                     : (project.project || 'Project');
 
-                  const typeLabel = project.type === 'leave' ? '🏖️ Leave'
+                  const typeLabel = project.type === 'leave' ? 'Leave'
                     : project.type === 'yardwork' ? '🚛 Yard Work'
                     : '📋 Project';
 
