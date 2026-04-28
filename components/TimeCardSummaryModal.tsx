@@ -779,7 +779,7 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
               <div className="border border-rose-200 rounded-lg p-4 bg-rose-50">
                 <div className="flex justify-between items-start gap-3">
                   <div className="min-w-0">
-                    <div className="text-base font-bold text-gray-700">Non-Allocated Time</div>
+                    <div className="text-base font-bold text-gray-700">Non-Allocated Paid Time</div>
                     <div className="text-xs text-gray-600 mt-1">
                       Time not allocated to an activity, yard work or project
                     </div>
@@ -805,7 +805,7 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                   ) : (
                     <ChevronRight className="w-5 h-5 text-gray-500" />
                   )}
-                  <div className="text-base font-bold">Remarks</div>
+                  <div className="text-base font-bold">Comments</div>
                 </div>
               </div>
               {expandedProjects['__remarks__'] && (

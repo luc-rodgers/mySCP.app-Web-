@@ -154,7 +154,7 @@ function printTimecard(entry: TimeEntry) {
     if (proj.type === "yardwork") return `<tr><td>Yard Work</td><td>Yard Work</td><td>${proj.siteStart ?? ""}–${proj.siteFinish ?? ""}</td><td>—</td></tr>`;
     return (proj.subActivities ?? []).map((sa) => `<tr><td>${proj.project ?? ""}</td><td>${sa.type ?? ""}</td><td>${sa.start ?? ""}–${sa.finish ?? ""}</td><td>—</td></tr>`).join("") || `<tr><td>${proj.project ?? ""}</td><td>—</td><td>—</td><td>—</td></tr>`;
   }).join("");
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Time Card – ${entry.timeCardNumber ?? entry.date}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:12px;color:#111;padding:32px}h1{font-size:18px;font-weight:bold;margin-bottom:4px}.meta{color:#555;font-size:11px;margin-bottom:20px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}.box{border:1px solid #e5e7eb;border-radius:6px;padding:10px}.label{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:4px}.box-value{font-size:16px;font-weight:bold}table{width:100%;border-collapse:collapse;margin-top:8px}th{background:#f9fafb;text-align:left;font-size:10px;text-transform:uppercase;color:#888;padding:6px 10px;border-bottom:1px solid #e5e7eb}td{padding:7px 10px;border-bottom:1px solid #f3f4f6;font-size:12px}.footer{margin-top:32px;border-top:1px solid #e5e7eb;padding-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:24px}.sig-line{border-bottom:1px solid #111;margin-top:24px}</style></head><body><h1>MySCP – Time Card</h1><div class="meta">${entry.timeCardNumber ?? "No reference"} · ${formatDate(entry.date)}</div><div class="grid"><div class="box"><div class="label">Employee</div><div class="box-value">${entry.employeeName ?? "—"}</div></div><div class="box"><div class="label">Depot Sign On</div><div class="box-value">${entry.depotStart ?? "—"}</div></div><div class="box"><div class="label">Depot Sign Off</div><div class="box-value">${entry.depotFinish ?? "—"}</div></div></div><div class="grid"><div class="box"><div class="label">Total Hours</div><div class="box-value">${hours.toFixed(2)}</div></div><div class="box"><div class="label">Status</div><div class="box-value">Pending Approval</div></div></div><div><div class="label">Work Detail</div><table><thead><tr><th>Project / Activity</th><th>Type</th><th>Time</th><th>Notes</th></tr></thead><tbody>${projectRows || '<tr><td colspan="4" style="color:#aaa">No work detail recorded</td></tr>'}</tbody></table></div>${entry.remarks ? `<div style="margin-top:16px"><div class="label">Remarks</div><p>${entry.remarks}</p></div>` : ""}<div class="footer"><div><div class="label">Employee Signature</div><div class="sig-line"></div></div><div><div class="label">Approved By</div><div class="sig-line"></div></div></div></body></html>`;
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Time Card – ${entry.timeCardNumber ?? entry.date}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:12px;color:#111;padding:32px}h1{font-size:18px;font-weight:bold;margin-bottom:4px}.meta{color:#555;font-size:11px;margin-bottom:20px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}.box{border:1px solid #e5e7eb;border-radius:6px;padding:10px}.label{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:4px}.box-value{font-size:16px;font-weight:bold}table{width:100%;border-collapse:collapse;margin-top:8px}th{background:#f9fafb;text-align:left;font-size:10px;text-transform:uppercase;color:#888;padding:6px 10px;border-bottom:1px solid #e5e7eb}td{padding:7px 10px;border-bottom:1px solid #f3f4f6;font-size:12px}.footer{margin-top:32px;border-top:1px solid #e5e7eb;padding-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:24px}.sig-line{border-bottom:1px solid #111;margin-top:24px}</style></head><body><h1>MySCP – Time Card</h1><div class="meta">${entry.timeCardNumber ?? "No reference"} · ${formatDate(entry.date)}</div><div class="grid"><div class="box"><div class="label">Employee</div><div class="box-value">${entry.employeeName ?? "—"}</div></div><div class="box"><div class="label">Depot Sign On</div><div class="box-value">${entry.depotStart ?? "—"}</div></div><div class="box"><div class="label">Depot Sign Off</div><div class="box-value">${entry.depotFinish ?? "—"}</div></div></div><div class="grid"><div class="box"><div class="label">Total Hours</div><div class="box-value">${hours.toFixed(2)}</div></div><div class="box"><div class="label">Status</div><div class="box-value">Pending Approval</div></div></div><div><div class="label">Work Detail</div><table><thead><tr><th>Project / Activity</th><th>Type</th><th>Time</th><th>Notes</th></tr></thead><tbody>${projectRows || '<tr><td colspan="4" style="color:#aaa">No work detail recorded</td></tr>'}</tbody></table></div>${entry.remarks ? `<div style="margin-top:16px"><div class="label">Comments</div><p>${entry.remarks}</p></div>` : ""}<div class="footer"><div><div class="label">Employee Signature</div><div class="sig-line"></div></div><div><div class="label">Approved By</div><div class="sig-line"></div></div></div></body></html>`;
   const win = window.open("", "_blank");
   if (!win) return;
   win.document.write(html);
@@ -277,7 +277,7 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
 
       {entry.remarks && (
         <div className="bg-white rounded-xl border border-gray-100 px-4 py-3">
-          <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Remarks</p>
+          <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Comments</p>
           <p className="text-sm text-gray-700">{entry.remarks}</p>
         </div>
       )}
@@ -328,14 +328,10 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
   // Build all 7 days of the week in order
   const weekDays = Array.from({ length: 7 }, (_, i) => addDaysStr(weekStart, i));
 
-  // Today first, then remaining days newest → oldest
+  // Newest → oldest
   const activeDays = weekDays
     .filter((d) => grouped[d]?.length > 0)
-    .sort((a, b) => {
-      if (a === today) return -1;
-      if (b === today) return 1;
-      return b.localeCompare(a);
-    });
+    .sort((a, b) => b.localeCompare(a));
 
   const totalEntries = entries.length;
   const totalHours = entries.reduce((sum, e) => sum + calcHours(e), 0);

@@ -521,7 +521,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
             {/* Remarks */}
             {!isLocked && (
               <div className="mt-4">
-                <label className="block text-xs text-gray-500 mb-1.5 font-medium">Remarks</label>
+                <label className="block text-xs text-gray-500 mb-1.5 font-medium">Comments</label>
                 <textarea
                   rows={3}
                   placeholder="Any extra info about today's work..."
