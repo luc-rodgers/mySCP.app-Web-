@@ -278,18 +278,16 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
                     <p className="text-xs text-gray-400 pl-3">No sub-activities</p>
                   )}
                   {proj.weather && (
-                    <div className="space-y-1 mt-1">
-                      <div className="flex items-start justify-between text-xs text-orange-600 pl-3 border-l-2 border-orange-200">
+                    <div className="mt-1 pl-3 border-l-2 border-orange-200 space-y-1 text-xs text-orange-600">
+                      <div className="flex items-start justify-between">
                         <span>Weather{proj.weatherType ? ` — ${proj.weatherType}` : ""}</span>
                         <span className="flex items-center gap-3 shrink-0 ml-2">
-                          <span className="text-orange-400">{proj.weatherStart ?? "--:--"} – {proj.weatherEnd ?? "--:--"}</span>
-                          <span className="font-medium text-orange-700 w-14 text-right">{subHrs(proj.weatherStart ?? "", proj.weatherEnd ?? "").toFixed(2)} hrs</span>
+                          <span>{proj.weatherStart ?? "--:--"} – {proj.weatherEnd ?? "--:--"}</span>
+                          <span className="font-medium w-14 text-right">{subHrs(proj.weatherStart ?? "", proj.weatherEnd ?? "").toFixed(2)} hrs</span>
                         </span>
                       </div>
                       {proj.approvedBy && (
-                        <div className="text-xs text-gray-500 pl-3 border-l-2 border-orange-200">
-                          Approved By: <span className="text-gray-700 font-medium">{proj.approvedBy}</span>
-                        </div>
+                        <div>Approved By: <span className="font-medium">{proj.approvedBy}</span></div>
                       )}
                     </div>
                   )}
