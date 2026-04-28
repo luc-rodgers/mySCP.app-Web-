@@ -234,7 +234,14 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
               return (
                 <div key={i} className="px-4 py-3">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-medium text-gray-900">{proj.project || "Unnamed Project"}</p>
+                    {proj.project ? (
+                      <p className="text-sm font-medium text-gray-900">{proj.project}</p>
+                    ) : (
+                      <p className="text-sm font-medium text-red-600 flex items-center gap-1.5">
+                        <AlertTriangle className="w-4 h-4" />
+                        Unknown Project
+                      </p>
+                    )}
                     <span className="text-sm font-semibold text-gray-700">{projHrs.toFixed(2)} hrs</span>
                   </div>
                   {(proj.subActivities ?? []).length > 0 ? (
