@@ -76,7 +76,7 @@ export function SubActivitySection({ projectId, entryId, subActivities, timeOpti
                 if (subActivity.type === 'pouring') {
                   return ['🚚 Mobile', '🏗️ Placing Boom / Skid Pump'];
                 }
-                return ['Clean Pump', 'Installation Boom', 'Installation Pump', 'Installation Other', 'Dismantle Boom', 'Dismantle Pump', 'Dismantle Other', 'Climb Boom', 'Preparation to Climb Boom', 'Pipeline Installation', 'Pipeline Relocation', 'Transfer Line Relocation', 'Install HD Bolts', 'Install Crucifix/Base', 'Maintenance', 'Inspections', 'Deliveries', 'Pipe Testing', 'Housekeeping', 'Other'];
+                return ['Clean Pump', 'Climb Boom', 'Deliveries', 'Dismantle Boom', 'Dismantle Other', 'Dismantle Pump', 'Housekeeping', 'Inspections', 'Install Crucifix/Base', 'Install HD Bolts', 'Installation Boom', 'Installation Other', 'Installation Pump', 'Maintenance', 'Pipe Testing', 'Pipeline Installation', 'Pipeline Relocation', 'Preparation to Climb Boom', 'Transfer Line Relocation', 'Other'];
               };
 
               // Get color based on activity type
