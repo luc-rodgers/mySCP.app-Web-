@@ -746,11 +746,6 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                             </div>
                           </div>
 
-                          {/* Activity instruction */}
-                          {!isLocked && (
-                            <p className="text-xs text-gray-400 text-center pt-1">Choose an activity</p>
-                          )}
-
                           {/* Sub-activity cards */}
                           {(project.subActivities || []).length > 0 && (
                             <div className="space-y-3">
@@ -872,34 +867,6 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                             </div>
                           )}
 
-                          {/* Activity buttons — always visible below any cards */}
-                          {!isLocked && (
-                            <div>
-                              <div className="grid grid-cols-3 gap-2">
-                                <button
-                                  onClick={() => handleAddSubActivity(entry.id, project.id, 'travel')}
-                                  className="flex-1 flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
-                                >
-                                  <Car className="w-4 h-4 shrink-0" />
-                                  <span>Travel</span>
-                                </button>
-                                <button
-                                  onClick={() => handleAddSubActivity(entry.id, project.id, 'pouring')}
-                                  className="flex-1 flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
-                                >
-                                  <Droplet className="w-4 h-4 shrink-0" />
-                                  <span>Pouring</span>
-                                </button>
-                                <button
-                                  onClick={() => handleAddSubActivity(entry.id, project.id, 'non-pouring')}
-                                  className="flex-1 flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
-                                >
-                                  <Hammer className="w-4 h-4 shrink-0" />
-                                  <span>Non-Pouring</span>
-                                </button>
-                              </div>
-                            </div>
-                          )}
                         </div>
                       ) : (
                         <div className="space-y-3">
@@ -954,37 +921,9 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                         </div>
                       )}
 
-                      {/* Options — Lunch / Lunch Penalty / Inclement Weather */}
-                      {project.type === 'project' && (
+                      {/* Lunch Penalty / Inclement Weather detail boxes */}
+                      {project.type === 'project' && (project.lunchPenalty || project.weather) && (
                         <div className="space-y-2">
-                          {/* Toggle buttons row */}
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => onUpdateProject(entry.id, project.id, { lunch: !project.lunch })}
-                              disabled={isLocked}
-                              className={`flex-1 flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.lunch ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
-                            >
-                              <Utensils className="w-4 h-4 shrink-0" />
-                              <span>Lunch</span>
-                            </button>
-                            <button
-                              onClick={() => onUpdateProject(entry.id, project.id, { lunchPenalty: !project.lunchPenalty })}
-                              disabled={isLocked}
-                              className={`flex-1 flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.lunchPenalty ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
-                            >
-                              <AlertTriangle className="w-4 h-4 shrink-0" />
-                              <span>Lunch Penalty</span>
-                            </button>
-                            <button
-                              onClick={() => onUpdateProject(entry.id, project.id, { weather: !project.weather })}
-                              disabled={isLocked}
-                              className={`flex-1 flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.weather ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
-                            >
-                              <CloudRain className="w-4 h-4 shrink-0" />
-                              <span>Weather</span>
-                            </button>
-                          </div>
-
                           {/* Lunch Penalty detail box */}
                           {project.lunchPenalty && (
                             <div className="border border-gray-200 rounded-xl p-3 bg-gray-50 space-y-2">
@@ -1058,6 +997,62 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                     </>
                   )}
                 </div>
+
+                {/* Sticky activity picker — Travel/Pouring/Non-Pouring + Lunch/Penalty/Weather */}
+                {project.type === 'project' && !isLocked && (
+                  <div className="px-4 pt-3 pb-2 border-t border-gray-100 shrink-0 space-y-2 bg-white">
+                    <p className="text-xs text-gray-400 text-center">Choose an activity</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        onClick={() => handleAddSubActivity(entry.id, project.id, 'travel')}
+                        className="flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
+                      >
+                        <Car className="w-4 h-4 shrink-0" />
+                        <span>Travel</span>
+                      </button>
+                      <button
+                        onClick={() => handleAddSubActivity(entry.id, project.id, 'pouring')}
+                        className="flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
+                      >
+                        <Droplet className="w-4 h-4 shrink-0" />
+                        <span>Pouring</span>
+                      </button>
+                      <button
+                        onClick={() => handleAddSubActivity(entry.id, project.id, 'non-pouring')}
+                        className="flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
+                      >
+                        <Hammer className="w-4 h-4 shrink-0" />
+                        <span>Non-Pouring</span>
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        onClick={() => onUpdateProject(entry.id, project.id, { lunch: !project.lunch })}
+                        disabled={isLocked}
+                        className={`flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.lunch ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
+                      >
+                        <Utensils className="w-4 h-4 shrink-0" />
+                        <span>Lunch</span>
+                      </button>
+                      <button
+                        onClick={() => onUpdateProject(entry.id, project.id, { lunchPenalty: !project.lunchPenalty })}
+                        disabled={isLocked}
+                        className={`flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.lunchPenalty ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
+                      >
+                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                        <span>Lunch Penalty</span>
+                      </button>
+                      <button
+                        onClick={() => onUpdateProject(entry.id, project.id, { weather: !project.weather })}
+                        disabled={isLocked}
+                        className={`flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.weather ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
+                      >
+                        <CloudRain className="w-4 h-4 shrink-0" />
+                        <span>Weather</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Layer 2 Footer - total hours + done */}
                 <div className="px-4 pt-4 pb-8 border-t border-gray-100 shrink-0 flex items-center gap-4">
