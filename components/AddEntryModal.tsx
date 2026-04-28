@@ -75,7 +75,6 @@ export function AddEntryModal({ isOpen, onClose, onSubmit }: AddEntryModalProps)
   };
 
   const projectOptions = [
-    '***Unknown Project***',
     'Queens St, Southport',
     'West Village - Calista',
     'West Village - Allere',

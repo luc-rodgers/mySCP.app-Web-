@@ -174,8 +174,6 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
-  const projectOptions = ['***Unknown Project***', ...activeProjects];
-
   const hourOptions = Array.from({ length: 25 }, (_, i) => i * 0.5);
 
   // Helper function to round down to nearest 0.25 increment
@@ -616,7 +614,6 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
             const project = entry.projects.find(p => p.id === selectedProjectId);
             if (!project) return null;
 
-            const projectOptions: ProjectOption[] = [{ id: 'unknown', name: '***Unknown Project***' }, ...activeProjects];
             const yardWorkOptions = ['Clean Pump', 'Inspections', 'Maintenance', 'Organize Yard', 'Equipment Prep for Site', 'Deliveries', 'Other'];
 
 
@@ -722,8 +719,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                                   const opts = projectsByState
                                     ? (stateFilter === 'QLD' ? projectsByState.QLD : projectsByState.NSW)
                                     : activeProjects;
-                                  const all = [{ id: 'unknown', name: '***Unknown Project***' }, ...opts];
-                                  const found = all.find(p => p.id === e.target.value);
+                                  const found = opts.find(p => p.id === e.target.value);
                                   if (found) onUpdateProject(entry.id, project.id, { project: found.name, projectId: found.id });
                                 }}
                                 disabled={isLocked}
@@ -733,7 +729,6 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                                   ? (stateFilter === 'QLD' ? projectsByState.QLD : projectsByState.NSW)
                                   : activeProjects
                                 ).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                                <option value="unknown">***Unknown Project***</option>
                               </Select>
                               {projectsByState && (
                                 <div className="flex bg-gray-100 rounded-lg p-0.5 shrink-0">
