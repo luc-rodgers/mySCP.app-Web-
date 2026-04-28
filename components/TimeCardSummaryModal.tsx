@@ -641,6 +641,11 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                                 Weather ({weatherHours.toFixed(1)} hrs)
                               </span>
                             )}
+                            {project.lunchPenalty && (
+                              <span className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded border border-orange-200">
+                                Lunch Penalty
+                              </span>
+                            )}
                             {hasInvalidTime && (
                               <span className="flex items-center">
                                 <AlertTriangle className="w-4 h-4 text-red-600" />
