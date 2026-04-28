@@ -624,7 +624,14 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                           ) : (
                             <ChevronRight className="w-5 h-5 text-gray-500 flex-shrink-0" />
                           )}
-                          <div className="text-base font-bold">{project.project || 'Not specified'}</div>
+                          {project.project ? (
+                            <div className="text-base font-bold">{project.project}</div>
+                          ) : (
+                            <div className="flex items-center gap-1.5 text-base font-bold text-orange-600">
+                              <AlertTriangle className="w-4 h-4" />
+                              Unknown Project
+                            </div>
+                          )}
                           <div className="flex gap-2 ml-2">
                             {project.lunch && (
                               <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded border border-green-200">Lunch</span>
