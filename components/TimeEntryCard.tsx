@@ -1,6 +1,7 @@
 "use client"
 import { Clock, MoreVertical, Plus, Trash2, X, Utensils, CloudRain, Check, CheckCircle, Briefcase, Truck, Plane, Car, Droplet, Hammer, AlertTriangle, ChevronRight, ChevronDown } from 'lucide-react';
 import { TimeEntry, Project, SubActivity } from '@/lib/types';
+import { NON_POURING_WORK_OPTIONS } from '@/lib/activityOptions';
 import { useState, useRef, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
@@ -762,7 +763,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                                 const isTravel = sa.type === 'travel';
                                 const isPouring = sa.type === 'pouring';
                                 const pouringOptions = ['Mobile', 'Placing Boom / Skid Pump'];
-                                const nonPouringOptions = ['Clean Pump', 'Climb Boom', 'Deliveries', 'Dismantle Boom', 'Dismantle Other', 'Dismantle Pump', 'Housekeeping', 'Inspections', 'Install Crucifix/Base', 'Install HD Bolts', 'Installation Boom', 'Installation Other', 'Installation Pump', 'Maintenance', 'Pipe Testing', 'Pipeline Installation', 'Pipeline Relocation', 'Preparation to Climb Boom', 'Transfer Line Relocation', 'Other'];
+                                const nonPouringOptions = NON_POURING_WORK_OPTIONS;
                                 const ActivityIcon = isTravel ? Car : isPouring ? Droplet : Hammer;
                                 const activityLabel = isTravel ? 'Travel' : isPouring ? 'Pouring' : 'Non-Pouring';
                                 const isCollapsed = collapsedActivities.has(sa.id);

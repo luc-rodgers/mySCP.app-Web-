@@ -1,6 +1,7 @@
 "use client"
 import { Plus, Trash2 } from 'lucide-react';
 import { SubActivity } from '@/lib/types';
+import { NON_POURING_WORK_OPTIONS } from '@/lib/activityOptions';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -76,7 +77,7 @@ export function SubActivitySection({ projectId, entryId, subActivities, timeOpti
                 if (subActivity.type === 'pouring') {
                   return ['🚚 Mobile', '🏗️ Placing Boom / Skid Pump'];
                 }
-                return ['Clean Pump', 'Climb Boom', 'Deliveries', 'Dismantle Boom', 'Dismantle Other', 'Dismantle Pump', 'Housekeeping', 'Inspections', 'Install Crucifix/Base', 'Install HD Bolts', 'Installation Boom', 'Installation Other', 'Installation Pump', 'Maintenance', 'Pipe Testing', 'Pipeline Installation', 'Pipeline Relocation', 'Preparation to Climb Boom', 'Transfer Line Relocation', 'Other'];
+                return NON_POURING_WORK_OPTIONS;
               };
 
               // Get color based on activity type
