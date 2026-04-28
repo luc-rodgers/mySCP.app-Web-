@@ -79,19 +79,34 @@ function calcHours(entry: TimeEntry): number {
   return Math.max(0, total - (hasLunch ? 0.5 : 0));
 }
 
-interface Flags { weather: boolean; lunchPenalty: boolean; unallocatedHours: number; }
+interface Flags { weather: boolean; lunchPenalty: boolean; unallocatedHours: number; unknownProject: boolean; invalidTimes: boolean; }
 
 function getFlags(entry: TimeEntry): Flags {
   const depotHrs = calcHours(entry);
-  let hasWeather = false, hasLunchPenalty = false, allocated = 0;
+  let hasWeather = false, hasLunchPenalty = false, allocated = 0, hasUnknownProject = false, hasInvalidTimes = false;
+  const toMin = (t?: string) => { if (!t) return null; const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+  const signOnMin = toMin(entry.depotStart);
+  const signOffMin = toMin(entry.depotFinish);
+  const before = (t?: string) => { const m = toMin(t); return m !== null && signOnMin !== null && m < signOnMin; };
+  const after = (t?: string) => { const m = toMin(t); return m !== null && signOffMin !== null && m > signOffMin; };
   (entry.projects ?? []).forEach((p) => {
     if (p.weather) hasWeather = true;
     if (p.lunchPenalty) hasLunchPenalty = true;
-    if (p.type === "yardwork") { allocated += subHrs(p.siteStart, p.siteFinish); if (p.lunch) allocated -= 0.5; }
-    else if (p.type === "leave") { allocated += parseFloat(p.leaveTotalHours || "0"); }
-    else { (p.subActivities ?? []).forEach((sa) => { allocated += subHrs(sa.start, sa.finish); }); }
+    if (p.type === "project" && !p.project) hasUnknownProject = true;
+    if (p.type === "yardwork") {
+      allocated += subHrs(p.siteStart, p.siteFinish);
+      if (p.lunch) allocated -= 0.5;
+      if (before(p.siteStart) || after(p.siteFinish)) hasInvalidTimes = true;
+    } else if (p.type === "leave") {
+      allocated += parseFloat(p.leaveTotalHours || "0");
+    } else {
+      (p.subActivities ?? []).forEach((sa) => {
+        allocated += subHrs(sa.start, sa.finish);
+        if (before(sa.start) || after(sa.finish)) hasInvalidTimes = true;
+      });
+    }
   });
-  return { weather: hasWeather, lunchPenalty: hasLunchPenalty, unallocatedHours: depotHrs > 0 ? Math.max(0, depotHrs - allocated) : 0 };
+  return { weather: hasWeather, lunchPenalty: hasLunchPenalty, unallocatedHours: depotHrs > 0 ? Math.max(0, depotHrs - allocated) : 0, unknownProject: hasUnknownProject, invalidTimes: hasInvalidTimes };
 }
 
 // ── Format helpers ───────────────────────────────────────────────────────────
@@ -274,7 +289,10 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
             })}
             {unallocatedHours > 0.05 && (
               <div className="px-4 py-3 flex items-center justify-between bg-red-50">
-                <p className="text-sm font-medium text-red-600">Unallocated Time</p>
+                <p className="text-sm font-medium text-red-600 flex items-center gap-1.5">
+                  <AlertTriangle className="w-4 h-4" />
+                  Unallocated Time
+                </p>
                 <span className="text-sm font-semibold text-red-600">{unallocatedHours.toFixed(2)} hrs</span>
               </div>
             )}
@@ -545,8 +563,7 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
                   const isEntryExpanded = expandedId === entry.id;
                   const isApproving = approvingId === entry.id;
                   const isApproved = entry.status === "approved";
-                  const hasOrangeFlag = flags.weather || flags.lunchPenalty;
-                  const hasRedFlag = flags.unallocatedHours > 0.05;
+                  const hasRedFlag = flags.unallocatedHours > 0.05 || flags.unknownProject || flags.invalidTimes || flags.weather || flags.lunchPenalty;
 
                   return (
                     <div key={entry.id}>

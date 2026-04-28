@@ -627,7 +627,7 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                           {project.project ? (
                             <div className="text-base font-bold">{project.project}</div>
                           ) : (
-                            <div className="flex items-center gap-1.5 text-base font-bold text-orange-600">
+                            <div className="flex items-center gap-1.5 text-base font-bold text-red-600">
                               <AlertTriangle className="w-4 h-4" />
                               Unknown Project
                             </div>
