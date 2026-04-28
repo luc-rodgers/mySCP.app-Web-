@@ -707,7 +707,8 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                   {(project.type === 'project' || project.type === 'yardwork') && (
                     <>
                       {project.type === 'project' ? (
-                        <div className="space-y-3">
+                        <div className="space-y-3 pt-2">
+                          <p className="text-xs text-gray-400 text-center">Choose a project</p>
                           {/* Project dropdown + QLD/NSW toggle */}
                           <div>
                             <label className="block text-xs text-gray-500 mb-1.5">Project Name</label>
@@ -1000,7 +1001,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
 
                 {/* Sticky activity picker — Travel/Pouring/Non-Pouring + Lunch/Penalty/Weather */}
                 {project.type === 'project' && !isLocked && (
-                  <div className="px-4 pt-3 pb-2 border-t border-gray-100 shrink-0 space-y-2 bg-white">
+                  <div className="px-4 pt-3 pb-5 border-t border-gray-100 shrink-0 space-y-2 bg-white">
                     <p className="text-xs text-gray-400 text-center">Choose an activity</p>
                     <div className="grid grid-cols-3 gap-2">
                       <button
