@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, AlertTriangle, Settings, Pencil, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, ChevronLeft, AlertTriangle, Settings, Pencil, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
@@ -843,7 +843,14 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
 
         <DialogFooter className="gap-2 px-6 pb-6">
           <Button variant="outline" onClick={onClose}>
-            {viewOnly ? 'Close' : 'Cancel'}
+            {viewOnly ? (
+              'Close'
+            ) : (
+              <>
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Back
+              </>
+            )}
           </Button>
           {!viewOnly && onSubmit && (
             <Button
