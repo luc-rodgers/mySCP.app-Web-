@@ -781,7 +781,7 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                   <div>
                     <div className="text-base font-bold text-gray-700">Non-Allocated Time</div>
                     <div className="text-xs text-gray-600 mt-1">
-                      Time not allocated to projects or yard work
+                      Time not allocated to an activity, yard work or project
                     </div>
                   </div>
                   <div className="text-right">
