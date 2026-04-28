@@ -278,7 +278,7 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
                     <p className="text-xs text-gray-400 pl-3">No sub-activities</p>
                   )}
                   {proj.weather && (
-                    <div className="mt-1 pl-3 border-l-2 border-orange-200 space-y-1 text-xs text-orange-600">
+                    <div className="mt-1 pl-3 border-l-2 border-orange-200 text-xs text-orange-600 leading-snug">
                       <div className="flex items-start justify-between">
                         <span>Weather{proj.weatherType ? ` — ${proj.weatherType}` : ""}</span>
                         <span className="flex items-center gap-3 shrink-0 ml-2">
