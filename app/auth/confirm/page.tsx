@@ -1,6 +1,5 @@
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -33,23 +32,6 @@ export default function ConfirmPage({
   const type = rawType as ConfirmType;
   const next = rawNext && SAFE_NEXT.test(rawNext) ? rawNext : "/auth/set-password";
 
-  async function confirm() {
-    "use server";
-    const supabase = await createClient();
-    const { error } = await supabase.auth.verifyOtp({
-      type,
-      token_hash: tokenHash!,
-    });
-
-    if (error) {
-      redirect(
-        "/login?error=" + encodeURIComponent("The link is invalid or has expired.")
-      );
-    }
-
-    redirect(next);
-  }
-
   const isRecovery = type === "recovery";
   const heading = isRecovery ? "Reset your password" : "Welcome to MySCP";
   const subtext = isRecovery
@@ -80,7 +62,10 @@ export default function ConfirmPage({
           <h2 className="text-lg font-semibold text-[#030213] mb-1">{heading}</h2>
           <p className="text-sm text-[#717182] mb-6">{subtext}</p>
 
-          <form action={confirm}>
+          <form action="/auth/confirm/verify" method="post">
+            <input type="hidden" name="token_hash" value={tokenHash} />
+            <input type="hidden" name="type" value={type} />
+            <input type="hidden" name="next" value={next} />
             <button
               type="submit"
               className="w-full py-2.5 px-4 rounded-[0.625rem] bg-[#030213] text-white text-sm font-medium hover:bg-[#1a1a2e] transition-colors"
