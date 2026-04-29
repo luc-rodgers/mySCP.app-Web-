@@ -243,8 +243,8 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
                             setLocalEmployee(e => ({ ...e, accountStatus: newStatus }));
                             onUpdate?.({ ...localEmployee, accountStatus: newStatus });
                             const shareText = result.action === 'reset'
-                              ? `Reset your MySCP password: ${result.url}`
-                              : `You've been added to MySCP. Activate your account: ${result.url}`;
+                              ? "Reset your MySCP password:"
+                              : "You've been added to MySCP. Activate your account:";
                             const nav = typeof navigator !== 'undefined' ? navigator : null;
                             try {
                               if (nav && typeof nav.share === 'function') {
