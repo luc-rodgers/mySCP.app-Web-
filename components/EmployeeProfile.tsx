@@ -1,6 +1,7 @@
 "use client"
-import { ArrowLeft, Mail, Phone, Clock, Settings, ChevronDown, ChevronUp, Car, Droplets, Wrench, UserPlus, CheckCircle2, CircleDashed, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Clock, Settings, ChevronDown, ChevronUp, Car, Droplets, Wrench, UserPlus, CheckCircle2, CircleDashed, AlertTriangle, Share2 } from 'lucide-react';
 import { inviteEmployee } from '@/app/actions/inviteEmployee';
+import { generateInviteLink } from '@/app/actions/generateInviteLink';
 import { TimeEntry } from '@/lib/types';
 import { useState, useRef, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -201,30 +202,88 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
                       Edit Employee
                     </button>
                     {localEmployee.email && (
-                      <button
-                        onClick={async () => {
-                          setShowMenu(false);
-                          setInviting(true);
-                          setInviteMessage(null);
-                          const result = await inviteEmployee(localEmployee.id);
-                          setInviting(false);
-                          if (result.success) {
+                      <>
+                        <button
+                          onClick={async () => {
+                            setShowMenu(false);
+                            setInviting(true);
+                            setInviteMessage(null);
+                            const result = await inviteEmployee(localEmployee.id);
+                            setInviting(false);
+                            if (result.success) {
+                              const newStatus = result.action === 'reset' ? 'confirmed' : 'pending';
+                              setLocalEmployee(e => ({ ...e, accountStatus: newStatus }));
+                              onUpdate?.({ ...localEmployee, accountStatus: newStatus });
+                              setInviteMessage({ ok: true, text: result.action === 'reset' ? 'Password reset sent!' : 'Invite sent!' });
+                            } else {
+                              setInviteMessage({ ok: false, text: result.error });
+                            }
+                            setTimeout(() => setInviteMessage(null), 4000);
+                          }}
+                          className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-2"
+                        >
+                          <UserPlus className="w-4 h-4" />
+                          {localEmployee.accountStatus === 'confirmed' ? 'Send Pswd Reset'
+                            : localEmployee.accountStatus === 'pending' ? 'Resend Invite'
+                            : 'Send Invite'}
+                        </button>
+                        <button
+                          onClick={async () => {
+                            setShowMenu(false);
+                            setInviting(true);
+                            setInviteMessage(null);
+                            const result = await generateInviteLink(localEmployee.id);
+                            setInviting(false);
+                            if (!result.success) {
+                              setInviteMessage({ ok: false, text: result.error });
+                              setTimeout(() => setInviteMessage(null), 4000);
+                              return;
+                            }
                             const newStatus = result.action === 'reset' ? 'confirmed' : 'pending';
                             setLocalEmployee(e => ({ ...e, accountStatus: newStatus }));
                             onUpdate?.({ ...localEmployee, accountStatus: newStatus });
-                            setInviteMessage({ ok: true, text: result.action === 'reset' ? 'Password reset sent!' : 'Invite sent!' });
-                          } else {
-                            setInviteMessage({ ok: false, text: result.error });
-                          }
-                          setTimeout(() => setInviteMessage(null), 4000);
-                        }}
-                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-2"
-                      >
-                        <UserPlus className="w-4 h-4" />
-                        {localEmployee.accountStatus === 'confirmed' ? 'Send Pswd Reset'
-                          : localEmployee.accountStatus === 'pending' ? 'Resend Invite'
-                          : 'Send Invite'}
-                      </button>
+                            const shareText = result.action === 'reset'
+                              ? `Reset your MySCP password: ${result.url}`
+                              : `You've been added to MySCP. Activate your account: ${result.url}`;
+                            const nav = typeof navigator !== 'undefined' ? navigator : null;
+                            try {
+                              if (nav && typeof nav.share === 'function') {
+                                await nav.share({
+                                  title: result.action === 'reset' ? 'MySCP password reset' : 'MySCP invite',
+                                  text: shareText,
+                                  url: result.url,
+                                });
+                                setInviteMessage({ ok: true, text: 'Link shared. Old link no longer works.' });
+                              } else if (nav?.clipboard) {
+                                await nav.clipboard.writeText(result.url);
+                                setInviteMessage({ ok: true, text: 'Link copied. Old link no longer works.' });
+                              } else {
+                                setInviteMessage({ ok: false, text: 'Sharing not supported in this browser.' });
+                              }
+                            } catch (err) {
+                              if ((err as Error)?.name === 'AbortError') {
+                                setInviteMessage(null);
+                                return;
+                              }
+                              try {
+                                if (nav?.clipboard) {
+                                  await nav.clipboard.writeText(result.url);
+                                  setInviteMessage({ ok: true, text: 'Link copied. Old link no longer works.' });
+                                } else {
+                                  setInviteMessage({ ok: false, text: 'Could not share or copy link.' });
+                                }
+                              } catch {
+                                setInviteMessage({ ok: false, text: 'Could not share or copy link.' });
+                              }
+                            }
+                            setTimeout(() => setInviteMessage(null), 4000);
+                          }}
+                          className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-2"
+                        >
+                          <Share2 className="w-4 h-4" />
+                          Share invite link
+                        </button>
+                      </>
                     )}
                   </div>
                 )}
