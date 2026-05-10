@@ -13,14 +13,20 @@ import {
   LogOut,
   X,
   Menu,
+  History,
+  BarChart3,
 } from "lucide-react";
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 
-const allMenuItems = [
-  { id: "profile",    label: "Profile",    icon: User,      href: "/profile",    adminOnly: false },
-  { id: "timesheet",  label: "Timesheet",  icon: Clock,     href: "/timesheet",  adminOnly: false },
+type MenuItem = { id: string; label: string; icon: typeof Clock; href: string; adminOnly: boolean; nonAdminOnly?: boolean };
+
+const allMenuItems: MenuItem[] = [
+  { id: "profile",    label: "Profile",    icon: User,          href: "/profile",    adminOnly: false },
+  { id: "timesheet",  label: "Timesheet",  icon: Clock,         href: "/timesheet",  adminOnly: false },
+  { id: "history",    label: "History",    icon: History,       href: "/history",    adminOnly: false, nonAdminOnly: true },
+  { id: "analytics",  label: "Analytics",  icon: BarChart3,     href: "/analytics",  adminOnly: false, nonAdminOnly: true },
   { id: "timesheets", label: "Administration", icon: ClipboardList, href: "/timesheets", adminOnly: true  },
   { id: "employees",  label: "Employees",  icon: Users,         href: "/employees",  adminOnly: true  },
   { id: "projects",   label: "Projects",   icon: Briefcase,     href: "/projects",   adminOnly: true  },
@@ -64,7 +70,7 @@ export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-2 space-y-2 overflow-y-auto">
-        {allMenuItems.filter(item => !item.adminOnly || isAdmin).map(({ id, label, icon: Icon, href }) => {
+        {allMenuItems.filter(item => (!item.adminOnly || isAdmin) && (!item.nonAdminOnly || !isAdmin)).map(({ id, label, icon: Icon, href }) => {
           const isActive = pathname === href;
           return (
             <Link
@@ -105,30 +111,32 @@ export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
 
   return (
     <>
-      {/* Mobile menu button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="fixed z-50 md:hidden bg-white shadow-md"
-        style={{ top: 'max(1rem, env(safe-area-inset-top, 1rem))', left: 'max(1rem, env(safe-area-inset-left, 1rem))' }}
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-      </Button>
+      {/* Mobile menu button — admins only; non-admins use the bottom nav */}
+      {isAdmin && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="fixed z-50 md:hidden bg-white shadow-md"
+          style={{ top: 'max(1rem, env(safe-area-inset-top, 1rem))', left: 'max(1rem, env(safe-area-inset-left, 1rem))' }}
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </Button>
+      )}
 
       {/* Mobile overlay */}
-      {isOpen && (
+      {isOpen && isAdmin && (
         <div
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar — hidden entirely on mobile for non-admins (replaced by bottom nav) */}
       <aside
         className={`fixed top-0 left-0 h-full bg-white border-r border-gray-200 w-64 transform transition-transform duration-300 ease-in-out z-40 shadow-sm ${
           isOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0 md:static md:w-[280px]`}
+        } md:translate-x-0 md:static md:w-[280px] ${isAdmin ? '' : 'hidden md:flex'}`}
         onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
         onTouchEnd={(e) => {
           if (touchStartX.current === null) return;

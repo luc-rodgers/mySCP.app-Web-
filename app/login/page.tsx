@@ -32,7 +32,7 @@ function LoginForm() {
       return;
     }
 
-    router.push("/profile");
+    router.push("/timesheet");
     router.refresh();
   }
 

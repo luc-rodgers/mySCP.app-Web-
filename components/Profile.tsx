@@ -20,6 +20,7 @@ interface ProfileProps {
   employmentType: string;
   role: string;
   showClaimAdmin?: boolean;
+  view?: 'profile' | 'history' | 'stats';
 }
 
 export function Profile({
@@ -34,6 +35,7 @@ export function Profile({
   classification,
   employmentType,
   role,
+  view,
 }: ProfileProps) {
   const [localEntries, setLocalEntries] = useState<TimeEntry[]>(entries);
   const [showEdit, setShowEdit] = useState(false);
@@ -121,11 +123,16 @@ export function Profile({
     });
   };
 
+  const showProfileCard = !view || view === 'profile';
+  const showTabs = !view;
+  const showHistory = !view ? activeTab === 'history' : view === 'history';
+  const showStats = !view ? activeTab === 'stats' : view === 'stats';
+
   return (
     <div className="min-h-screen bg-[#f3f3f5] pb-24 pt-4">
 
       {/* Profile card */}
-      <div className="mx-4 mb-4">
+      {showProfileCard && <div className="mx-4 mb-4">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
 
           {/* Gear menu */}
@@ -166,10 +173,10 @@ export function Profile({
           </div>
 
         </div>
-      </div>
+      </div>}
 
       {/* Tab toggle */}
-      <div className="mx-4 mb-4">
+      {showTabs && <div className="mx-4 mb-4">
         <div className="flex bg-gray-200 rounded-xl p-1 gap-1">
           <button
             onClick={() => setActiveTab('history')}
@@ -192,10 +199,10 @@ export function Profile({
             Analytics
           </button>
         </div>
-      </div>
+      </div>}
 
       {/* Work History tab */}
-      {activeTab === 'history' && (
+      {showHistory && (
         <div className="mx-4">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             {sortedWeekKeys.length === 0 ? (
@@ -281,7 +288,7 @@ export function Profile({
       )}
 
       {/* Analytics tab */}
-      {activeTab === 'stats' && (
+      {showStats && (
         <div className="mx-4 space-y-4">
           {/* Stat cards */}
           <div className="grid grid-cols-3 gap-3">

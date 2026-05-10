@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Sidebar from "@/components/Sidebar";
 import { ToastProvider } from "@/components/Toast";
+import MobileBottomNav from "@/components/MobileBottomNav";
+import MobileProfileHeader from "@/components/MobileProfileHeader";
 
 export default async function ProtectedLayout({
   children,
@@ -19,7 +21,7 @@ export default async function ProtectedLayout({
 
   const { data: employee } = await supabase
     .from("employees")
-    .select("role")
+    .select("role, first_name, last_name, title")
     .eq("user_id", user.id)
     .single();
 
@@ -29,9 +31,17 @@ export default async function ProtectedLayout({
     <ToastProvider>
       <div className="flex min-h-screen" style={{ backgroundColor: "#f3f3f5" }}>
         <Sidebar isAdmin={isAdmin} />
-        <main className="flex-1 min-h-screen">
+        <main className="flex-1 min-h-screen pb-20 md:pb-0">
+          {!isAdmin && (
+            <MobileProfileHeader
+              firstName={employee?.first_name ?? ""}
+              lastName={employee?.last_name ?? ""}
+              classification={employee?.title ?? ""}
+            />
+          )}
           <div className="max-w-6xl mx-auto w-full px-6 py-6">{children}</div>
         </main>
+        {!isAdmin && <MobileBottomNav />}
       </div>
     </ToastProvider>
   );
