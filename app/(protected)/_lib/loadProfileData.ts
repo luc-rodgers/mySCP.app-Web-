@@ -1,5 +1,32 @@
 import { createClient } from "@/lib/supabase/server";
 import { Employee, TimeEntry } from "@/lib/types";
+import { diffHours } from "@/lib/timeMath";
+
+export function summariseHours(entries: TimeEntry[]) {
+  const today = new Date();
+  const tz = today.getTimezoneOffset();
+  const localToday = new Date(today.getTime() - tz * 60000).toISOString().split("T")[0];
+
+  const weekStart = new Date(today);
+  const dow = weekStart.getDay();
+  const offset = dow === 0 ? -6 : 1 - dow; // Monday-anchored
+  weekStart.setDate(weekStart.getDate() + offset);
+  weekStart.setHours(0, 0, 0, 0);
+
+  let todayHours = 0, weekHours = 0;
+  for (const e of entries) {
+    const depot = diffHours(e.depotStart, e.depotFinish, e.isNightShift);
+    const hasLunch = (e.projects ?? []).some(p => p.lunch);
+    const leave = (e.projects ?? []).filter(p => p.type === "leave")
+      .reduce((sum, p) => sum + parseFloat((p as any).leaveTotalHours || "0"), 0);
+    const hrs = Math.max(0, depot - (hasLunch ? 0.5 : 0)) + leave;
+
+    if (e.date === localToday) todayHours += hrs;
+    const [y, m, d] = e.date.split("-").map(Number);
+    if (new Date(y, m - 1, d) >= weekStart) weekHours += hrs;
+  }
+  return { todayHours, weekHours };
+}
 
 export async function loadProfileData() {
   const supabase = await createClient();
