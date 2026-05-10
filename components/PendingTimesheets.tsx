@@ -4,6 +4,7 @@ import { useState, useEffect, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { TimeEntry } from "@/lib/types";
+import { isTimeOutsideShift } from "@/lib/timeMath";
 import { TimeEntryEditorModal } from "./TimeEntryEditorModal";
 import { approveTimeEntry } from "@/app/actions/approveTimeEntry";
 import { useToast } from "@/components/Toast";
@@ -65,16 +66,18 @@ function formatDayHeader(dateStr: string): string {
 
 // ── Hour / flag helpers ──────────────────────────────────────────────────────
 
-function subHrs(start: string, finish: string): number {
+function subHrs(start: string, finish: string, allowNextDay = false): number {
   if (!start || !finish) return 0;
   const [sh, sm] = start.split(":").map(Number);
   const [fh, fm] = finish.split(":").map(Number);
-  return Math.max(0, (fh * 60 + fm - sh * 60 - sm) / 60);
+  let diff = (fh * 60 + fm) - (sh * 60 + sm);
+  if (diff < 0 && allowNextDay) diff += 24 * 60;
+  return Math.max(0, diff / 60);
 }
 
 function calcHours(entry: TimeEntry): number {
   if (!entry.depotStart || !entry.depotFinish) return 0;
-  const total = subHrs(entry.depotStart, entry.depotFinish);
+  const total = subHrs(entry.depotStart, entry.depotFinish, entry.isNightShift);
   const hasLunch = (entry.projects ?? []).some((p) => p.lunch);
   return Math.max(0, total - (hasLunch ? 0.5 : 0));
 }
@@ -84,25 +87,22 @@ interface Flags { weather: boolean; lunchPenalty: boolean; unallocatedHours: num
 function getFlags(entry: TimeEntry): Flags {
   const depotHrs = calcHours(entry);
   let hasWeather = false, hasLunchPenalty = false, allocated = 0, hasUnknownProject = false, hasInvalidTimes = false;
-  const toMin = (t?: string) => { if (!t) return null; const [h, m] = t.split(":").map(Number); return h * 60 + m; };
-  const signOnMin = toMin(entry.depotStart);
-  const signOffMin = toMin(entry.depotFinish);
-  const before = (t?: string) => { const m = toMin(t); return m !== null && signOnMin !== null && m < signOnMin; };
-  const after = (t?: string) => { const m = toMin(t); return m !== null && signOffMin !== null && m > signOffMin; };
+  const ns = !!entry.isNightShift;
+  const outside = (t?: string) => !!t && !!entry.depotStart && !!entry.depotFinish && isTimeOutsideShift(t, entry.depotStart, entry.depotFinish, ns);
   (entry.projects ?? []).forEach((p) => {
     if (p.weather) hasWeather = true;
     if (p.lunchPenalty) hasLunchPenalty = true;
     if (p.type === "project" && !p.project) hasUnknownProject = true;
     if (p.type === "yardwork") {
-      allocated += subHrs(p.siteStart, p.siteFinish);
+      allocated += subHrs(p.siteStart, p.siteFinish, ns);
       if (p.lunch) allocated -= 0.5;
-      if (before(p.siteStart) || after(p.siteFinish)) hasInvalidTimes = true;
+      if (outside(p.siteStart) || outside(p.siteFinish)) hasInvalidTimes = true;
     } else if (p.type === "leave") {
       allocated += parseFloat(p.leaveTotalHours || "0");
     } else {
       (p.subActivities ?? []).forEach((sa) => {
-        allocated += subHrs(sa.start, sa.finish);
-        if (before(sa.start) || after(sa.finish)) hasInvalidTimes = true;
+        allocated += subHrs(sa.start, sa.finish, ns);
+        if (outside(sa.start) || outside(sa.finish)) hasInvalidTimes = true;
       });
     }
   });
@@ -169,7 +169,7 @@ function printTimecard(entry: TimeEntry) {
     if (proj.type === "yardwork") return `<tr><td>Yard Work</td><td>Yard Work</td><td>${proj.siteStart ?? ""}–${proj.siteFinish ?? ""}</td><td>—</td></tr>`;
     return (proj.subActivities ?? []).map((sa) => `<tr><td>${proj.project ?? ""}</td><td>${sa.type ?? ""}</td><td>${sa.start ?? ""}–${sa.finish ?? ""}</td><td>—</td></tr>`).join("") || `<tr><td>${proj.project ?? ""}</td><td>—</td><td>—</td><td>—</td></tr>`;
   }).join("");
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Time Card – ${entry.timeCardNumber ?? entry.date}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:12px;color:#111;padding:32px}h1{font-size:18px;font-weight:bold;margin-bottom:4px}.meta{color:#555;font-size:11px;margin-bottom:20px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}.box{border:1px solid #e5e7eb;border-radius:6px;padding:10px}.label{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:4px}.box-value{font-size:16px;font-weight:bold}table{width:100%;border-collapse:collapse;margin-top:8px}th{background:#f9fafb;text-align:left;font-size:10px;text-transform:uppercase;color:#888;padding:6px 10px;border-bottom:1px solid #e5e7eb}td{padding:7px 10px;border-bottom:1px solid #f3f4f6;font-size:12px}.footer{margin-top:32px;border-top:1px solid #e5e7eb;padding-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:24px}.sig-line{border-bottom:1px solid #111;margin-top:24px}</style></head><body><h1>MySCP – Time Card</h1><div class="meta">${entry.timeCardNumber ?? "No reference"} · ${formatDate(entry.date)}</div><div class="grid"><div class="box"><div class="label">Employee</div><div class="box-value">${entry.employeeName ?? "—"}</div></div><div class="box"><div class="label">Depot Sign On</div><div class="box-value">${entry.depotStart ?? "—"}</div></div><div class="box"><div class="label">Depot Sign Off</div><div class="box-value">${entry.depotFinish ?? "—"}</div></div></div><div class="grid"><div class="box"><div class="label">Total Hours</div><div class="box-value">${hours.toFixed(2)}</div></div><div class="box"><div class="label">Status</div><div class="box-value">Pending Approval</div></div></div><div><div class="label">Work Detail</div><table><thead><tr><th>Project / Activity</th><th>Type</th><th>Time</th><th>Notes</th></tr></thead><tbody>${projectRows || '<tr><td colspan="4" style="color:#aaa">No work detail recorded</td></tr>'}</tbody></table></div>${entry.remarks ? `<div style="margin-top:16px"><div class="label">Comments</div><p>${entry.remarks}</p></div>` : ""}<div class="footer"><div><div class="label">Employee Signature</div><div class="sig-line"></div></div><div><div class="label">Approved By</div><div class="sig-line"></div></div></div></body></html>`;
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Time Card – ${entry.timeCardNumber ?? entry.date}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:12px;color:#111;padding:32px}h1{font-size:18px;font-weight:bold;margin-bottom:4px}.meta{color:#555;font-size:11px;margin-bottom:20px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}.box{border:1px solid #e5e7eb;border-radius:6px;padding:10px}.label{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:4px}.box-value{font-size:16px;font-weight:bold}table{width:100%;border-collapse:collapse;margin-top:8px}th{background:#f9fafb;text-align:left;font-size:10px;text-transform:uppercase;color:#888;padding:6px 10px;border-bottom:1px solid #e5e7eb}td{padding:7px 10px;border-bottom:1px solid #f3f4f6;font-size:12px}.footer{margin-top:32px;border-top:1px solid #e5e7eb;padding-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:24px}.sig-line{border-bottom:1px solid #111;margin-top:24px}</style></head><body><h1>MySCP – Time Card</h1><div class="meta">${entry.timeCardNumber ?? "No reference"} · ${formatDate(entry.date)}</div><div class="grid"><div class="box"><div class="label">Employee</div><div class="box-value">${entry.employeeName ?? "—"}</div></div><div class="box"><div class="label">Sign On</div><div class="box-value">${entry.depotStart ?? "—"}</div></div><div class="box"><div class="label">Sign Off</div><div class="box-value">${entry.depotFinish ?? "—"}</div></div></div><div class="grid"><div class="box"><div class="label">Total Hours</div><div class="box-value">${hours.toFixed(2)}</div></div><div class="box"><div class="label">Status</div><div class="box-value">Pending Approval</div></div></div><div><div class="label">Work Detail</div><table><thead><tr><th>Project / Activity</th><th>Type</th><th>Time</th><th>Notes</th></tr></thead><tbody>${projectRows || '<tr><td colspan="4" style="color:#aaa">No work detail recorded</td></tr>'}</tbody></table></div>${entry.remarks ? `<div style="margin-top:16px"><div class="label">Comments</div><p>${entry.remarks}</p></div>` : ""}<div class="footer"><div><div class="label">Employee Signature</div><div class="sig-line"></div></div><div><div class="label">Approved By</div><div class="sig-line"></div></div></div></body></html>`;
   const win = window.open("", "_blank");
   if (!win) return;
   win.document.write(html);
@@ -187,11 +187,11 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
     <div className="px-5 pb-5 pt-2 border-t border-gray-100 bg-gray-50/50 space-y-4">
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-white rounded-xl border border-gray-100 px-4 py-3">
-          <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Depot Sign On</p>
+          <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Sign On</p>
           <p className="text-base font-semibold text-gray-900">{entry.depotStart || "—"}</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-100 px-4 py-3">
-          <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Depot Sign Off</p>
+          <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Sign Off</p>
           <p className="text-base font-semibold text-gray-900">{entry.depotFinish || "—"}</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-100 px-4 py-3">
@@ -220,7 +220,7 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
                 );
               }
               if (proj.type === "yardwork") {
-                const yardHrs = Math.max(0, subHrs(proj.siteStart, proj.siteFinish) - (proj.lunch ? 0.5 : 0));
+                const yardHrs = Math.max(0, subHrs(proj.siteStart, proj.siteFinish, entry.isNightShift) - (proj.lunch ? 0.5 : 0));
                 return (
                   <div key={i} className="px-4 py-3">
                     <div className="flex items-center justify-between mb-2">
@@ -245,7 +245,7 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
                   </div>
                 );
               }
-              const projHrs = (proj.subActivities ?? []).reduce((sum, sa) => sum + subHrs(sa.start, sa.finish), 0);
+              const projHrs = (proj.subActivities ?? []).reduce((sum, sa) => sum + subHrs(sa.start, sa.finish, entry.isNightShift), 0);
               return (
                 <div key={i} className="px-4 py-3">
                   <div className="flex items-center justify-between mb-2">
@@ -262,7 +262,7 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
                   {(proj.subActivities ?? []).length > 0 ? (
                     <div className="space-y-1">
                       {proj.subActivities.map((sa, j) => {
-                        const saHrs = subHrs(sa.start, sa.finish);
+                        const saHrs = subHrs(sa.start, sa.finish, entry.isNightShift);
                         return (
                           <div key={j} className="flex items-start justify-between text-xs text-gray-500 pl-3 border-l-2 border-gray-200">
                             <span className="capitalize">{sa.type}{sa.activityType ? ` — ${sa.activityType}` : ""}</span>
@@ -283,7 +283,7 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
                         <span>Weather{proj.weatherType ? ` — ${proj.weatherType}` : ""}</span>
                         <span className="flex items-center gap-3 shrink-0 ml-2">
                           <span>{proj.weatherStart ?? "--:--"} – {proj.weatherEnd ?? "--:--"}</span>
-                          <span className="font-medium w-14 text-right">{subHrs(proj.weatherStart ?? "", proj.weatherEnd ?? "").toFixed(2)} hrs</span>
+                          <span className="font-medium w-14 text-right">{subHrs(proj.weatherStart ?? "", proj.weatherEnd ?? "", entry.isNightShift).toFixed(2)} hrs</span>
                         </span>
                       </div>
                       {proj.approvedBy && (

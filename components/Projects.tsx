@@ -1,9 +1,12 @@
 "use client"
 import { Settings } from 'lucide-react';
 import { Badge } from './ui/badge';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { ProjectProfile } from './ProjectProfile';
 import { AddProjectModal } from './AddProjectModal';
+import { SortHeader, type SortDirection } from './SortHeader';
+
+type SortField = 'name' | 'client' | 'address' | 'hoursLogged';
 
 interface Project {
   id: string;
@@ -39,7 +42,18 @@ export function Projects({ initialProjects = [], isAdmin = false, clients = [] }
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const menuRef = useRef<HTMLDivElement>(null);
+
+  function handleSort(field: SortField) {
+    if (sortField === field) {
+      setSortDirection(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  }
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -53,6 +67,23 @@ export function Projects({ initialProjects = [], isAdmin = false, clients = [] }
 
   const stateProjects = projects.filter(p => !p.state || p.state === stateFilter);
   const filteredProjects = stateProjects.filter(p => p.status === (showCompleted ? 'completed' : 'active'));
+
+  const sortedProjects = useMemo(() => {
+    const dir = sortDirection === 'asc' ? 1 : -1;
+    const collator = new Intl.Collator(undefined, { sensitivity: 'base' });
+    return [...filteredProjects].sort((a, b) => {
+      if (sortField === 'hoursLogged') {
+        const cmp = a.hoursLogged - b.hoursLogged;
+        if (cmp !== 0) return cmp * dir;
+        return collator.compare(a.name, b.name);
+      }
+      const av = (a[sortField] ?? '') as string;
+      const bv = (b[sortField] ?? '') as string;
+      const cmp = collator.compare(av, bv);
+      if (cmp !== 0) return cmp * dir;
+      return collator.compare(a.name, b.name);
+    });
+  }, [filteredProjects, sortField, sortDirection]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -157,7 +188,7 @@ export function Projects({ initialProjects = [], isAdmin = false, clients = [] }
 
       {/* Projects Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        {filteredProjects.length === 0 && (
+        {sortedProjects.length === 0 && (
           <div className="px-4 py-10 text-center text-sm text-gray-500">
             No {showCompleted ? 'completed' : 'active'} projects in {stateFilter}
           </div>
@@ -165,7 +196,7 @@ export function Projects({ initialProjects = [], isAdmin = false, clients = [] }
 
         {/* Mobile Layout */}
         <div className="md:hidden divide-y divide-gray-100">
-          {filteredProjects.map((project) => (
+          {sortedProjects.map((project) => (
             <button
               key={project.id}
               onClick={() => setSelectedProject(project)}
@@ -187,14 +218,14 @@ export function Projects({ initialProjects = [], isAdmin = false, clients = [] }
         {/* Desktop Layout */}
         <div className="hidden md:block">
           <div className="grid grid-cols-12 gap-4 bg-gray-50 px-4 py-3 border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
-            <div className="col-span-4">Project Name</div>
-            <div className="col-span-2">Client</div>
-            <div className="col-span-3">Location</div>
+            <SortHeader label="Project Name" field="name" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="col-span-4" />
+            <SortHeader label="Client" field="client" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="col-span-2" />
+            <SortHeader label="Location" field="address" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="col-span-3" />
             <div className="col-span-2">Status</div>
-            <div className="col-span-1 text-right">Hrs</div>
+            <SortHeader label="Hrs" field="hoursLogged" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="col-span-1 justify-end" />
           </div>
           <div className="divide-y divide-gray-100">
-            {filteredProjects.map((project) => (
+            {sortedProjects.map((project) => (
               <button
                 key={project.id}
                 onClick={() => setSelectedProject(project)}

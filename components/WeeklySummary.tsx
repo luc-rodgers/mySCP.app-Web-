@@ -65,11 +65,13 @@ export function WeeklySummary({ entries, employee, onBack }: WeeklySummaryProps)
 
   const roundQ = (h: number) => Math.floor(h * 4) / 4;
 
-  const calcHrs = (start: string, end: string): number => {
+  const calcHrs = (start: string, end: string, allowNextDay = false): number => {
     if (!start || !end) return 0;
     const [sh, sm] = start.split(':').map(Number);
     const [eh, em] = end.split(':').map(Number);
-    return roundQ((eh * 60 + em - sh * 60 - sm) / 60);
+    let diff = (eh * 60 + em) - (sh * 60 + sm);
+    if (diff < 0 && allowNextDay) diff += 24 * 60;
+    return roundQ(Math.max(0, diff) / 60);
   };
 
   // Get on-site / off-site times for a project entry
@@ -119,7 +121,7 @@ export function WeeklySummary({ entries, employee, onBack }: WeeklySummaryProps)
     const leaveTotal = entry.projects
       .filter((p: any) => p.type === 'leave')
       .reduce((sum: number, p: any) => sum + parseFloat(p.leaveTotalHours || '0'), 0);
-    const grossHours = isLeaveOnly ? 0 : calcHrs(entry.depotStart, entry.depotFinish) + leaveTotal;
+    const grossHours = isLeaveOnly ? 0 : calcHrs(entry.depotStart, entry.depotFinish, entry.isNightShift) + leaveTotal;
     const hasLunch = !isLeaveOnly && entry.projects.some(p => p.lunch);
     const hasLunchPenalty = !isLeaveOnly && entry.projects.some(p => p.lunchPenalty);
     const lunchPenaltyHours = hasLunchPenalty ? 0.5 : 0;

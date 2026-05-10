@@ -1,5 +1,6 @@
 "use client"
 import { TimeEntry } from '@/lib/types';
+import { diffHours, isTimeOutsideShift } from '@/lib/timeMath';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -53,6 +54,7 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
   
   // Check for invalid time order (sign on after sign off)
   const hasInvalidTimeOrder = (() => {
+    if (entry.isNightShift) return false;
     if (!entry.depotStart || !entry.depotFinish) return false;
     const [startHour, startMin] = entry.depotStart.split(':').map(Number);
     const [finishHour, finishMin] = entry.depotFinish.split(':').map(Number);
@@ -61,60 +63,32 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
     return startMinutes >= finishMinutes;
   })();
 
-  // Check if any project/yard work starts before sign on time
+  // Check if any project/yard work starts outside the shift window
   const hasWorkBeforeSignOn = (() => {
-    if (!entry.depotStart) return false;
-    const [signOnHour, signOnMin] = entry.depotStart.split(':').map(Number);
-    const signOnMinutes = signOnHour * 60 + signOnMin;
-
+    if (!entry.depotStart || !entry.depotFinish) return false;
     for (const project of entry.projects) {
-      if (project.type === 'leave') continue; // Skip Leave
-
+      if (project.type === 'leave') continue;
       if (project.type === 'yardwork') {
-        // Check yard work site start
-        if (project.siteStart) {
-          const [startHour, startMin] = project.siteStart.split(':').map(Number);
-          const startMinutes = startHour * 60 + startMin;
-          if (startMinutes < signOnMinutes) return true;
-        }
+        if (project.siteStart && isTimeOutsideShift(project.siteStart, entry.depotStart, entry.depotFinish, !!entry.isNightShift)) return true;
       } else if (project.type === 'project' && project.subActivities) {
-        // Check all sub-activity start times
-        for (const subActivity of project.subActivities) {
-          if (subActivity.start) {
-            const [startHour, startMin] = subActivity.start.split(':').map(Number);
-            const startMinutes = startHour * 60 + startMin;
-            if (startMinutes < signOnMinutes) return true;
-          }
+        for (const sa of project.subActivities) {
+          if (sa.start && isTimeOutsideShift(sa.start, entry.depotStart, entry.depotFinish, !!entry.isNightShift)) return true;
         }
       }
     }
     return false;
   })();
 
-  // Check if any project/yard work finishes after sign off time
+  // Check if any project/yard work finishes outside the shift window
   const hasWorkAfterSignOff = (() => {
-    if (!entry.depotFinish) return false;
-    const [signOffHour, signOffMin] = entry.depotFinish.split(':').map(Number);
-    const signOffMinutes = signOffHour * 60 + signOffMin;
-
+    if (!entry.depotStart || !entry.depotFinish) return false;
     for (const project of entry.projects) {
-      if (project.type === 'leave') continue; // Skip Leave
-
+      if (project.type === 'leave') continue;
       if (project.type === 'yardwork') {
-        // Check yard work site finish
-        if (project.siteFinish) {
-          const [finishHour, finishMin] = project.siteFinish.split(':').map(Number);
-          const finishMinutes = finishHour * 60 + finishMin;
-          if (finishMinutes > signOffMinutes) return true;
-        }
+        if (project.siteFinish && isTimeOutsideShift(project.siteFinish, entry.depotStart, entry.depotFinish, !!entry.isNightShift)) return true;
       } else if (project.type === 'project' && project.subActivities) {
-        // Check all sub-activity finish times
-        for (const subActivity of project.subActivities) {
-          if (subActivity.finish) {
-            const [finishHour, finishMin] = subActivity.finish.split(':').map(Number);
-            const finishMinutes = finishHour * 60 + finishMin;
-            if (finishMinutes > signOffMinutes) return true;
-          }
+        for (const sa of project.subActivities) {
+          if (sa.finish && isTimeOutsideShift(sa.finish, entry.depotStart, entry.depotFinish, !!entry.isNightShift)) return true;
         }
       }
     }
@@ -123,76 +97,27 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
 
   const hasInvalidWorkTimes = hasWorkBeforeSignOn || hasWorkAfterSignOff;
 
-  // Helper function to check if a specific start time is before sign on
+  // True if a sub-activity start sits outside the shift window
   const timeIsBeforeSignOn = (timeString: string) => {
-    if (!entry.depotStart || !timeString) return false;
-    const [signOnHour, signOnMin] = entry.depotStart.split(':').map(Number);
-    const signOnMinutes = signOnHour * 60 + signOnMin;
-    
-    const [timeHour, timeMin] = timeString.split(':').map(Number);
-    const timeMinutes = timeHour * 60 + timeMin;
-    
-    return timeMinutes < signOnMinutes;
+    if (!entry.depotStart || !entry.depotFinish || !timeString) return false;
+    return isTimeOutsideShift(timeString, entry.depotStart, entry.depotFinish, !!entry.isNightShift);
   };
 
-  // Helper function to check if a specific finish time is after sign off
+  // True if a sub-activity finish sits outside the shift window
   const timeIsAfterSignOff = (timeString: string) => {
-    if (!entry.depotFinish || !timeString) return false;
-    const [signOffHour, signOffMin] = entry.depotFinish.split(':').map(Number);
-    const signOffMinutes = signOffHour * 60 + signOffMin;
-    
-    const [timeHour, timeMin] = timeString.split(':').map(Number);
-    const timeMinutes = timeHour * 60 + timeMin;
-    
-    return timeMinutes > signOffMinutes;
+    if (!entry.depotStart || !entry.depotFinish || !timeString) return false;
+    return isTimeOutsideShift(timeString, entry.depotStart, entry.depotFinish, !!entry.isNightShift);
   };
 
-  // Helper function to check if a specific project has times before sign on or after sign off
+  // True if a project has any time falling outside the shift window
   const projectHasInvalidTimes = (project: any) => {
-    // Check start times before sign on
-    if (entry.depotStart) {
-      const [signOnHour, signOnMin] = entry.depotStart.split(':').map(Number);
-      const signOnMinutes = signOnHour * 60 + signOnMin;
-
-      if (project.type === 'yardwork') {
-        if (project.siteStart) {
-          const [startHour, startMin] = project.siteStart.split(':').map(Number);
-          const startMinutes = startHour * 60 + startMin;
-          if (startMinutes < signOnMinutes) return true;
-        }
-      } else if (project.type === 'project' && project.subActivities) {
-        for (const subActivity of project.subActivities) {
-          if (subActivity.start) {
-            const [startHour, startMin] = subActivity.start.split(':').map(Number);
-            const startMinutes = startHour * 60 + startMin;
-            if (startMinutes < signOnMinutes) return true;
-          }
-        }
-      }
+    if (!entry.depotStart || !entry.depotFinish) return false;
+    const ns = !!entry.isNightShift;
+    const outside = (t?: string) => !!t && isTimeOutsideShift(t, entry.depotStart, entry.depotFinish, ns);
+    if (project.type === 'yardwork') return outside(project.siteStart) || outside(project.siteFinish);
+    if (project.type === 'project' && project.subActivities) {
+      return project.subActivities.some((sa: any) => outside(sa.start) || outside(sa.finish));
     }
-
-    // Check finish times after sign off
-    if (entry.depotFinish) {
-      const [signOffHour, signOffMin] = entry.depotFinish.split(':').map(Number);
-      const signOffMinutes = signOffHour * 60 + signOffMin;
-
-      if (project.type === 'yardwork') {
-        if (project.siteFinish) {
-          const [finishHour, finishMin] = project.siteFinish.split(':').map(Number);
-          const finishMinutes = finishHour * 60 + finishMin;
-          if (finishMinutes > signOffMinutes) return true;
-        }
-      } else if (project.type === 'project' && project.subActivities) {
-        for (const subActivity of project.subActivities) {
-          if (subActivity.finish) {
-            const [finishHour, finishMin] = subActivity.finish.split(':').map(Number);
-            const finishMinutes = finishHour * 60 + finishMin;
-            if (finishMinutes > signOffMinutes) return true;
-          }
-        }
-      }
-    }
-
     return false;
   };
 
@@ -207,17 +132,11 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
   };
 
   const calculateProjectHours = (project: any) => {
-    if (!project.siteStart || !project.siteFinish) return 0;
-    const [startHour, startMin] = project.siteStart.split(':').map(Number);
-    const [finishHour, finishMin] = project.siteFinish.split(':').map(Number);
-    return (finishHour * 60 + finishMin - startHour * 60 - startMin) / 60 - (project.lunchPenalty ? 0.5 : 0);
+    return diffHours(project.siteStart, project.siteFinish, entry.isNightShift) - (project.lunchPenalty ? 0.5 : 0);
   };
 
   const calculateWeatherHours = (start?: string, end?: string) => {
-    if (!start || !end) return 0;
-    const [startHour, startMin] = start.split(':').map(Number);
-    const [endHour, endMin] = end.split(':').map(Number);
-    return Math.max(0, (endHour * 60 + endMin - startHour * 60 - startMin) / 60);
+    return diffHours(start ?? '', end ?? '', entry.isNightShift);
   };
 
   const totalHours = (() => {
@@ -225,9 +144,7 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
       return entry.projects.reduce((sum, p) => sum + parseFloat((p as any).leaveTotalHours || '0'), 0);
     }
     if (!entry.depotStart || !entry.depotFinish) return 0;
-    const [depotStartHour, depotStartMin] = entry.depotStart.split(':').map(Number);
-    const [depotFinishHour, depotFinishMin] = entry.depotFinish.split(':').map(Number);
-    const hours = (depotFinishHour * 60 + depotFinishMin - depotStartHour * 60 - depotStartMin) / 60;
+    const hours = diffHours(entry.depotStart, entry.depotFinish, entry.isNightShift);
     const hasLunch = entry.projects.some(project => project.lunch);
     const depotHours = Math.max(0, hours - (hasLunch ? 0.5 : 0));
     const leaveHours = entry.projects
@@ -241,24 +158,16 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
     let total = 0;
     entry.projects.forEach(project => {
       if (project.type === 'project') {
-        // For projects, sum all sub-activity hours
         if (project.subActivities) {
           project.subActivities.forEach(subActivity => {
-            if (subActivity.start && subActivity.finish) {
-              const [startHour, startMin] = subActivity.start.split(':').map(Number);
-              const [finishHour, finishMin] = subActivity.finish.split(':').map(Number);
-              total += (finishHour * 60 + finishMin - startHour * 60 - startMin) / 60;
-            }
+            total += diffHours(subActivity.start, subActivity.finish, entry.isNightShift);
           });
         }
       } else if (project.type === 'yardwork') {
-        // For yard work, use siteStart and siteFinish
         total += calculateProjectHours(project);
       } else if (project.type === 'leave') {
-        // Leave hours are fully allocated — don't count as non-allocated
         total += parseFloat((project as any).leaveTotalHours || '0');
       }
-      // RDO type doesn't count toward productive hours
     });
     return total;
   })();

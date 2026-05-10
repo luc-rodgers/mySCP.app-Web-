@@ -43,6 +43,7 @@ export interface TimeEntry {
   remarks?: string;
   employeeName?: string;
   timeCardNumber?: string;
+  isNightShift?: boolean;
 }
 
 export type ProjectEntry = Project & {

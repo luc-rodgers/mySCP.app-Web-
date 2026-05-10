@@ -1,7 +1,8 @@
 "use client"
-import { Clock, MoreVertical, Plus, Trash2, X, Utensils, CloudRain, Check, CheckCircle, Briefcase, Truck, Plane, Car, Droplet, Hammer, AlertTriangle, ChevronRight, ChevronDown } from 'lucide-react';
+import { Clock, MoreVertical, MoreHorizontal, Plus, Trash2, X, Utensils, CloudRain, Check, CheckCircle, Briefcase, Truck, Plane, Car, Droplet, Hammer, AlertTriangle, ChevronRight, ChevronDown, ChevronUp, SprayCan, Moon, Thermometer, CalendarDays, Wallet } from 'lucide-react';
 import { TimeEntry, Project, SubActivity } from '@/lib/types';
 import { NON_POURING_WORK_OPTIONS } from '@/lib/activityOptions';
+import { diffHours } from '@/lib/timeMath';
 import { useState, useRef, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
@@ -55,6 +56,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [stateFilter, setStateFilter] = useState<'QLD' | 'NSW'>('QLD');
   const [collapsedActivities, setCollapsedActivities] = useState<Set<string>>(new Set());
+  const [moreOpen, setMoreOpen] = useState(false);
   const prevProjectsLengthRef = useRef(entry.projects.length);
 
   // Auto-open detail modal when a new project is added
@@ -219,14 +221,12 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
 
     // If we still don't have both times, return 0
     if (!effectiveStart || !effectiveFinish) return 0;
-    
-    const [startHour, startMin] = effectiveStart.split(':').map(Number);
-    const [finishHour, finishMin] = effectiveFinish.split(':').map(Number);
-    const hours = (finishHour * 60 + finishMin - startHour * 60 - startMin) / 60;
-    
+
+    const hours = diffHours(effectiveStart, effectiveFinish, entry.isNightShift);
+
     // Check if any project has lunch selected
     const hasLunch = entry.projects.some(project => project.lunch);
-    
+
     // Subtract 30 minutes (0.5 hours) if lunch is selected
     const depotHours = Math.max(0, hours - (hasLunch ? 0.5 : 0));
 
@@ -406,17 +406,32 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                     <Input
                       id={`depotHours-mobile-${entry.id}`}
                       type="text"
-                      value={(() => {
-                        if (!entry.depotStart || !entry.depotFinish) return '0.00';
-                        const [startHour, startMin] = entry.depotStart.split(':').map(Number);
-                        const [finishHour, finishMin] = entry.depotFinish.split(':').map(Number);
-                        const hours = (finishHour * 60 + finishMin - startHour * 60 - startMin) / 60;
-                        return Math.max(0, hours).toFixed(2);
-                      })()}
+                      value={diffHours(entry.depotStart, entry.depotFinish, entry.isNightShift).toFixed(2)}
                       className="h-14 bg-white text-center"
                       readOnly
                     />
                   </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Moon className="w-4 h-4 text-gray-500 shrink-0" />
+                    <div>
+                      <div className="text-sm font-medium text-gray-700">Night Shift</div>
+                      {entry.isNightShift && (
+                        <div className="text-xs text-gray-400">Sign Off is the next morning</div>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={!!entry.isNightShift}
+                    onClick={() => handleUpdateEntry(entry.id, { isNightShift: !entry.isNightShift })}
+                    disabled={isLocked}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${entry.isNightShift ? 'bg-gray-900' : 'bg-gray-200'}`}
+                  >
+                    <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform ${entry.isNightShift ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </button>
                 </div>
               </div>
             </div>}
@@ -431,18 +446,11 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                     hours = parseFloat(project.leaveTotalHours || '0');
                   } else if ((project.subActivities || []).length > 0) {
                     // Sum sub-activity durations (project type)
-                    hours = (project.subActivities || []).reduce((sum, sa) => {
-                      if (!sa.start || !sa.finish) return sum;
-                      const [sh, sm] = sa.start.split(':').map(Number);
-                      const [fh, fm] = sa.finish.split(':').map(Number);
-                      return sum + Math.max(0, (fh * 60 + fm - sh * 60 - sm) / 60);
-                    }, 0);
+                    hours = (project.subActivities || []).reduce((sum, sa) => sum + diffHours(sa.start, sa.finish, entry.isNightShift), 0);
                     if (project.lunch) hours = Math.max(0, hours - 0.5);
                   } else if (project.siteStart && project.siteFinish) {
                     // Yard work or legacy entries using site times
-                    const [sh, sm] = project.siteStart.split(':').map(Number);
-                    const [fh, fm] = project.siteFinish.split(':').map(Number);
-                    hours = Math.max(0, (fh * 60 + fm - sh * 60 - sm) / 60);
+                    hours = diffHours(project.siteStart, project.siteFinish, entry.isNightShift);
                     if (project.lunch) hours = Math.max(0, hours - 0.5);
                   }
 
@@ -452,9 +460,28 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                     ? (project.project || 'Yard Work')
                     : (project.project || 'Project');
 
-                  const typeLabel = project.type === 'leave' ? 'Leave'
-                    : project.type === 'yardwork' ? '🚛 Yard Work'
-                    : '📋 Project';
+                  const typeLabel: React.ReactNode = project.type === 'leave' ? 'Leave'
+                    : project.type === 'yardwork' ? (
+                      <span className="inline-flex items-center gap-1">
+                        <Truck className="w-3.5 h-3.5 shrink-0" />
+                        Yard Work
+                      </span>
+                    )
+                    : (
+                      <span className="inline-flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="9" y1="22" x2="9" y2="5" />
+                          <line x1="9" y1="5" x2="21" y2="5" />
+                          <line x1="9" y1="5" x2="3" y2="5" />
+                          <line x1="21" y1="5" x2="21" y2="14" />
+                          <path d="M19 14 Q19 17 21 17 Q23 17 23 14" />
+                          <line x1="5" y1="22" x2="13" y2="22" />
+                          <line x1="3" y1="5" x2="9" y2="3" />
+                          <line x1="21" y1="5" x2="9" y2="3" />
+                        </svg>
+                        Project
+                      </span>
+                    );
 
                   return (
                     <button
@@ -669,39 +696,57 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
 
                   {/* Leave form */}
-                  {project.type === 'leave' && (
-                    <>
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">Leave Type</label>
-                        <Select
-                          value={project.leaveType || ''}
-                          className="h-12 text-base w-full font-bold"
-                          onChange={(e) => onUpdateProject(entry.id, project.id, { leaveType: e.target.value })}
-                          disabled={isLocked}
-                        >
-                          <option value="">Select Leave Type</option>
-                          <option value="Unpaid Leave">Unpaid Leave</option>
-                          <option value="Annual Leave">Annual Leave</option>
-                          <option value="Sick Leave">Sick Leave</option>
-                          <option value="RDO">RDO</option>
-                        </Select>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1 text-center">Total Hours</label>
-                        <Select
-                          value={project.leaveTotalHours || ''}
-                          className="h-12 text-base w-full text-center"
-                          onChange={(e) => onUpdateProject(entry.id, project.id, { leaveTotalHours: e.target.value })}
-                          disabled={isLocked}
-                        >
-                          <option value="">Select...</option>
-                          {[0.25,0.5,0.75,1,1.25,1.5,1.75,2,2.25,2.5,2.75,3,3.25,3.5,3.75,4,4.25,4.5,4.75,5,5.25,5.5,5.75,6,6.25,6.5,6.75,7,7.25,7.5,7.75,8,8.25,8.5,8.75,9,9.25,9.5,9.75,10,10.25,10.5,10.75,11,11.25,11.5,11.75,12].map(h => (
-                            <option key={h} value={h.toString()}>{h} {h === 1 ? 'hr' : 'hrs'}</option>
-                          ))}
-                        </Select>
-                      </div>
-                    </>
-                  )}
+                  {project.type === 'leave' && (() => {
+                    const leaveTypes = [
+                      { value: 'Annual Leave', label: 'Annual Leave', Icon: Plane },
+                      { value: 'Sick Leave', label: 'Sick Leave', Icon: Thermometer },
+                      { value: 'RDO', label: 'RDO', Icon: CalendarDays },
+                      { value: 'Unpaid Leave', label: 'Unpaid Leave', Icon: Wallet },
+                    ];
+                    const selectedType = project.leaveType || '';
+                    return (
+                      <>
+                        <div>
+                          <p className="text-xs text-gray-400 text-center mb-3">What kind of leave?</p>
+                          <div className="grid grid-cols-2 gap-3">
+                            {leaveTypes.map(({ value, label, Icon }) => {
+                              const selected = selectedType === value;
+                              return (
+                                <button
+                                  key={value}
+                                  type="button"
+                                  onClick={() => onUpdateProject(entry.id, project.id, { leaveType: value })}
+                                  disabled={isLocked}
+                                  className={`flex flex-col items-center justify-center gap-2 px-3 py-4 rounded-xl border text-sm font-medium transition-colors cursor-pointer disabled:opacity-40 ${selected ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
+                                >
+                                  <Icon className="w-6 h-6 shrink-0" />
+                                  <span>{label}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        {selectedType && (
+                          <div className="pt-2 flex flex-col items-center">
+                            <p className="text-xs text-gray-400 text-center mb-3">How long?</p>
+                            <div className="w-32">
+                              <Select
+                                value={project.leaveTotalHours || ''}
+                                className="!h-9 text-sm text-center font-semibold !border-gray-300"
+                                onChange={(e) => onUpdateProject(entry.id, project.id, { leaveTotalHours: e.target.value })}
+                                disabled={isLocked}
+                              >
+                                <option value="">Select…</option>
+                                {[0.25,0.5,0.75,1,1.25,1.5,1.75,2,2.25,2.5,2.75,3,3.25,3.5,3.75,4,4.25,4.5,4.75,5,5.25,5.5,5.75,6,6.25,6.5,6.75,7,7.25,7.5,7.75,8,8.25,8.5,8.75,9,9.25,9.5,9.75,10,10.25,10.5,10.75,11,11.25,11.5,11.75,12].map(h => (
+                                  <option key={h} value={h.toString()}>{h} {h === 1 ? 'hr' : 'hrs'}</option>
+                                ))}
+                              </Select>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
 
                   {/* Project / Yard Work form */}
                   {(project.type === 'project' || project.type === 'yardwork') && (
@@ -1036,14 +1081,6 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                         <span>Lunch</span>
                       </button>
                       <button
-                        onClick={() => onUpdateProject(entry.id, project.id, { lunchPenalty: !project.lunchPenalty })}
-                        disabled={isLocked}
-                        className={`flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.lunchPenalty ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
-                      >
-                        <AlertTriangle className="w-4 h-4 shrink-0" />
-                        <span>Lunch Penalty</span>
-                      </button>
-                      <button
                         onClick={() => onUpdateProject(entry.id, project.id, { weather: !project.weather })}
                         disabled={isLocked}
                         className={`flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.weather ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
@@ -1051,7 +1088,43 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                         <CloudRain className="w-4 h-4 shrink-0" />
                         <span>Weather</span>
                       </button>
+                      <button
+                        onClick={() => setMoreOpen(o => !o)}
+                        disabled={isLocked}
+                        className={`flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${moreOpen ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
+                      >
+                        <MoreHorizontal className="w-4 h-4 shrink-0" />
+                        <span>More</span>
+                      </button>
                     </div>
+                    {moreOpen && (
+                      <div className="grid grid-cols-3 gap-2">
+                        <button
+                          onClick={() => onUpdateProject(entry.id, project.id, { lunchPenalty: !project.lunchPenalty })}
+                          disabled={isLocked}
+                          className={`flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.lunchPenalty ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
+                        >
+                          <AlertTriangle className="w-4 h-4 shrink-0" />
+                          <span>Lunch Penalty</span>
+                        </button>
+                        <button
+                          type="button"
+                          disabled
+                          className="flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-400 text-xs font-medium cursor-not-allowed opacity-50"
+                        >
+                          <SprayCan className="w-4 h-4 shrink-0" />
+                          <span>Shotcrete</span>
+                        </button>
+                        <button
+                          type="button"
+                          disabled
+                          className="flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-400 text-xs font-medium cursor-not-allowed opacity-50"
+                        >
+                          <Truck className="w-4 h-4 shrink-0" />
+                          <span>Transfer KMs</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1065,18 +1138,10 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                         if (project.type === 'leave') {
                           total = parseFloat((project as any).leaveTotalHours || '0');
                         } else if (project.type === 'yardwork') {
-                          if (project.siteStart && project.siteFinish) {
-                            const [sh, sm] = project.siteStart.split(':').map(Number);
-                            const [fh, fm] = project.siteFinish.split(':').map(Number);
-                            total = Math.max(0, (fh * 60 + fm - sh * 60 - sm) / 60);
-                          }
+                          total = diffHours(project.siteStart, project.siteFinish, entry.isNightShift);
                         } else {
                           (project.subActivities || []).forEach(sa => {
-                            if (sa.start && sa.finish) {
-                              const [sh, sm] = sa.start.split(':').map(Number);
-                              const [fh, fm] = sa.finish.split(':').map(Number);
-                              total += Math.max(0, (fh * 60 + fm - sh * 60 - sm) / 60);
-                            }
+                            total += diffHours(sa.start, sa.finish, entry.isNightShift);
                           });
                         }
                         if (project.lunch) total -= 0.5;

@@ -1,8 +1,12 @@
 "use client"
 import { Mail, Phone, Settings, CheckCircle2, CircleDashed } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { EmployeeProfile } from './EmployeeProfile';
 import { AddEmployeeModal } from './AddEmployeeModal';
+import { SortHeader, type SortDirection } from './SortHeader';
+
+type SortField = 'name' | 'classification' | 'employmentType' | 'accountStatus';
+const ACCOUNT_ORDER: Record<'none' | 'pending' | 'confirmed', number> = { none: 0, pending: 1, confirmed: 2 };
 
 interface Employee {
   id: string;
@@ -29,7 +33,18 @@ export function Employees({ initialEmployees, isAdmin = false }: EmployeesProps)
   const [showRetired, setShowRetired] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const menuRef = useRef<HTMLDivElement>(null);
+
+  function handleSort(field: SortField) {
+    if (sortField === field) {
+      setSortDirection(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  }
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -43,6 +58,24 @@ export function Employees({ initialEmployees, isAdmin = false }: EmployeesProps)
   }, []);
 
   const filteredEmployees = employees.filter(e => e.status === (showRetired ? 'retired' : 'active'));
+
+  const sortedEmployees = useMemo(() => {
+    const dir = sortDirection === 'asc' ? 1 : -1;
+    const collator = new Intl.Collator(undefined, { sensitivity: 'base' });
+    return [...filteredEmployees].sort((a, b) => {
+      if (sortField === 'accountStatus') {
+        const av = ACCOUNT_ORDER[a.accountStatus ?? 'none'];
+        const bv = ACCOUNT_ORDER[b.accountStatus ?? 'none'];
+        if (av !== bv) return (av - bv) * dir;
+        return collator.compare(a.name, b.name);
+      }
+      const av = (a[sortField] ?? '') as string;
+      const bv = (b[sortField] ?? '') as string;
+      const cmp = collator.compare(av, bv);
+      if (cmp !== 0) return cmp * dir;
+      return collator.compare(a.name, b.name);
+    });
+  }, [filteredEmployees, sortField, sortDirection]);
 
   const totalEmployees = employees.filter(e => e.status === 'active').length;
   const permanentEmployees = employees.filter(e => e.employmentType === 'Permanent' && e.status === 'active').length;
@@ -121,7 +154,7 @@ export function Employees({ initialEmployees, isAdmin = false }: EmployeesProps)
 
       {/* Employees Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        {filteredEmployees.length === 0 && (
+        {sortedEmployees.length === 0 && (
           <div className="px-4 py-10 text-center text-sm text-gray-500">
             No {showRetired ? 'retired' : 'active'} employees
           </div>
@@ -129,7 +162,7 @@ export function Employees({ initialEmployees, isAdmin = false }: EmployeesProps)
 
         {/* Mobile Layout */}
         <div className="md:hidden divide-y divide-gray-100">
-          {filteredEmployees.map((employee) => (
+          {sortedEmployees.map((employee) => (
             <button
               key={employee.id}
               onClick={() => setSelectedEmployee(employee)}
@@ -146,14 +179,14 @@ export function Employees({ initialEmployees, isAdmin = false }: EmployeesProps)
         {/* Desktop Layout */}
         <div className="hidden md:block">
           <div className="grid grid-cols-8 gap-4 bg-gray-50 px-4 py-3 border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
-            <div className="col-span-2">Name</div>
-            <div className="col-span-2">Position</div>
-            <div className="col-span-2">Type</div>
+            <SortHeader label="Name" field="name" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="col-span-2" />
+            <SortHeader label="Position" field="classification" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="col-span-2" />
+            <SortHeader label="Type" field="employmentType" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="col-span-2" />
             <div className="col-span-1">Contact</div>
-            <div className="col-span-1 text-center">Account</div>
+            <SortHeader label="Account" field="accountStatus" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="col-span-1 justify-center" />
           </div>
           <div className="divide-y divide-gray-100">
-            {filteredEmployees.map((employee) => (
+            {sortedEmployees.map((employee) => (
               <button
                 key={employee.id}
                 onClick={() => setSelectedEmployee(employee)}
