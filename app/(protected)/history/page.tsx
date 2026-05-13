@@ -1,9 +1,10 @@
 import { Profile } from "@/components/Profile";
 import { TimeSheetHeader } from "@/components/TimeSheetHeader";
+import DesktopTabToggle from "@/components/DesktopTabToggle";
 import { loadProfileData, summariseHours } from "../_lib/loadProfileData";
 
 export default async function HistoryPage() {
-  const { employee, emp, entries, activeProjects, projectsByState } = await loadProfileData();
+  const { employee, emp, entries, activeProjects, projectsByState, employeeForEdit, isAdmin } = await loadProfileData();
   const { todayHours, weekHours } = summariseHours(entries);
 
   return (
@@ -13,7 +14,10 @@ export default async function HistoryPage() {
         weekHours={weekHours}
         employeeName={employee.name}
         employeeTitle={employee.classification}
+        employeeForEdit={employeeForEdit}
+        isAdmin={isAdmin}
       />
+      <DesktopTabToggle />
       <Profile
         view="history"
         employee={employee}

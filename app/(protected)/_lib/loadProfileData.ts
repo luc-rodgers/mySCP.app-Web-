@@ -82,11 +82,25 @@ export async function loadProfileData() {
     NSW: (projectRows ?? []).filter((p: any) => !p.state || p.state === 'NSW').map((p: any) => ({ id: p.id, name: p.name })),
   };
 
+  const employeeForEdit = emp ? {
+    id: emp.id,
+    firstName: emp.first_name ?? "",
+    lastName: emp.last_name ?? "",
+    email: emp.email ?? "",
+    phone: emp.phone ?? "",
+    classification: emp.title ?? "",
+    employmentType: emp.employment_type ?? "Casual",
+    role: emp.role ?? "user",
+    activeStatus: emp.active_status ?? "active",
+  } : undefined;
+
   return {
     employee,
     emp,
     entries,
     showClaimAdmin,
+    isAdmin: isUserAdmin,
+    employeeForEdit,
     activeProjects: (projectRows ?? []).map((p: any) => ({ id: p.id, name: p.name })),
     projectsByState,
   };

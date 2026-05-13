@@ -33,7 +33,7 @@ export default async function ProtectedLayout({
         <main className="flex-1 min-h-screen pb-24 md:pb-0">
           <div className="max-w-6xl mx-auto w-full px-6 py-6">{children}</div>
         </main>
-        {!isAdmin && <MobileBottomNav />}
+        <MobileBottomNav />
       </div>
     </ToastProvider>
   );

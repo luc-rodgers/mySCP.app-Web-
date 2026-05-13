@@ -20,17 +20,14 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 
-type MenuItem = { id: string; label: string; icon: typeof Clock; href: string; adminOnly: boolean; nonAdminOnly?: boolean };
+type MenuItem = { id: string; label: string; icon: typeof Clock; href: string };
 
-const allMenuItems: MenuItem[] = [
-  { id: "profile",    label: "Profile",    icon: User,          href: "/profile",    adminOnly: false },
-  { id: "timesheet",  label: "Timesheet",  icon: Clock,         href: "/timesheet",  adminOnly: false },
-  { id: "history",    label: "History",    icon: History,       href: "/history",    adminOnly: false, nonAdminOnly: true },
-  { id: "analytics",  label: "Analytics",  icon: BarChart3,     href: "/analytics",  adminOnly: false, nonAdminOnly: true },
-  { id: "timesheets", label: "Administration", icon: ClipboardList, href: "/timesheets", adminOnly: true  },
-  { id: "employees",  label: "Employees",  icon: Users,         href: "/employees",  adminOnly: true  },
-  { id: "projects",   label: "Projects",   icon: Briefcase,     href: "/projects",   adminOnly: true  },
-  { id: "clients",    label: "Clients",    icon: Building2,     href: "/clients",    adminOnly: true  },
+const adminMenuItems: MenuItem[] = [
+  { id: "timesheet",  label: "My Time",        icon: Clock,         href: "/timesheet" },
+  { id: "timesheets", label: "Administration", icon: ClipboardList, href: "/timesheets" },
+  { id: "employees",  label: "Employees",      icon: Users,         href: "/employees" },
+  { id: "projects",   label: "Projects",       icon: Briefcase,     href: "/projects" },
+  { id: "clients",    label: "Clients",        icon: Building2,     href: "/clients" },
 ];
 
 function SCPLogo() {
@@ -54,6 +51,9 @@ export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const touchStartX = useRef<number | null>(null);
 
+  // Non-admins get the banner + bottom nav; no sidebar at all.
+  if (!isAdmin) return null;
+
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -70,7 +70,7 @@ export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-2 space-y-2 overflow-y-auto">
-        {allMenuItems.filter(item => (!item.adminOnly || isAdmin) && (!item.nonAdminOnly || !isAdmin)).map(({ id, label, icon: Icon, href }) => {
+        {adminMenuItems.map(({ id, label, icon: Icon, href }) => {
           const isActive = pathname === href;
           return (
             <Link

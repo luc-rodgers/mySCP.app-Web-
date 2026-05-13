@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { TimeEntry, Employee, Project, SubActivity } from "@/lib/types";
-import { TimeSheetHeader } from "@/components/TimeSheetHeader";
+import { TimeSheetHeader, type ProfileEditData } from "@/components/TimeSheetHeader";
+import DesktopTabToggle from "@/components/DesktopTabToggle";
 import { TimeEntryList } from "@/components/TimeEntryList";
 import { WeeklySummary } from "@/components/WeeklySummary";
 import { createClient } from "@/lib/supabase/client";
@@ -16,6 +17,8 @@ type SupabaseEmployee = {
   role: string;
   email?: string;
   phone?: string;
+  employment_type?: string;
+  active_status?: string;
 } | null;
 
 type ProjectOption = { id: string; name: string };
@@ -391,7 +394,20 @@ export default function TimesheetClient({ supabaseEmployee, userEmail, activePro
         weekHours={weekHours}
         employeeName={mockEmployee.name}
         employeeTitle={mockEmployee.classification}
+        employeeForEdit={supabaseEmployee ? {
+          id: supabaseEmployee.id,
+          firstName: supabaseEmployee.first_name ?? "",
+          lastName: supabaseEmployee.last_name ?? "",
+          email: supabaseEmployee.email ?? "",
+          phone: supabaseEmployee.phone ?? "",
+          classification: supabaseEmployee.title ?? "",
+          employmentType: supabaseEmployee.employment_type ?? "Casual",
+          role: supabaseEmployee.role ?? "user",
+          activeStatus: supabaseEmployee.active_status ?? "active",
+        } : undefined}
+        isAdmin={supabaseEmployee?.role?.toLowerCase() === "admin"}
       />
+      <DesktopTabToggle />
       <TimeEntryList
         entries={entries}
         activeProjects={activeProjects}
