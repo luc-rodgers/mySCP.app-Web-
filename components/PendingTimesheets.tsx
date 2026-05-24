@@ -12,7 +12,7 @@ import {
   ClipboardList, Clock, Users, Printer, Download,
   CheckCircle, Loader2, AlertTriangle, ChevronDown, ChevronUp,
   Pencil, ChevronLeft, ChevronRight, CalendarDays, MoreHorizontal,
-  Plus, X,
+  Plus, X, Moon,
 } from "lucide-react";
 
 interface ProjectOption { id: string; name: string; }
@@ -185,6 +185,12 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
   const { unallocatedHours } = getFlags(entry);
   return (
     <div className="px-5 pb-5 pt-2 border-t border-gray-100 bg-gray-50/50 space-y-4">
+      {entry.isNightShift && (
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-medium">
+          <Moon className="w-3.5 h-3.5" />
+          Night Shift
+        </div>
+      )}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-white rounded-xl border border-gray-100 px-4 py-3">
           <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Sign On</p>
@@ -588,6 +594,11 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
                       >
                         <div className="min-w-0 flex items-center gap-2">
                           <span className="text-sm font-medium text-gray-900">{entry.employeeName}</span>
+                          {entry.isNightShift && (
+                            <span title="Night Shift" className="inline-flex items-center text-indigo-500">
+                              <Moon className="w-3.5 h-3.5" />
+                            </span>
+                          )}
                           <span className="text-gray-300">·</span>
                           <span className="text-sm text-gray-500">{hours.toFixed(1)} hrs</span>
                           {hasRedFlag && !isApproved && (

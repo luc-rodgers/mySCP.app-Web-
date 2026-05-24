@@ -1,5 +1,5 @@
 "use client"
-import { Mail, Phone, Clock, Settings, ChevronDown, ChevronUp, Car, Droplets, Wrench, AlertTriangle } from 'lucide-react';
+import { Mail, Phone, Clock, Settings, ChevronDown, ChevronUp, Car, Droplets, Wrench, AlertTriangle, Moon } from 'lucide-react';
 import { Employee, TimeEntry } from '@/lib/types';
 import { useState, useRef, useEffect } from 'react';
 import { TimeCardSummaryModal } from './TimeCardSummaryModal';
@@ -255,7 +255,14 @@ export function Profile({
                                   className="w-full flex items-center justify-between pl-6 pr-5 py-1.5 bg-white hover:bg-gray-50 transition-colors cursor-pointer text-left"
                                 >
                                   <div className="flex items-center gap-3">
-                                    <p className="text-sm text-gray-700">{formatDate(entry.date)}</p>
+                                    <p className="text-sm text-gray-700 flex items-center gap-1.5">
+                                      {formatDate(entry.date)}
+                                      {entry.isNightShift && (
+                                        <span title="Night Shift" className="inline-flex items-center text-indigo-500">
+                                          <Moon className="w-3.5 h-3.5" />
+                                        </span>
+                                      )}
+                                    </p>
                                     <p className="text-xs text-gray-400">
                                       {entry.timeCardNumber ?? (entry.status === 'draft' ? 'Draft' : '—')}
                                     </p>

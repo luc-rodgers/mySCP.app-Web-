@@ -6,7 +6,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, ChevronLeft, AlertTriangle, Settings, Pencil, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, ChevronLeft, AlertTriangle, Settings, Pencil, Trash2, Moon } from 'lucide-react';
 import Image from 'next/image';
 import { useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
@@ -282,6 +282,12 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
             {entry.timeCardNumber && (
               <div className="text-xs text-gray-500 mt-1">
                 {entry.timeCardNumber}
+              </div>
+            )}
+            {entry.isNightShift && (
+              <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-medium">
+                <Moon className="w-3.5 h-3.5" />
+                Night Shift
               </div>
             )}
           </div>
