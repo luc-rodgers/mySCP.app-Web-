@@ -4,7 +4,7 @@ import { useState, useEffect, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { TimeEntry } from "@/lib/types";
-import { isTimeOutsideShift } from "@/lib/timeMath";
+import { isTimeOutsideShift, shiftMinutes } from "@/lib/timeMath";
 import { TimeEntryEditorModal } from "./TimeEntryEditorModal";
 import { approveTimeEntry } from "@/app/actions/approveTimeEntry";
 import { useToast } from "@/components/Toast";
@@ -261,7 +261,9 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
                   </div>
                   {(proj.subActivities ?? []).length > 0 ? (
                     <div className="space-y-1">
-                      {proj.subActivities.map((sa, j) => {
+                      {[...proj.subActivities]
+                        .sort((a, b) => shiftMinutes(a.start, entry.depotStart || '', !!entry.isNightShift) - shiftMinutes(b.start, entry.depotStart || '', !!entry.isNightShift))
+                        .map((sa, j) => {
                         const saHrs = subHrs(sa.start, sa.finish, entry.isNightShift);
                         return (
                           <div key={j} className="flex items-start justify-between text-xs text-gray-500 pl-3 border-l-2 border-gray-200">

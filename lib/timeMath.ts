@@ -22,3 +22,16 @@ export function isTimeOutsideShift(time: string, signOn: string, signOff: string
   if (isNightShift) return t > off && t < on;
   return t < on || t > off;
 }
+
+// Returns a sortable minute-offset that respects night-shift wrap-around.
+// For a night shift, times earlier in the clock than `signOn` are treated as the next
+// calendar day (+24h), so 22:00 sorts before 01:00. Falls back to clock minutes when
+// signOn is missing or it's a regular shift.
+export function shiftMinutes(time: string, signOn: string, isNightShift: boolean): number {
+  const t = toMin(time);
+  if (t === null) return Number.MAX_SAFE_INTEGER;
+  if (!isNightShift) return t;
+  const on = toMin(signOn);
+  if (on === null) return t;
+  return t < on ? t + 24 * 60 : t;
+}

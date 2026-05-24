@@ -1,6 +1,6 @@
 "use client"
 import { TimeEntry } from '@/lib/types';
-import { diffHours, isTimeOutsideShift } from '@/lib/timeMath';
+import { diffHours, isTimeOutsideShift, shiftMinutes } from '@/lib/timeMath';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -336,11 +336,15 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
               <h3 className="text-sm text-gray-500 mb-2">{isLeaveOnly ? 'Leave' : 'Projects & Work'}</h3>
               <div className="space-y-3">
                 {entry.projects.map((project, index) => {
-                  // Sort sub-activities chronologically by start time
-                  const sortedSubActivities = project.subActivities 
+                  // Sort sub-activities chronologically by start time.
+                  // For night shifts, times before sign-on (e.g. 01:00) wrap to the next day
+                  // so they sort *after* late-evening times like 22:00.
+                  const ns = !!entry.isNightShift;
+                  const signOn = entry.depotStart || '';
+                  const sortedSubActivities = project.subActivities
                     ? [...project.subActivities].sort((a, b) => {
                         if (!a.start || !b.start) return 0;
-                        return a.start.localeCompare(b.start);
+                        return shiftMinutes(a.start, signOn, ns) - shiftMinutes(b.start, signOn, ns);
                       })
                     : [];
 
@@ -355,12 +359,7 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
 
                   // Calculate total project hours from sub-activities
                   const totalProjectHours = sortedSubActivities.reduce((total, subActivity) => {
-                    if (subActivity.start && subActivity.finish) {
-                      const [startHour, startMin] = subActivity.start.split(':').map(Number);
-                      const [finishHour, finishMin] = subActivity.finish.split(':').map(Number);
-                      return total + (finishHour * 60 + finishMin - startHour * 60 - startMin) / 60;
-                    }
-                    return total;
+                    return total + diffHours(subActivity.start, subActivity.finish, ns);
                   }, 0);
 
                   const weatherHours = calculateWeatherHours(project.weatherStart, project.weatherEnd);
@@ -583,12 +582,7 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                                 {/* Activities */}
                                 <div className="space-y-3 ml-6 mb-2">
                                   {sortedSubActivities.map((subActivity, idx) => {
-                                    let subActivityHours = 0;
-                                    if (subActivity.start && subActivity.finish) {
-                                      const [startHour, startMin] = subActivity.start.split(':').map(Number);
-                                      const [finishHour, finishMin] = subActivity.finish.split(':').map(Number);
-                                      subActivityHours = (finishHour * 60 + finishMin - startHour * 60 - startMin) / 60;
-                                    }
+                                    const subActivityHours = diffHours(subActivity.start, subActivity.finish, ns);
                                     
                                     // Determine if this is the first or last work activity (non-travel)
                                     const workActivities = sortedSubActivities.filter(sa => sa.type !== 'travel');

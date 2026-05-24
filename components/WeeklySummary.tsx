@@ -1,5 +1,6 @@
 "use client"
 import { TimeEntry, Employee } from '@/lib/types';
+import { shiftMinutes } from '@/lib/timeMath';
 import { ArrowLeft, Download, Calendar } from 'lucide-react';
 import { Button } from './ui/button';
 
@@ -75,7 +76,7 @@ export function WeeklySummary({ entries, employee, onBack }: WeeklySummaryProps)
   };
 
   // Get on-site / off-site times for a project entry
-  const getProjectSlot = (p: any): ProjectSlot => {
+  const getProjectSlot = (p: any, signOn: string, isNightShift: boolean): ProjectSlot => {
     if (p.type === 'yardwork') {
       return { onSite: p.siteStart || '', offSite: p.siteFinish || '', siteName: p.yardActivity || 'Yard Work' };
     }
@@ -87,8 +88,11 @@ export function WeeklySummary({ entries, employee, onBack }: WeeklySummaryProps)
     if (subs.length === 0) {
       return { onSite: p.siteStart || '', offSite: p.siteFinish || '', siteName: p.project || '' };
     }
-    const starts = subs.map((s: any) => s.start).sort();
-    const finishes = subs.map((s: any) => s.finish).sort();
+    // Sort by shift-minutes so night-shift times that wrap past midnight order correctly.
+    const starts = subs.map((s: any) => s.start)
+      .sort((a: string, b: string) => shiftMinutes(a, signOn, isNightShift) - shiftMinutes(b, signOn, isNightShift));
+    const finishes = subs.map((s: any) => s.finish)
+      .sort((a: string, b: string) => shiftMinutes(a, signOn, isNightShift) - shiftMinutes(b, signOn, isNightShift));
     return {
       onSite: starts[0],
       offSite: finishes[finishes.length - 1],
@@ -135,8 +139,8 @@ export function WeeklySummary({ entries, employee, onBack }: WeeklySummaryProps)
     const cribBreak = grossHours >= 10 ? 'Y' : '';
 
 
-    const slot0 = entry.projects[0] ? getProjectSlot(entry.projects[0]) : emptySlot;
-    const slot1 = entry.projects[1] ? getProjectSlot(entry.projects[1]) : emptySlot;
+    const slot0 = entry.projects[0] ? getProjectSlot(entry.projects[0], entry.depotStart, !!entry.isNightShift) : emptySlot;
+    const slot1 = entry.projects[1] ? getProjectSlot(entry.projects[1], entry.depotStart, !!entry.isNightShift) : emptySlot;
 
     return {
       weekday: weekdays[index],

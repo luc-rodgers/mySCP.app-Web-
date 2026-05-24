@@ -2,7 +2,7 @@
 import { Clock, MoreVertical, MoreHorizontal, Plus, Trash2, X, Utensils, CloudRain, Check, CheckCircle, Briefcase, Truck, Plane, Car, Droplet, Hammer, AlertTriangle, ChevronRight, ChevronDown, ChevronUp, SprayCan, Moon, Thermometer, CalendarDays, Wallet } from 'lucide-react';
 import { TimeEntry, Project, SubActivity } from '@/lib/types';
 import { NON_POURING_WORK_OPTIONS } from '@/lib/activityOptions';
-import { diffHours } from '@/lib/timeMath';
+import { diffHours, shiftMinutes } from '@/lib/timeMath';
 import { useState, useRef, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
@@ -191,31 +191,33 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
       );
     }
 
+    // Pivot used by shiftMinutes to wrap night-shift times past midnight.
+    // When depotStart is missing, fall back to the earliest project time as the pivot.
+    const ns = !!entry.isNightShift;
+    const startCandidates: string[] = [];
+    entry.projects.forEach(project => {
+      if (project.siteStart) startCandidates.push(project.siteStart);
+      if (project.weather && project.weatherStart) startCandidates.push(project.weatherStart);
+    });
+    const pivot = entry.depotStart || (startCandidates.length > 0 ? startCandidates[0] : '');
+
     // Determine effective start time
     let effectiveStart = entry.depotStart;
-    if (!effectiveStart) {
-      // Find earliest site start or weather start
-      const allStartTimes: string[] = [];
-      entry.projects.forEach(project => {
-        if (project.siteStart) allStartTimes.push(project.siteStart);
-        if (project.weather && project.weatherStart) allStartTimes.push(project.weatherStart);
-      });
-      if (allStartTimes.length > 0) {
-        effectiveStart = allStartTimes.sort()[0]; // Sort to get earliest time
-      }
+    if (!effectiveStart && startCandidates.length > 0) {
+      effectiveStart = [...startCandidates].sort((a, b) => shiftMinutes(a, pivot, ns) - shiftMinutes(b, pivot, ns))[0];
     }
 
     // Determine effective finish time
     let effectiveFinish = entry.depotFinish;
     if (!effectiveFinish) {
-      // Find latest site finish or weather end
       const allFinishTimes: string[] = [];
       entry.projects.forEach(project => {
         if (project.siteFinish) allFinishTimes.push(project.siteFinish);
         if (project.weather && project.weatherEnd) allFinishTimes.push(project.weatherEnd);
       });
       if (allFinishTimes.length > 0) {
-        effectiveFinish = allFinishTimes.sort().reverse()[0]; // Sort reverse to get latest time
+        const sorted = [...allFinishTimes].sort((a, b) => shiftMinutes(a, pivot, ns) - shiftMinutes(b, pivot, ns));
+        effectiveFinish = sorted[sorted.length - 1];
       }
     }
 
