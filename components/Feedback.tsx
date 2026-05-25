@@ -12,15 +12,16 @@ const OPERATOR_SECTIONS = [
   "Timesheet",
   "Work History",
   "Analytics",
-  "My Profile",
 ];
 const ADMIN_SECTIONS = [
+  "My Profile",
   "Administration / Pending Timesheets",
   "Projects",
   "Clients",
   "Employees",
+  "Feedback page",
 ];
-const ALWAYS_LAST = ["Feedback page", "Other / General"];
+const ALWAYS_LAST = ["Other / General"];
 
 export interface FeedbackSubmission {
   id: string;
