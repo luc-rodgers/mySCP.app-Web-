@@ -15,6 +15,7 @@ import {
   Menu,
   History,
   BarChart3,
+  MessageSquare,
 } from "lucide-react";
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
@@ -23,11 +24,12 @@ import Image from "next/image";
 type MenuItem = { id: string; label: string; icon: typeof Clock; href: string };
 
 const adminMenuItems: MenuItem[] = [
-  { id: "timesheet",  label: "My Profile",     icon: User,          href: "/timesheet" },
-  { id: "timesheets", label: "Administration", icon: ClipboardList, href: "/timesheets" },
-  { id: "employees",  label: "Employees",      icon: Users,         href: "/employees" },
-  { id: "projects",   label: "Projects",       icon: Briefcase,     href: "/projects" },
-  { id: "clients",    label: "Clients",        icon: Building2,     href: "/clients" },
+  { id: "timesheet",  label: "My Profile",     icon: User,           href: "/timesheet" },
+  { id: "timesheets", label: "Administration", icon: ClipboardList,  href: "/timesheets" },
+  { id: "employees",  label: "Employees",      icon: Users,          href: "/employees" },
+  { id: "projects",   label: "Projects",       icon: Briefcase,      href: "/projects" },
+  { id: "clients",    label: "Clients",        icon: Building2,      href: "/clients" },
+  { id: "feedback",   label: "Feedback",       icon: MessageSquare,  href: "/feedback" },
 ];
 
 function SCPLogo() {

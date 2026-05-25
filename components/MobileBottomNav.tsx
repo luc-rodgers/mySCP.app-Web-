@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Clock, History, BarChart3 } from "lucide-react";
+import { Clock, History, BarChart3, MessageSquare } from "lucide-react";
 
 const tabs = [
   { href: "/timesheet", label: "Timesheet", Icon: Clock },
   { href: "/history", label: "History", Icon: History },
   { href: "/analytics", label: "Analytics", Icon: BarChart3 },
+  { href: "/feedback", label: "Feedback", Icon: MessageSquare },
 ];
 
 export default function MobileBottomNav() {
