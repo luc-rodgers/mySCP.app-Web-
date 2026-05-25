@@ -10,6 +10,7 @@ import { deleteProject } from '@/app/actions/deleteProject';
 import { WorkHeatmap } from './WorkHeatmap';
 import { TimeEntryEditorModal } from './TimeEntryEditorModal';
 import { TimeEntry } from '@/lib/types';
+import { PlacesAutocompleteInput, type PickedPlace } from './PlacesAutocompleteInput';
 
 interface WorkHistoryRow {
   id: string;
@@ -37,6 +38,9 @@ interface Project {
   endDate: string;
   hoursLogged: number;
   projectValue?: string;
+  lat?: number | null;
+  lng?: number | null;
+  placeId?: string | null;
 }
 
 interface ProjectProfileProps {
@@ -90,6 +94,37 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editedProject, setEditedProject] = useState<Project>(project);
+
+  // Controlled address fields for the edit form. Initialized from project on edit-open,
+  // and updated by both the Places autocomplete and the visible inputs.
+  const [streetAddress, setStreetAddress] = useState(project.streetAddress ?? '');
+  const [suburb, setSuburb] = useState(project.address ?? '');
+  const [stateCode, setStateCode] = useState(project.state ?? '');
+  const [lat, setLat] = useState<string>(project.lat != null ? String(project.lat) : '');
+  const [lng, setLng] = useState<string>(project.lng != null ? String(project.lng) : '');
+  const [placeId, setPlaceId] = useState<string>(project.placeId ?? '');
+
+  function handlePlacePick(place: PickedPlace) {
+    if (place.streetAddress) setStreetAddress(place.streetAddress);
+    if (place.suburb) setSuburb(place.suburb);
+    if (place.state === 'QLD' || place.state === 'NSW') setStateCode(place.state);
+    setLat(place.lat != null ? String(place.lat) : '');
+    setLng(place.lng != null ? String(place.lng) : '');
+    setPlaceId(place.placeId || '');
+  }
+
+  // Reset controlled state whenever editing is opened/closed so it always reflects
+  // the latest saved project.
+  useEffect(() => {
+    if (!isEditing) {
+      setStreetAddress(editedProject.streetAddress ?? '');
+      setSuburb(editedProject.address ?? '');
+      setStateCode(editedProject.state ?? '');
+      setLat(editedProject.lat != null ? String(editedProject.lat) : '');
+      setLng(editedProject.lng != null ? String(editedProject.lng) : '');
+      setPlaceId(editedProject.placeId ?? '');
+    }
+  }, [isEditing, editedProject]);
 
   const [workHistory, setWorkHistory] = useState<WorkHistoryRow[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
@@ -211,6 +246,8 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
     setSaving(false);
     if (!result.success) { setError(result.error); return; }
     // Update local state immediately so the view reflects the saved values
+    const latRaw = (formData.get('lat') as string) || '';
+    const lngRaw = (formData.get('lng') as string) || '';
     const merged = {
       ...editedProject,
       name: (formData.get('name') as string)?.trim() || editedProject.name,
@@ -220,6 +257,9 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
       state: (formData.get('state') as string) || editedProject.state,
       projectValue: (formData.get('projectValue') as string) || editedProject.projectValue,
       status: (formData.get('status') as string) || editedProject.status,
+      lat: latRaw ? Number(latRaw) : (editedProject.lat ?? null),
+      lng: lngRaw ? Number(lngRaw) : (editedProject.lng ?? null),
+      placeId: (formData.get('placeId') as string)?.trim() || (editedProject.placeId ?? null),
     };
     setEditedProject(merged);
     onUpdate?.(merged);
@@ -339,28 +379,47 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
 
             <div>
               <label className="block text-xs text-gray-600 mb-1">Street Address</label>
-              <input name="streetAddress" defaultValue={editedProject.streetAddress || ''}
+              <PlacesAutocompleteInput
+                name="streetAddress"
+                value={streetAddress}
+                onChange={setStreetAddress}
+                onPlaceSelected={handlePlacePick}
+                placeholder="Start typing an address…"
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-                placeholder="123 Example St" />
+              />
+              <p className="mt-1 text-[11px] text-gray-400">Pick a suggestion to auto-fill suburb, state and coordinates.</p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Suburb</label>
-                <input name="address" defaultValue={editedProject.address}
+                <input
+                  name="address"
+                  value={suburb}
+                  onChange={e => setSuburb(e.target.value)}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-                  placeholder="Suburb" />
+                  placeholder="Suburb"
+                />
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">State</label>
-                <select name="state" defaultValue={editedProject.state || ''}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer">
+                <select
+                  name="state"
+                  value={stateCode}
+                  onChange={e => setStateCode(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
+                >
                   <option value="">Select state</option>
                   <option value="QLD">QLD</option>
                   <option value="NSW">NSW</option>
                 </select>
               </div>
             </div>
+
+            {/* Hidden carriers for geo data */}
+            <input type="hidden" name="lat" value={lat} />
+            <input type="hidden" name="lng" value={lng} />
+            <input type="hidden" name="placeId" value={placeId} />
 
             <div className="grid grid-cols-2 gap-3">
               <div>

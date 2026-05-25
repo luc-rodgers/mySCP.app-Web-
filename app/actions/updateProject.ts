@@ -32,6 +32,13 @@ export async function updateProject(
   const projectValue = (formData.get("projectValue") as string) || null;
   const status = (formData.get("status") as string) || "active";
 
+  // Geo fields — only present when a Places suggestion was picked.
+  const latRaw = (formData.get("lat") as string) || "";
+  const lngRaw = (formData.get("lng") as string) || "";
+  const lat = latRaw ? Number(latRaw) : null;
+  const lng = lngRaw ? Number(lngRaw) : null;
+  const placeId = (formData.get("placeId") as string)?.trim() || null;
+
   if (!name) return { success: false, error: "Project name is required." };
 
   // Resolve client
@@ -58,7 +65,18 @@ export async function updateProject(
 
   const { error } = await supabase
     .from("projects")
-    .update({ name, client_id: clientId, street_address: streetAddress, address, state, project_value: projectValue, status })
+    .update({
+      name,
+      client_id: clientId,
+      street_address: streetAddress,
+      address,
+      state,
+      project_value: projectValue,
+      status,
+      lat: Number.isFinite(lat as number) ? lat : null,
+      lng: Number.isFinite(lng as number) ? lng : null,
+      place_id: placeId,
+    })
     .eq("id", projectId);
 
   if (error) return { success: false, error: error.message };

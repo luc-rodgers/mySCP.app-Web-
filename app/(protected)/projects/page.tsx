@@ -9,7 +9,7 @@ export default async function ProjectsPage() {
   const [{ data: currentEmployee }, { data: rows }, { data: clientRows }, { data: timeEntries }] = await Promise.all([
     supabase.from("employees").select("role").eq("user_id", user?.id ?? "").single(),
     supabase.from("projects")
-      .select("id, name, status, start_date, end_date, street_address, address, state, project_value, clients(name)")
+      .select("id, name, status, start_date, end_date, street_address, address, state, project_value, lat, lng, place_id, clients(name)")
       .order("name"),
     supabase.from("clients").select("id, name").order("name"),
     supabase.from("time_entries").select("data"),
@@ -47,6 +47,9 @@ export default async function ProjectsPage() {
     endDate: r.end_date ?? "",
     hoursLogged: hoursPerProject[r.id] ?? 0,
     projectValue: r.project_value ?? undefined,
+    lat: (r as any).lat ?? null,
+    lng: (r as any).lng ?? null,
+    placeId: (r as any).place_id ?? null,
   }));
 
   const clients = (clientRows ?? []).map((c) => ({ id: c.id, name: c.name }));

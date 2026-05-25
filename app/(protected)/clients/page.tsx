@@ -11,7 +11,7 @@ export default async function ClientsPage() {
       .select("id, name, contact_name, email, phone, address, projects(id, status)")
       .order("name"),
     supabase.from("projects")
-      .select("id, name, status, street_address, address, state, project_value, hours_logged, start_date, end_date, client_id, clients(id, name)")
+      .select("id, name, status, street_address, address, state, project_value, hours_logged, start_date, end_date, client_id, lat, lng, place_id, clients(id, name)")
       .order("name"),
   ]);
 
@@ -40,6 +40,9 @@ export default async function ClientsPage() {
     hoursLogged: p.hours_logged ?? 0,
     startDate: p.start_date ?? "",
     endDate: p.end_date ?? "",
+    lat: p.lat ?? null,
+    lng: p.lng ?? null,
+    placeId: p.place_id ?? null,
   }));
 
   return <Clients initialClients={initialClients} allProjects={allProjects} isAdmin={isAdmin} />;

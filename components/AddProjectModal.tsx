@@ -6,6 +6,7 @@ import { createProject } from "@/app/actions/createProject";
 import { createClientAction } from "@/app/actions/createClientAction";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/Toast";
+import { PlacesAutocompleteInput, type PickedPlace } from "@/components/PlacesAutocompleteInput";
 
 const PROJECT_VALUE_OPTIONS = [
   ">$50m-$80m",
@@ -39,6 +40,23 @@ export function AddProjectModal({ clients: initialClients = [], onClose }: Props
   const [showNewClient, setShowNewClient] = useState(false);
   const [newClientLoading, setNewClientLoading] = useState(false);
   const [newClientError, setNewClientError] = useState<string | null>(null);
+
+  // Address state — controlled so Places Autocomplete can populate all fields on pick
+  const [streetAddress, setStreetAddress] = useState("");
+  const [suburb, setSuburb] = useState("");
+  const [stateCode, setStateCode] = useState("");
+  const [lat, setLat] = useState<string>("");
+  const [lng, setLng] = useState<string>("");
+  const [placeId, setPlaceId] = useState<string>("");
+
+  function handlePlacePick(place: PickedPlace) {
+    if (place.streetAddress) setStreetAddress(place.streetAddress);
+    if (place.suburb) setSuburb(place.suburb);
+    if (place.state === "QLD" || place.state === "NSW") setStateCode(place.state);
+    setLat(place.lat != null ? String(place.lat) : "");
+    setLng(place.lng != null ? String(place.lng) : "");
+    setPlaceId(place.placeId || "");
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -220,14 +238,18 @@ export function AddProjectModal({ clients: initialClients = [], onClose }: Props
               </select>
             </div>
 
-            {/* Street Address */}
+            {/* Street Address (with Places Autocomplete) */}
             <div>
               <label className="block text-xs text-gray-600 mb-1">Street Address</label>
-              <input
+              <PlacesAutocompleteInput
                 name="streetAddress"
+                value={streetAddress}
+                onChange={setStreetAddress}
+                onPlaceSelected={handlePlacePick}
+                placeholder="Start typing an address…"
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
-                placeholder="123 Example St"
               />
+              <p className="mt-1 text-[11px] text-gray-400">Pick a suggestion to auto-fill suburb, state and coordinates.</p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -235,6 +257,8 @@ export function AddProjectModal({ clients: initialClients = [], onClose }: Props
                 <label className="block text-xs text-gray-600 mb-1">Suburb</label>
                 <input
                   name="address"
+                  value={suburb}
+                  onChange={e => setSuburb(e.target.value)}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
                   placeholder="Suburb"
                 />
@@ -243,7 +267,8 @@ export function AddProjectModal({ clients: initialClients = [], onClose }: Props
                 <label className="block text-xs text-gray-600 mb-1">State</label>
                 <select
                   name="state"
-                  defaultValue=""
+                  value={stateCode}
+                  onChange={e => setStateCode(e.target.value)}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
                 >
                   <option value="">Select state</option>
@@ -252,6 +277,11 @@ export function AddProjectModal({ clients: initialClients = [], onClose }: Props
                 </select>
               </div>
             </div>
+
+            {/* Hidden carriers for geo data — sent through with FormData */}
+            <input type="hidden" name="lat" value={lat} />
+            <input type="hidden" name="lng" value={lng} />
+            <input type="hidden" name="placeId" value={placeId} />
 
             {/* Project Value + Status */}
             <div className="grid grid-cols-2 gap-3">

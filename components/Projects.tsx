@@ -20,6 +20,9 @@ interface Project {
   hoursLogged: number;
   projectValue?: string;
   state?: string;
+  lat?: number | null;
+  lng?: number | null;
+  placeId?: string | null;
 }
 
 interface Client {
