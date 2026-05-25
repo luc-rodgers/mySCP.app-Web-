@@ -1,5 +1,5 @@
 "use client"
-import { ArrowLeft, MapPin, DollarSign, Edit2, X, Check, CheckCircle, Trash2, Car, Droplets, Wrench, Loader2, Settings } from 'lucide-react';
+import { ArrowLeft, MapPin, DollarSign, Edit2, X, Check, CheckCircle, Trash2, Car, Droplets, Wrench, Loader2, Settings, ExternalLink } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -335,19 +335,40 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
               )}
             </div>
 
-            {(editedProject.streetAddress || editedProject.address || editedProject.state) && (
-              <div className="pt-4 border-t border-gray-100">
-                <div className="flex items-start gap-2 text-sm text-gray-600">
-                  <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
-                  <div>
-                    {editedProject.streetAddress && (
-                      <p>{editedProject.streetAddress}</p>
-                    )}
-                    <p>{[editedProject.address, editedProject.state].filter(Boolean).join(', ')}</p>
-                  </div>
+            {(editedProject.streetAddress || editedProject.address || editedProject.state) && (() => {
+              // Build the best Maps URL we can: place_id wins, then lat/lng, then a text search.
+              const addressText = [editedProject.streetAddress, editedProject.address, editedProject.state]
+                .filter(Boolean).join(', ');
+              const query = encodeURIComponent(addressText || editedProject.name);
+              let mapsHref = `https://www.google.com/maps/search/?api=1&query=${query}`;
+              if (editedProject.placeId) {
+                mapsHref += `&query_place_id=${encodeURIComponent(editedProject.placeId)}`;
+              } else if (editedProject.lat != null && editedProject.lng != null) {
+                mapsHref = `https://www.google.com/maps/search/?api=1&query=${editedProject.lat},${editedProject.lng}`;
+              }
+              return (
+                <div className="pt-4 border-t border-gray-100">
+                  <a
+                    href={mapsHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-start gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                    title="Open in Google Maps"
+                  >
+                    <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
+                    <div className="flex-1">
+                      {editedProject.streetAddress && (
+                        <p className="group-hover:underline underline-offset-2">{editedProject.streetAddress}</p>
+                      )}
+                      <p className="group-hover:underline underline-offset-2">
+                        {[editedProject.address, editedProject.state].filter(Boolean).join(', ')}
+                      </p>
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 mt-0.5 opacity-0 group-hover:opacity-60 transition-opacity shrink-0" />
+                  </a>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
           </>
         ) : (
