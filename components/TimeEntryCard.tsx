@@ -56,6 +56,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [stateFilter, setStateFilter] = useState<'QLD' | 'NSW'>('QLD');
   const [collapsedActivities, setCollapsedActivities] = useState<Set<string>>(new Set());
+  const [collapsedWeather, setCollapsedWeather] = useState<Set<string>>(new Set());
   const [moreOpen, setMoreOpen] = useState(false);
   const prevProjectsLengthRef = useRef(entry.projects.length);
 
@@ -853,17 +854,33 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                                         <span className="text-xs font-medium">{activityLabel}</span>
                                       </div>
 
-                                      {/* ── Type dropdown ── */}
+                                      {/* ── Type selector ── */}
                                       {!isTravel ? (
-                                        <Select
-                                          value={sa.activityType || ''}
-                                          className="h-10 text-sm w-full md:h-8 md:text-xs md:flex-1 md:min-w-0"
-                                          onChange={(e) => handleUpdateSubActivity(entry.id, project.id, sa.id, { activityType: e.target.value })}
-                                          disabled={isLocked}
-                                        >
-                                          <option value="">Select type...</option>
-                                          {(isPouring ? pouringOptions : nonPouringOptions).map(o => <option key={o} value={o}>{o}</option>)}
-                                        </Select>
+                                        isPouring ? (
+                                          <div className="flex rounded-lg border border-gray-200 overflow-hidden w-full md:flex-1 md:min-w-0">
+                                            {pouringOptions.map(o => (
+                                              <button
+                                                key={o}
+                                                type="button"
+                                                disabled={isLocked}
+                                                onClick={() => handleUpdateSubActivity(entry.id, project.id, sa.id, { activityType: sa.activityType === o ? '' : o })}
+                                                className={`flex-1 px-2 py-2.5 text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 first:border-r first:border-gray-200 ${sa.activityType === o ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                                              >
+                                                {o}
+                                              </button>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <Select
+                                            value={sa.activityType || ''}
+                                            className="h-10 text-sm w-full md:h-8 md:text-xs md:flex-1 md:min-w-0"
+                                            onChange={(e) => handleUpdateSubActivity(entry.id, project.id, sa.id, { activityType: e.target.value })}
+                                            disabled={isLocked}
+                                          >
+                                            <option value="">Select type...</option>
+                                            {nonPouringOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                                          </Select>
+                                        )
                                       ) : (
                                         <div className="hidden md:block md:flex-1" />
                                       )}
@@ -992,7 +1009,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                           )}
 
                           {/* Inclement Weather detail box */}
-                          {project.weather && (
+                          {project.weather && !collapsedWeather.has(project.id) && (
                             <div className="border border-gray-200 rounded-xl p-3 bg-gray-50 space-y-3">
                               <div className="flex items-center justify-center gap-1.5 text-gray-700">
                                 <CloudRain className="w-4 h-4" />
@@ -1037,6 +1054,15 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                                 disabled={isLocked}
                                 className="h-10 text-sm"
                               />
+                              {!isLocked && (
+                                <button
+                                  onClick={() => setCollapsedWeather(prev => new Set([...prev, project.id]))}
+                                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gray-900 text-white active:bg-gray-700 cursor-pointer"
+                                >
+                                  <Check className="w-5 h-5" />
+                                  <span className="text-sm font-medium">Save</span>
+                                </button>
+                              )}
                             </div>
                           )}
                         </div>
@@ -1053,21 +1079,21 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                     <div className="grid grid-cols-3 gap-2">
                       <button
                         onClick={() => handleAddSubActivity(entry.id, project.id, 'travel')}
-                        className="flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
+                        className="flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
                       >
                         <Car className="w-4 h-4 shrink-0" />
                         <span>Travel</span>
                       </button>
                       <button
                         onClick={() => handleAddSubActivity(entry.id, project.id, 'pouring')}
-                        className="flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
+                        className="flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
                       >
                         <Droplet className="w-4 h-4 shrink-0" />
                         <span>Pouring</span>
                       </button>
                       <button
                         onClick={() => handleAddSubActivity(entry.id, project.id, 'non-pouring')}
-                        className="flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
+                        className="flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
                       >
                         <Hammer className="w-4 h-4 shrink-0" />
                         <span>Non-Pouring</span>
@@ -1077,23 +1103,36 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                       <button
                         onClick={() => onUpdateProject(entry.id, project.id, { lunch: !project.lunch })}
                         disabled={isLocked}
-                        className={`flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.lunch ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
+                        className={`flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.lunch ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
                       >
                         <Utensils className="w-4 h-4 shrink-0" />
                         <span>Lunch</span>
                       </button>
                       <button
-                        onClick={() => onUpdateProject(entry.id, project.id, { weather: !project.weather })}
+                        onClick={() => {
+                          if (project.weather && collapsedWeather.has(project.id)) {
+                            // Already saved/collapsed — re-expand
+                            setCollapsedWeather(prev => { const n = new Set(prev); n.delete(project.id); return n; });
+                          } else if (project.weather) {
+                            // Turn off weather and clear collapsed state
+                            onUpdateProject(entry.id, project.id, { weather: false });
+                            setCollapsedWeather(prev => { const n = new Set(prev); n.delete(project.id); return n; });
+                          } else {
+                            // Turn on and ensure expanded
+                            onUpdateProject(entry.id, project.id, { weather: true });
+                            setCollapsedWeather(prev => { const n = new Set(prev); n.delete(project.id); return n; });
+                          }
+                        }}
                         disabled={isLocked}
-                        className={`flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.weather ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
+                        className={`flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.weather ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
                       >
                         <CloudRain className="w-4 h-4 shrink-0" />
-                        <span>Weather</span>
+                        <span className="text-center leading-tight">Inclement<br />Weather</span>
                       </button>
                       <button
                         onClick={() => setMoreOpen(o => !o)}
                         disabled={isLocked}
-                        className={`flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${moreOpen ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
+                        className={`flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${moreOpen ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
                       >
                         <MoreHorizontal className="w-4 h-4 shrink-0" />
                         <span>More</span>
@@ -1104,7 +1143,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                         <button
                           onClick={() => onUpdateProject(entry.id, project.id, { lunchPenalty: !project.lunchPenalty })}
                           disabled={isLocked}
-                          className={`flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.lunchPenalty ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
+                          className={`flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.lunchPenalty ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
                         >
                           <AlertTriangle className="w-4 h-4 shrink-0" />
                           <span>Lunch Penalty</span>
@@ -1112,7 +1151,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                         <button
                           type="button"
                           disabled
-                          className="flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-400 text-xs font-medium cursor-not-allowed opacity-50"
+                          className="flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-400 text-xs font-medium cursor-not-allowed opacity-50"
                         >
                           <SprayCan className="w-4 h-4 shrink-0" />
                           <span>Shotcrete</span>
@@ -1120,7 +1159,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                         <button
                           type="button"
                           disabled
-                          className="flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-400 text-xs font-medium cursor-not-allowed opacity-50"
+                          className="flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-400 text-xs font-medium cursor-not-allowed opacity-50"
                         >
                           <Truck className="w-4 h-4 shrink-0" />
                           <span>Transfer KMs</span>
