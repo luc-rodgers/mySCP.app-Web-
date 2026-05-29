@@ -1010,22 +1010,32 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
 
                           {/* Inclement Weather — collapsed summary row */}
                           {project.weather && collapsedWeather.has(project.id) && (
-                            <button
-                              onClick={() => setCollapsedWeather(prev => { const n = new Set(prev); n.delete(project.id); return n; })}
-                              className="w-full flex items-center gap-2 px-3 py-3 rounded-xl border border-gray-200 bg-gray-50 text-left active:bg-gray-100"
-                            >
-                              <CloudRain className="w-4 h-4 text-gray-500 shrink-0" />
-                              <span className="text-sm font-medium text-gray-700">Inclement Weather</span>
-                              {project.weatherType && (
-                                <span className="text-sm text-gray-400 truncate">· {project.weatherType}</span>
+                            <div className="flex items-center rounded-xl border border-gray-200 bg-gray-50 overflow-hidden">
+                              <button
+                                onClick={() => setCollapsedWeather(prev => { const n = new Set(prev); n.delete(project.id); return n; })}
+                                className="flex-1 flex items-center gap-2 px-3 py-3 text-left active:bg-gray-100"
+                              >
+                                <CloudRain className="w-4 h-4 text-gray-500 shrink-0" />
+                                <span className="text-sm font-medium text-gray-700">Inclement Weather</span>
+                                {project.weatherType && (
+                                  <span className="text-sm text-gray-400 truncate">· {project.weatherType}</span>
+                                )}
+                                <div className="ml-auto flex items-center gap-1 text-xs text-gray-500 shrink-0">
+                                  <span>{project.weatherStart || '--'}</span>
+                                  <span className="text-gray-300">→</span>
+                                  <span>{project.weatherEnd || '--'}</span>
+                                </div>
+                                <ChevronDown className="w-4 h-4 text-gray-300 shrink-0 ml-1" />
+                              </button>
+                              {!isLocked && (
+                                <button
+                                  onClick={() => { onUpdateProject(entry.id, project.id, { weather: false }); setCollapsedWeather(prev => { const n = new Set(prev); n.delete(project.id); return n; }); }}
+                                  className="px-3 py-3 text-red-400 hover:text-red-600 active:text-red-700 shrink-0"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
                               )}
-                              <div className="ml-auto flex items-center gap-1 text-xs text-gray-500 shrink-0">
-                                <span>{project.weatherStart || '--'}</span>
-                                <span className="text-gray-300">→</span>
-                                <span>{project.weatherEnd || '--'}</span>
-                              </div>
-                              <ChevronDown className="w-4 h-4 text-gray-300 shrink-0 ml-1" />
-                            </button>
+                            </div>
                           )}
 
                           {/* Inclement Weather detail box */}
