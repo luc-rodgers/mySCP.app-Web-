@@ -108,6 +108,27 @@ export default function TimesheetClient({ supabaseEmployee, userEmail, activePro
         .select("id")
         .single();
       if (!error && data) return { id: data.id as string, referenceNumber: null };
+      // Insert failed — likely a duplicate row already exists in DB for this date
+      // (can happen if the page was refreshed before the local ID was updated).
+      // Fall through to upsert by employee_id+date to recover gracefully.
+      console.warn("Insert failed, attempting fallback upsert by date:", error);
+      const { data: existing } = await supabase
+        .from("time_entries")
+        .select("id, reference_number")
+        .eq("employee_id", employeeDbId)
+        .eq("date", entry.date)
+        .single();
+      if (existing) {
+        const { data: updated, error: updateError } = await supabase
+          .from("time_entries")
+          .update({ status: entry.status, data: entry })
+          .eq("id", existing.id)
+          .select("id, reference_number")
+          .single();
+        if (updateError) { console.error("Fallback update error:", updateError); return null; }
+        if (updated) return { id: updated.id as string, referenceNumber: (updated as any).reference_number as string | null };
+      }
+      return null;
     } else {
       const { data, error } = await supabase
         .from("time_entries")
