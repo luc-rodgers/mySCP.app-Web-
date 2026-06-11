@@ -23,7 +23,7 @@ interface TimeEntryCardProps {
   entry: TimeEntry;
   activeProjects: ProjectOption[];
   onDelete: (id: string) => void;
-  onStatusChange: (id: string, status: TimeEntry['status']) => void;
+  onStatusChange: (id: string, status: TimeEntry['status']) => Promise<boolean>;
   onAddProject: (entryId: string, type?: 'project' | 'yardwork' | 'leave') => void;
   onDeleteProject: (entryId: string, projectId: string) => void;
   onUpdateProject: (entryId: string, projectId: string, updatedProject: Partial<Project>) => void;
@@ -324,13 +324,19 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
             onModalClose?.();
           }
         }}
-        onSubmit={(signature) => {
-          onStatusChange(entry.id, 'submitted');
-          setShowSummaryModal(false);
-          setSummaryFromEdit(false);
-          setIsEditMode(false);
-          setWasSubmittedWhenEditStarted(false);
-          setHasBeenEdited(false);
+        onSubmit={async (signature) => {
+          const success = await onStatusChange(entry.id, 'submitted');
+          if (success) {
+            // Delay closing so the modal's success animation can finish
+            setTimeout(() => {
+              setShowSummaryModal(false);
+              setSummaryFromEdit(false);
+              setIsEditMode(false);
+              setWasSubmittedWhenEditStarted(false);
+              setHasBeenEdited(false);
+            }, 1200);
+          }
+          return success;
         }}
         onEdit={entry.status === 'submitted' ? () => {
           setIsEditMode(true);
@@ -388,7 +394,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
               <div className="border rounded-lg p-4 bg-gray-50">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1 text-center">Sign On</label>
+                    <label className="block text-xs text-gray-600 mb-1 text-center font-bold">Sign On</label>
                     <TimePicker
                       value={entry.depotStart ?? ''}
                       onChange={(v) => handleUpdateEntry(entry.id, { depotStart: v })}
@@ -397,7 +403,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1 text-center">Sign Off</label>
+                    <label className="block text-xs text-gray-600 mb-1 text-center font-bold">Sign Off</label>
                     <TimePicker
                       value={entry.depotFinish ?? ''}
                       onChange={(v) => handleUpdateEntry(entry.id, { depotFinish: v })}
@@ -514,7 +520,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
               <button
                 onClick={() => handleAddProject(entry.id)}
                 disabled={isLocked}
-                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-[#030213] hover:bg-[#1a1a2e] text-white text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
                 <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="9" y1="22" x2="9" y2="5" />
@@ -531,7 +537,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
               <button
                 onClick={() => handleAddProject(entry.id, 'yardwork')}
                 disabled={isLocked}
-                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-[#030213] hover:bg-[#1a1a2e] text-white text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
                 <Truck className="w-4 h-4 shrink-0" />
                 <span>Yard Work</span>
@@ -539,7 +545,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
               <button
                 onClick={() => handleAddProject(entry.id, 'leave')}
                 disabled={isLocked}
-                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-[#030213] hover:bg-[#1a1a2e] text-white text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
                 <Plane className="w-4 h-4 shrink-0" />
                 <span>Leave</span>
@@ -568,18 +574,26 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
             )}
 
             {entry.status !== 'submitted' && entry.status !== 'approved' && (
-              <Button
-                variant="outline"
-                className="w-full mt-4 !bg-white hover:!bg-gray-50 !text-gray-900 !border-2 !border-gray-400 cursor-pointer font-semibold"
-                onClick={() => {
-                  handleCloseModal();
-                  setSummaryFromEdit(true);
-                  setShowSummaryModal(true);
-                }}
-              >
-                <FileCheck className="w-4 h-4 mr-2" />
-                Submit
-              </Button>
+              <>
+                <Button
+                  className="w-full mt-4 !bg-green-600 hover:!bg-green-700 text-white cursor-pointer font-semibold"
+                  onClick={() => {
+                    handleCloseModal();
+                    setSummaryFromEdit(true);
+                    setShowSummaryModal(true);
+                  }}
+                >
+                  <FileCheck className="w-4 h-4 mr-2" />
+                  Submit Timesheet
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full mt-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 font-normal"
+                  onClick={handleCloseModal}
+                >
+                  Save Draft
+                </Button>
+              </>
             )}
 
             {/* Done Editing Button - Visible when in edit mode */}
@@ -606,8 +620,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                     onClick={() => setShowDeleteConfirm(true)}
                     className="flex items-center gap-2 text-sm text-red-500 hover:text-red-700 cursor-pointer w-full justify-center"
                   >
-                    <Trash2 className="w-4 h-4" />
-                    Delete time card
+                    Delete Time Card
                   </button>
                 ) : (
                   <div className="text-center space-y-2">
@@ -1109,21 +1122,21 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                     <div className="grid grid-cols-3 gap-2">
                       <button
                         onClick={() => handleAddSubActivity(entry.id, project.id, 'travel')}
-                        className="flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
+                        className="flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2 px-2 md:px-3 py-3 md:py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
                       >
                         <Car className="w-4 h-4 shrink-0" />
                         <span>Travel</span>
                       </button>
                       <button
                         onClick={() => handleAddSubActivity(entry.id, project.id, 'pouring')}
-                        className="flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
+                        className="flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2 px-2 md:px-3 py-3 md:py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
                       >
                         <Droplet className="w-4 h-4 shrink-0" />
                         <span>Pouring</span>
                       </button>
                       <button
                         onClick={() => handleAddSubActivity(entry.id, project.id, 'non-pouring')}
-                        className="flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
+                        className="flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2 px-2 md:px-3 py-3 md:py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
                       >
                         <Hammer className="w-4 h-4 shrink-0" />
                         <span>Non-Pouring</span>
@@ -1133,7 +1146,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                       <button
                         onClick={() => onUpdateProject(entry.id, project.id, { lunch: !project.lunch })}
                         disabled={isLocked}
-                        className={`flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.lunch ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
+                        className={`flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2 px-2 md:px-3 py-3 md:py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.lunch ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
                       >
                         <Utensils className="w-4 h-4 shrink-0" />
                         <span>Lunch</span>
@@ -1154,7 +1167,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                           }
                         }}
                         disabled={isLocked}
-                        className={`flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.weather ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
+                        className={`flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2 px-2 md:px-3 py-3 md:py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.weather ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
                       >
                         <CloudRain className="w-4 h-4 shrink-0" />
                         <span className="text-center leading-tight">Inclement<br />Weather</span>
@@ -1162,7 +1175,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                       <button
                         onClick={() => setMoreOpen(o => !o)}
                         disabled={isLocked}
-                        className={`flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${moreOpen ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
+                        className={`flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2 px-2 md:px-3 py-3 md:py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${moreOpen ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
                       >
                         <MoreHorizontal className="w-4 h-4 shrink-0" />
                         <span>More</span>
@@ -1173,7 +1186,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                         <button
                           onClick={() => onUpdateProject(entry.id, project.id, { lunchPenalty: !project.lunchPenalty })}
                           disabled={isLocked}
-                          className={`flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.lunchPenalty ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
+                          className={`flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2 px-2 md:px-3 py-3 md:py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.lunchPenalty ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
                         >
                           <AlertTriangle className="w-4 h-4 shrink-0" />
                           <span>Lunch Penalty</span>
@@ -1181,7 +1194,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                         <button
                           type="button"
                           disabled
-                          className="flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-400 text-xs font-medium cursor-not-allowed opacity-50"
+                          className="flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2 px-2 md:px-3 py-3 md:py-1.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-400 text-xs font-medium cursor-not-allowed opacity-50"
                         >
                           <SprayCan className="w-4 h-4 shrink-0" />
                           <span>Shotcrete</span>
@@ -1189,7 +1202,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                         <button
                           type="button"
                           disabled
-                          className="flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-400 text-xs font-medium cursor-not-allowed opacity-50"
+                          className="flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2 px-2 md:px-3 py-3 md:py-1.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-400 text-xs font-medium cursor-not-allowed opacity-50"
                         >
                           <Truck className="w-4 h-4 shrink-0" />
                           <span>Transfer KMs</span>

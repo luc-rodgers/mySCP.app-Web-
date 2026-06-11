@@ -8,6 +8,7 @@ import DesktopTabToggle from "@/components/DesktopTabToggle";
 import { TimeEntryList } from "@/components/TimeEntryList";
 import { WeeklySummary } from "@/components/WeeklySummary";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 type SupabaseEmployee = {
   id: string;
@@ -108,7 +109,7 @@ export default function TimesheetClient({ supabaseEmployee, userEmail, activePro
         .single();
       if (!error && data) return { id: data.id as string, referenceNumber: null };
     } else {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("time_entries")
         .upsert({
           id: entry.id,
@@ -119,6 +120,10 @@ export default function TimesheetClient({ supabaseEmployee, userEmail, activePro
         })
         .select("id, reference_number")
         .single();
+      if (error) {
+        console.error("upsertEntry error:", error);
+        return null;
+      }
       if (data) return { id: data.id as string, referenceNumber: (data as any).reference_number as string | null };
     }
     return null;
@@ -199,26 +204,37 @@ export default function TimesheetClient({ supabaseEmployee, userEmail, activePro
     deleteEntryFromDB(id);
   };
 
-  const handleStatusChange = async (id: string, status: TimeEntry["status"]) => {
+  const handleStatusChange = async (id: string, status: TimeEntry["status"]): Promise<boolean> => {
     // Optimistic update — set status immediately
     let entrySnapshot: TimeEntry | undefined;
+    let previousStatus: TimeEntry["status"] | undefined;
     setEntries((prev) => prev.map((e) => {
       if (e.id !== id) return e;
+      previousStatus = e.status;
       entrySnapshot = { ...e, status };
       return entrySnapshot;
     }));
 
-    if (!entrySnapshot) return;
+    if (!entrySnapshot) return false;
 
     // Persist to DB; trigger will assign reference_number when status = 'submitted'
     const result = await upsertEntry(entrySnapshot);
 
+    if (!result) {
+      // Roll back the optimistic update so the UI matches DB state
+      setEntries((prev) => prev.map((e) => e.id === id ? { ...e, status: previousStatus! } : e));
+      toast.error("Failed to submit timesheet. Please check your connection and try again.");
+      return false;
+    }
+
     // Read back the DB-assigned reference number and store it on the entry
-    if (status === "submitted" && result?.referenceNumber) {
+    if (status === "submitted" && result.referenceNumber) {
       setEntries((prev) => prev.map((e) =>
         e.id === id ? { ...e, timeCardNumber: result.referenceNumber! } : e
       ));
     }
+
+    return true;
   };
 
   const getDefaultStartTime = (entry: TimeEntry): string => {

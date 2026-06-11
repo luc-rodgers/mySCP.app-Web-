@@ -15,7 +15,7 @@ interface TimeCardSummaryModalProps {
   entry: TimeEntry;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit?: (signature: string) => void;
+  onSubmit?: (signature: string) => Promise<boolean>;
   onEdit?: () => void;
   onDelete?: () => void;
   viewOnly?: boolean;
@@ -175,18 +175,18 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
   // Calculate non-productive hours
   const nonProductiveHours = Math.max(0, totalHours - totalProductiveHours);
 
-  const handleSubmit = () => {
-    if (signature.trim() && onSubmit) {
-      const sig = signature;
-      setSignature('');
-      setSubmitState('submitting');
-      setTimeout(() => {
-        setSubmitState('done');
-        setTimeout(() => {
-          setSubmitState('idle');
-          onSubmit(sig); // call AFTER animation so no re-render interrupts
-        }, 1000);
-      }, 800);
+  const handleSubmit = async () => {
+    if (!signature.trim() || !onSubmit) return;
+    const sig = signature;
+    setSignature('');
+    setSubmitState('submitting');
+    const success = await onSubmit(sig);
+    if (success) {
+      setSubmitState('done');
+      setTimeout(() => setSubmitState('idle'), 1000);
+    } else {
+      setSignature(sig); // restore so the user can retry
+      setSubmitState('idle');
     }
   };
 
