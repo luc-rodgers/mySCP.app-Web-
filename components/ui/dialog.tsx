@@ -21,20 +21,23 @@ const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
   )
 }
 
-const DialogContent = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, children, ...props }, ref) => (
-  <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-    <div
-      ref={ref}
-      className={`bg-background w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl shadow-lg max-h-[90vh] overflow-y-auto ${className || ''}`}
-      {...props}
-    >
-      {children}
+interface DialogContentProps extends React.HTMLAttributes<HTMLDivElement> {
+  position?: 'top' | 'bottom';
+}
+
+const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
+  ({ className, children, position = 'bottom', ...props }, ref) => (
+    <div className={`fixed inset-0 z-50 flex ${position === 'top' ? 'items-start' : 'items-end'} sm:items-center justify-center`}>
+      <div
+        ref={ref}
+        className={`bg-background w-full sm:max-w-lg ${position === 'top' ? 'rounded-b-2xl' : 'rounded-t-2xl'} sm:rounded-2xl shadow-lg ${className || ''}`}
+        {...props}
+      >
+        {children}
+      </div>
     </div>
-  </div>
-))
+  )
+)
 DialogContent.displayName = "DialogContent"
 
 const DialogHeader = ({

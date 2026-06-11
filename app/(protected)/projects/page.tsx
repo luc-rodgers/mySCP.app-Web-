@@ -29,7 +29,9 @@ export default async function ProjectsPage() {
         if (!sa.start || !sa.finish) return;
         const [sh, sm] = sa.start.split(':').map(Number);
         const [fh, fm] = sa.finish.split(':').map(Number);
-        hrs += Math.max(0, (fh * 60 + fm - sh * 60 - sm) / 60);
+        let mins = fh * 60 + fm - sh * 60 - sm;
+        if (mins < 0) mins += 24 * 60; // crosses midnight (night shift)
+        hrs += mins / 60;
       });
       hoursPerProject[p.projectId] = (hoursPerProject[p.projectId] ?? 0) + hrs;
     });

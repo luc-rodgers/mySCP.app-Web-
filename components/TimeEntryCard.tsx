@@ -261,22 +261,33 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
       {/* Day Header - Clickable to open modal */}
       <div
         onClick={handleToggleExpanded}
-        className="transition-colors cursor-pointer bg-gray-200 hover:bg-gray-300
-          /* Mobile: horizontal row */
+        className={`relative overflow-hidden transition-colors duration-500 cursor-pointer
           px-4 py-3 flex justify-between items-center
-          /* Desktop: vertical column tile */
-          md:flex-col md:items-center md:justify-between md:px-3 md:py-4 md:min-h-[140px] md:text-center md:flex-1"
+          md:flex-col md:items-center md:justify-between md:px-3 md:py-4 md:min-h-[140px] md:text-center md:flex-1
+          ${entry.isNightShift ? 'bg-[#0d1b2a] hover:bg-[#112236]' : 'bg-gray-200 hover:bg-gray-300'}`}
       >
+        {/* Night sky stars */}
+        {entry.isNightShift && (
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-2 left-6 w-1 h-1 rounded-full bg-yellow-300 opacity-80" />
+            <div className="absolute top-5 left-14 w-0.5 h-0.5 rounded-full bg-yellow-300 opacity-60" />
+            <div className="absolute top-2 right-10 w-1 h-1 rounded-full bg-yellow-300 opacity-75" />
+            <div className="absolute top-6 right-20 w-0.5 h-0.5 rounded-full bg-yellow-300 opacity-50" />
+            <div className="absolute top-1 left-1/3 w-0.5 h-0.5 rounded-full bg-yellow-300 opacity-90" />
+            <div className="absolute top-4 left-1/2 w-1 h-1 rounded-full bg-yellow-300 opacity-40" />
+            <div className="absolute top-3 right-5 w-0.5 h-0.5 rounded-full bg-yellow-300 opacity-70" />
+          </div>
+        )}
         {/* Day name + date */}
         <div className="flex items-center gap-3 md:flex-col md:gap-1 md:items-center">
-          <Clock className="w-5 h-5 text-gray-700 md:hidden" />
+          <Clock className={`w-5 h-5 md:hidden transition-colors duration-500 ${entry.isNightShift ? 'text-blue-200' : 'text-gray-700'}`} />
           <div className="md:text-center">
-            <div className="text-gray-900 font-medium md:text-sm">
+            <div className={`font-medium md:text-sm transition-colors duration-500 ${entry.isNightShift ? 'text-white' : 'text-gray-900'}`}>
               {/* Mobile: full day name. Desktop: 3-letter abbrev */}
               <span className="md:hidden">{formatDate(entry.date).split(',')[0]}</span>
               <span className="hidden md:inline">{formatDate(entry.date).split(',')[0].slice(0, 3)}</span>
             </div>
-            <div className="text-xs text-gray-600">
+            <div className={`text-xs transition-colors duration-500 ${entry.isNightShift ? 'text-blue-300' : 'text-gray-600'}`}>
               {/* Mobile: "Mar 3, 2026". Desktop: just "3 Mar" */}
               <span className="md:hidden">{formatDate(entry.date).split(',')[1]}</span>
               <span className="hidden md:inline">
@@ -290,8 +301,8 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
         </div>
 
         {/* Hours */}
-        <div className="text-sm text-gray-900 md:text-base md:font-semibold">
-          {totalHours > 0 ? `${totalHours} hrs` : <span className="text-gray-400 text-xs">—</span>}
+        <div className={`text-sm md:text-base md:font-semibold transition-colors duration-500 ${entry.isNightShift ? 'text-white' : 'text-gray-900'}`}>
+          {totalHours > 0 ? `${totalHours} hrs` : <span className={`text-xs ${entry.isNightShift ? 'text-blue-300' : 'text-gray-400'}`}>—</span>}
         </div>
 
         {/* Reference number (submitted cards only) */}
@@ -391,10 +402,24 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
           <div className="overflow-y-auto p-4" onClick={markAsEdited}>
             {/* Depot Section - Hidden when all projects are leave */}
             {!isLeaveOnly && <div className="mb-4">
-              <div className="border rounded-lg p-4 bg-gray-50">
+              <div className={`border rounded-lg p-4 relative overflow-hidden transition-colors duration-500 ${entry.isNightShift ? 'bg-[#0d1b2a] border-[#1e3a5f]' : 'bg-gray-50'}`}>
+                {/* Night sky stars */}
+                {entry.isNightShift && (
+                  <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute top-2 left-6 w-1 h-1 rounded-full bg-yellow-300 opacity-80" />
+                    <div className="absolute top-5 left-14 w-0.5 h-0.5 rounded-full bg-yellow-300 opacity-60" />
+                    <div className="absolute top-2 right-10 w-1 h-1 rounded-full bg-yellow-300 opacity-75" />
+                    <div className="absolute top-6 right-20 w-0.5 h-0.5 rounded-full bg-yellow-300 opacity-50" />
+                    <div className="absolute top-1 left-1/3 w-0.5 h-0.5 rounded-full bg-yellow-300 opacity-90" />
+                    <div className="absolute top-4 left-1/2 w-1 h-1 rounded-full bg-yellow-300 opacity-40" />
+                    <div className="absolute top-3 right-5 w-0.5 h-0.5 rounded-full bg-yellow-300 opacity-70" />
+                    <div className="absolute top-7 left-24 w-0.5 h-0.5 rounded-full bg-yellow-300 opacity-55" />
+                    <div className="absolute top-1 right-1/3 w-1 h-1 rounded-full bg-yellow-300 opacity-60" />
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1 text-center font-bold">Sign On</label>
+                    <label className={`block text-xs mb-1 text-center font-bold transition-colors duration-500 ${entry.isNightShift ? 'text-blue-200' : 'text-gray-600'}`}>Sign On</label>
                     <TimePicker
                       value={entry.depotStart ?? ''}
                       onChange={(v) => handleUpdateEntry(entry.id, { depotStart: v })}
@@ -403,7 +428,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1 text-center font-bold">Sign Off</label>
+                    <label className={`block text-xs mb-1 text-center font-bold transition-colors duration-500 ${entry.isNightShift ? 'text-blue-200' : 'text-gray-600'}`}>Sign Off</label>
                     <TimePicker
                       value={entry.depotFinish ?? ''}
                       onChange={(v) => handleUpdateEntry(entry.id, { depotFinish: v })}
@@ -421,13 +446,13 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                     />
                   </div>
                 </div>
-                <div className="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between gap-3">
+                <div className={`mt-3 pt-3 border-t flex items-center justify-between gap-3 transition-colors duration-500 ${entry.isNightShift ? 'border-white/20' : 'border-gray-200'}`}>
                   <div className="flex items-center gap-2">
-                    <Moon className="w-4 h-4 text-gray-500 shrink-0" />
+                    <Moon className={`w-4 h-4 shrink-0 transition-colors duration-500 ${entry.isNightShift ? 'text-yellow-300' : 'text-gray-500'}`} />
                     <div>
-                      <div className="text-sm font-medium text-gray-700">Night Shift</div>
+                      <div className={`text-sm font-medium transition-colors duration-500 ${entry.isNightShift ? 'text-white' : 'text-gray-700'}`}>Night Shift</div>
                       {entry.isNightShift && (
-                        <div className="text-xs text-gray-400">Sign Off is the next morning</div>
+                        <div className="text-xs text-blue-300">Sign Off is the next morning</div>
                       )}
                     </div>
                   </div>
@@ -437,7 +462,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                     aria-checked={!!entry.isNightShift}
                     onClick={() => handleUpdateEntry(entry.id, { isNightShift: !entry.isNightShift })}
                     disabled={isLocked}
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${entry.isNightShift ? 'bg-gray-900' : 'bg-gray-200'}`}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${entry.isNightShift ? 'bg-yellow-400' : 'bg-gray-200'}`}
                   >
                     <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform ${entry.isNightShift ? 'translate-x-5' : 'translate-x-0'}`} />
                   </button>
@@ -1236,9 +1261,9 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                   <button
                     onClick={() => setSelectedProjectId(null)}
                     disabled={project.type === 'yardwork' && !project.project}
-                    className="w-32 h-14 flex items-center justify-center rounded-xl bg-gray-900 text-white text-base font-medium active:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    className="w-32 h-14 flex items-center justify-center rounded-xl bg-green-600 text-white text-base font-medium active:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
-                    Done
+                    Save
                   </button>
                 </div>
               </div>

@@ -6,7 +6,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, ChevronLeft, AlertTriangle, Settings, Pencil, Trash2, Moon } from 'lucide-react';
+import { ChevronDown, ChevronRight, ChevronLeft, AlertTriangle, Settings, Pencil, Trash2, Moon, ClipboardList } from 'lucide-react';
 import Image from 'next/image';
 import { useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
@@ -28,7 +28,13 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
   const [showSettings, setShowSettings] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [submitState, setSubmitState] = useState<'idle' | 'submitting' | 'done'>('idle');
+  const [showReviewPrompt, setShowReviewPrompt] = useState(true);
   const settingsRef = useRef<HTMLDivElement>(null);
+
+  // Reset review prompt each time the modal opens
+  useEffect(() => {
+    if (isOpen) setShowReviewPrompt(true);
+  }, [isOpen]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -199,25 +205,12 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { setShowSettings(false); setShowDeleteConfirm(false); onClose(); } }}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="px-4 pt-4 pb-0 border-b-0">
-          <DialogTitle asChild>
-            <div className="flex items-center justify-between">
-              {/* Left spacer — same width as gear button so logo stays centred */}
-              <div className="w-8 shrink-0" />
-
-              {/* Logo */}
-              <Image
-                src="/scp-corporate-logo.jpg"
-                alt="Specialised Concrete Pumping"
-                width={140}
-                height={56}
-                className="object-contain"
-                priority
-              />
-
-              {/* Settings gear — top right */}
-              {viewOnly && (onEdit || onDelete) ? (
+      <DialogContent position="top" className="max-w-2xl h-[100dvh] sm:h-auto sm:max-h-[90vh] flex flex-col overflow-hidden p-0">
+        {/* Header — settings gear for view-only, empty bar otherwise */}
+        {viewOnly && (onEdit || onDelete) && (
+          <DialogHeader className="px-4 pt-3 pb-2 border-b-0 shrink-0">
+            <DialogTitle asChild>
+              <div className="flex justify-end">
                 <div ref={settingsRef} className="relative shrink-0">
                   <button
                     onClick={() => setShowSettings(s => !s)}
@@ -267,14 +260,27 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                     </div>
                   )}
                 </div>
-              ) : (
-                <div className="w-8 shrink-0" />
-              )}
-            </div>
-          </DialogTitle>
-        </DialogHeader>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+        )}
 
-        <div className="space-y-4 pt-4 pb-4 px-6">
+        {/* Review prompt — dismissible overlay, centred over content */}
+        {!viewOnly && showReviewPrompt && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center px-6">
+            <div className="w-full rounded-2xl bg-[#030213] text-white px-6 py-8 flex flex-col items-center gap-6 shadow-2xl">
+              <p className="text-xl font-bold text-center leading-snug">Please Review, Confirm and Sign your Time Sheet</p>
+              <button
+                onClick={() => setShowReviewPrompt(false)}
+                className="w-full text-base font-bold bg-white text-[#030213] rounded-xl px-6 py-3 cursor-pointer hover:bg-gray-100"
+              >
+                Ok
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="flex-1 overflow-y-auto space-y-4 pt-4 pb-4 px-6">
           {/* Employee Name */}
           <div className="text-center">
             <div className="text-2xl font-bold">{entry.employeeName || 'Employee Name'}</div>
@@ -293,11 +299,23 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
           </div>
 
           {/* Sign On / Sign Off / Total Hours - Hidden for leave-only entries */}
-          {!isLeaveOnly && <div className={`bg-gray-50 p-4 rounded-lg border ${hasMissingTimes && !viewOnly ? 'border-red-400' : 'border-gray-200'}`}>
+          {!isLeaveOnly && <div className={`relative overflow-hidden p-4 rounded-lg border transition-colors duration-500 ${entry.isNightShift ? 'bg-[#0d1b2a] border-[#1e3a5f]' : `bg-gray-50 ${hasMissingTimes && !viewOnly ? 'border-red-400' : 'border-gray-200'}`}`}>
+            {/* Night sky stars */}
+            {entry.isNightShift && (
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-2 left-6 w-1 h-1 rounded-full bg-yellow-300 opacity-80" />
+                <div className="absolute top-5 left-14 w-0.5 h-0.5 rounded-full bg-yellow-300 opacity-60" />
+                <div className="absolute top-2 right-10 w-1 h-1 rounded-full bg-yellow-300 opacity-75" />
+                <div className="absolute top-6 right-20 w-0.5 h-0.5 rounded-full bg-yellow-300 opacity-50" />
+                <div className="absolute top-1 left-1/3 w-0.5 h-0.5 rounded-full bg-yellow-300 opacity-90" />
+                <div className="absolute top-4 left-1/2 w-1 h-1 rounded-full bg-yellow-300 opacity-40" />
+                <div className="absolute top-3 right-5 w-0.5 h-0.5 rounded-full bg-yellow-300 opacity-70" />
+              </div>
+            )}
             <div className="flex items-center justify-between gap-4">
               <div className="text-center flex-1">
-                <div className="text-xs text-gray-500 mb-1">Sign On</div>
-                <div className={`text-lg font-semibold ${missingSignOn && !viewOnly ? 'text-red-600' : ''}`}>
+                <div className={`text-xs mb-1 transition-colors duration-500 ${entry.isNightShift ? 'text-blue-200' : 'text-gray-500'}`}>Sign On</div>
+                <div className={`text-lg font-semibold transition-colors duration-500 ${missingSignOn && !viewOnly ? 'text-red-600' : entry.isNightShift ? 'text-white' : ''}`}>
                   {entry.depotStart || '--:--'}
                 </div>
                 {missingSignOn && !viewOnly && (
@@ -307,10 +325,10 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                   </div>
                 )}
               </div>
-              <div className="text-gray-400 text-xl pb-5">→</div>
+              <div className={`text-xl pb-5 transition-colors duration-500 ${entry.isNightShift ? 'text-blue-300' : 'text-gray-400'}`}>→</div>
               <div className="text-center flex-1">
-                <div className="text-xs text-gray-500 mb-1">Sign Off</div>
-                <div className={`text-lg font-semibold ${missingSignOff && !viewOnly ? 'text-red-600' : ''}`}>
+                <div className={`text-xs mb-1 transition-colors duration-500 ${entry.isNightShift ? 'text-blue-200' : 'text-gray-500'}`}>Sign Off</div>
+                <div className={`text-lg font-semibold transition-colors duration-500 ${missingSignOff && !viewOnly ? 'text-red-600' : entry.isNightShift ? 'text-white' : ''}`}>
                   {entry.depotFinish || '--:--'}
                 </div>
                 {missingSignOff && !viewOnly && (
@@ -320,9 +338,9 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                   </div>
                 )}
               </div>
-              <div className="hidden md:block text-gray-300 text-2xl mx-2">|</div>
+              <div className={`hidden md:block text-2xl mx-2 transition-colors duration-500 ${entry.isNightShift ? 'text-white/20' : 'text-gray-300'}`}>|</div>
               <div className="text-center flex-1">
-                <div className="text-xs text-gray-500 mb-1">Total Hours</div>
+                <div className={`text-xs mb-1 transition-colors duration-500 ${entry.isNightShift ? 'text-blue-200' : 'text-gray-500'}`}>Total Hours</div>
                 <div className={`text-lg font-semibold ${hasInvalidTimeOrder && !viewOnly ? 'text-red-600' : 'text-blue-600'}`}>
                   {totalHours.toFixed(2)}
                 </div>
@@ -339,7 +357,6 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
           {/* Projects Summary */}
           {entry.projects.length > 0 && (
             <div>
-              <h3 className="text-sm text-gray-500 mb-2">{isLeaveOnly ? 'Leave' : 'Projects & Work'}</h3>
               <div className="space-y-3">
                 {entry.projects.map((project, index) => {
                   // Sort sub-activities chronologically by start time.
@@ -374,12 +391,15 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                   if (project.type === 'leave') {
                     const leaveHours = parseFloat(project.leaveTotalHours || '0');
                     return (
-                      <div key={project.id} className="border rounded-lg p-4 bg-white">
-                        <div className="flex justify-between items-center">
-                          <div className="text-base font-bold">{project.leaveType || 'Leave'}</div>
-                          {leaveHours > 0 && (
-                            <div className="text-lg font-bold text-blue-600">{leaveHours.toFixed(2)} hrs</div>
-                          )}
+                      <div key={project.id}>
+                        <p className="text-xs text-gray-500 mb-1">Leave</p>
+                        <div className="border rounded-lg p-4 bg-white">
+                          <div className="flex justify-between items-center">
+                            <div className="text-base font-bold">{project.leaveType || 'Leave'}</div>
+                            {leaveHours > 0 && (
+                              <div className="text-lg font-bold text-blue-600">{leaveHours.toFixed(2)} hrs</div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
@@ -388,23 +408,26 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                   // Handle RDO type differently
                   if (project.type === 'rdo') {
                     return (
-                      <div key={project.id} className="border rounded-lg p-3 bg-white">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <div className="text-sm font-bold">RDO</div>
+                      <div key={project.id}>
+                        <p className="text-xs text-gray-500 mb-1">Leave</p>
+                        <div className="border rounded-lg p-3 bg-white">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <div className="text-sm font-bold">RDO</div>
+                            </div>
                           </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
-                          {project.rdoPayout && (
-                            <div>
-                              <span className="text-gray-500">RDO Payout:</span> {project.rdoPayout} hrs
-                            </div>
-                          )}
-                          {project.rdoHold && (
-                            <div>
-                              <span className="text-gray-500">RDO Hold:</span> {project.rdoHold} hrs
-                            </div>
-                          )}
+                          <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                            {project.rdoPayout && (
+                              <div>
+                                <span className="text-gray-500">RDO Payout:</span> {project.rdoPayout} hrs
+                              </div>
+                            )}
+                            {project.rdoHold && (
+                              <div>
+                                <span className="text-gray-500">RDO Hold:</span> {project.rdoHold} hrs
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
@@ -418,7 +441,9 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                     
                     const missingYardType = !viewOnly && !project.project;
                     return (
-                      <div key={project.id} className={`border rounded-lg bg-white overflow-hidden ${hasInvalidTime || missingYardType ? 'border-red-400 bg-red-50' : ''}`}>
+                      <div key={project.id}>
+                      <p className="text-xs text-gray-500 mb-1">Yard Work</p>
+                      <div className={`border rounded-lg bg-white overflow-hidden ${hasInvalidTime || missingYardType ? 'border-red-400 bg-red-50' : ''}`}>
                         {/* Clickable Header */}
                         <div
                           className="flex justify-between items-start p-4 cursor-pointer hover:bg-gray-50 transition-colors"
@@ -518,6 +543,7 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                           </div>
                         )}
                       </div>
+                      </div>
                     );
                   }
 
@@ -526,7 +552,9 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                   const hasInvalidTime = !viewOnly && projectHasInvalidTimes(project);
                   
                   return (
-                    <div key={project.id} className={`border rounded-lg bg-white overflow-hidden ${hasInvalidTime ? 'border-red-400 bg-red-50' : ''}`}>
+                    <div key={project.id}>
+                    <p className="text-xs text-gray-500 mb-1">Project</p>
+                    <div className={`border rounded-lg bg-white overflow-hidden ${hasInvalidTime ? 'border-red-400 bg-red-50' : ''}`}>
                       {/* Clickable Header */}
                       <div 
                         className="flex justify-between items-start p-4 cursor-pointer hover:bg-gray-50 transition-colors"
@@ -688,6 +716,7 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                         </div>
                       )}
                     </div>
+                    </div>
                   );
                 })}
               </div>
@@ -737,45 +766,40 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
             </div>
           )}
 
-          {/* Signature Section */}
+        </div>
+
+        {/* Pinned footer — signature + actions always visible */}
+        <div className="shrink-0 border-t bg-white px-6 pt-4 pb-6 space-y-3">
           {!viewOnly && shouldShowSignature && (
-            <div className="border-t pt-4 mt-4">
-              <Label htmlFor="signature" className="text-sm">
-                Employee Signature/Initials <span className="text-red-500">*</span>
-              </Label>
+            <div>
+              <p className="text-lg font-bold text-gray-900 mb-2 text-center">Type Initials or Signature Below</p>
               <Input
                 id="signature"
                 type="text"
                 placeholder="Enter your initials or full name"
                 value={signature}
                 onChange={(e) => setSignature(e.target.value)}
-                className="mt-2 border-2 border-blue-400 bg-blue-50 focus:border-blue-500 focus:bg-white"
+                className="h-11 border-2 border-blue-400 bg-blue-50 focus:border-blue-500 focus:bg-white text-base"
               />
             </div>
           )}
-        </div>
-
-        <DialogFooter className="gap-2 px-6 pb-6">
-          <Button variant="outline" onClick={onClose}>
-            {viewOnly ? (
-              'Close'
-            ) : (
-              <>
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Back
-              </>
-            )}
-          </Button>
-          {!viewOnly && onSubmit && (
-            <Button
-              onClick={handleSubmit}
-              disabled={(shouldShowSignature && !signature.trim()) || hasMissingTimes || hasInvalidTimeOrder || hasInvalidWorkTimes || hasUnselectedYardWork || submitState !== 'idle'}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Accept & Submit
+          <div className="flex gap-3">
+            <Button variant="outline" className="flex-1" onClick={onClose}>
+              {viewOnly ? 'Close' : (
+                <><ChevronLeft className="w-4 h-4 mr-1" />Back & Edit</>
+              )}
             </Button>
-          )}
-        </DialogFooter>
+            {!viewOnly && onSubmit && (
+              <Button
+                onClick={handleSubmit}
+                disabled={(shouldShowSignature && !signature.trim()) || hasMissingTimes || hasInvalidTimeOrder || hasInvalidWorkTimes || hasUnselectedYardWork || submitState !== 'idle'}
+                className="flex-1 !bg-green-600 hover:!bg-green-700 text-white font-bold"
+              >
+                Accept & Submit
+              </Button>
+            )}
+          </div>
+        </div>
 
       </DialogContent>
 

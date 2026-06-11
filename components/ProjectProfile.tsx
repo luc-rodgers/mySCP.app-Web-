@@ -134,9 +134,10 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
     if (!entry.depotStart || !entry.depotFinish) return 0;
     const [sh, sm] = (entry.depotStart as string).split(':').map(Number);
     const [fh, fm] = (entry.depotFinish as string).split(':').map(Number);
-    const hours = (fh * 60 + fm - sh * 60 - sm) / 60;
+    let mins = fh * 60 + fm - sh * 60 - sm;
+    if (mins < 0) mins += 24 * 60; // crosses midnight (night shift)
     const hasLunch = (entry.projects ?? []).some((p: any) => p.lunch);
-    return Math.max(0, hours - (hasLunch ? 0.5 : 0));
+    return Math.max(0, mins / 60 - (hasLunch ? 0.5 : 0));
   }, []);
 
   useEffect(() => {
@@ -169,7 +170,9 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
         if (!siteStart || !siteFinish) return 0;
         const [sh, sm] = siteStart.split(':').map(Number);
         const [fh, fm] = siteFinish.split(':').map(Number);
-        return Math.max(0, (fh * 60 + fm - sh * 60 - sm) / 60);
+        let mins = fh * 60 + fm - sh * 60 - sm;
+        if (mins < 0) mins += 24 * 60; // crosses midnight (night shift)
+        return mins / 60;
       }
 
       const rows: WorkHistoryRow[] = filtered.map((row: any) => {
