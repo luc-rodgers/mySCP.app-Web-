@@ -574,9 +574,9 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
             )}
 
             {entry.status !== 'submitted' && entry.status !== 'approved' && (
-              <>
+              <div className="flex flex-col gap-3 mt-4">
                 <Button
-                  className="w-full mt-4 !bg-green-600 hover:!bg-green-700 text-white cursor-pointer font-semibold"
+                  className="w-full !bg-green-600 hover:!bg-green-700 text-white cursor-pointer font-semibold"
                   onClick={() => {
                     handleCloseModal();
                     setSummaryFromEdit(true);
@@ -586,14 +586,25 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                   <FileCheck className="w-4 h-4 mr-2" />
                   Submit Timesheet
                 </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full mt-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 font-normal"
-                  onClick={handleCloseModal}
-                >
-                  Save Draft
-                </Button>
-              </>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="flex-1 font-semibold !border-gray-200"
+                    onClick={handleCloseModal}
+                  >
+                    Save Draft
+                  </Button>
+                  {!isLocked && !showDeleteConfirm && (
+                    <Button
+                      variant="outline"
+                      className="flex-1 font-semibold !border-gray-200 text-red-500 hover:text-red-600"
+                      onClick={() => setShowDeleteConfirm(true)}
+                    >
+                      Delete Time Card
+                    </Button>
+                  )}
+                </div>
+              </div>
             )}
 
             {/* Done Editing Button - Visible when in edit mode */}
@@ -612,42 +623,31 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
               </Button>
             )}
 
-            {/* Delete time card */}
-            {!isLocked && (
-              <div className="mt-4 pt-3 border-t border-gray-100">
-                {!showDeleteConfirm ? (
-                  <button
-                    onClick={() => setShowDeleteConfirm(true)}
-                    className="flex items-center gap-2 text-sm text-red-500 hover:text-red-700 cursor-pointer w-full justify-center"
+            {/* Delete time card confirm */}
+            {!isLocked && showDeleteConfirm && (
+              <div className="mt-3 text-center space-y-2">
+                <p className="text-sm text-red-700 font-medium">Delete this time card?</p>
+                <p className="text-xs text-gray-500">This cannot be undone.</p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 cursor-pointer"
+                    onClick={() => setShowDeleteConfirm(false)}
                   >
-                    Delete Time Card
-                  </button>
-                ) : (
-                  <div className="text-center space-y-2">
-                    <p className="text-sm text-red-700 font-medium">Delete this time card?</p>
-                    <p className="text-xs text-gray-500">This cannot be undone.</p>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 cursor-pointer"
-                        onClick={() => setShowDeleteConfirm(false)}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        size="sm"
-                        className="flex-1 bg-red-600 hover:bg-red-700 text-white cursor-pointer"
-                        onClick={() => {
-                          handleCloseModal();
-                          onDelete(entry.id);
-                        }}
-                      >
-                        Yes, delete
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="flex-1 bg-red-600 hover:bg-red-700 text-white cursor-pointer"
+                    onClick={() => {
+                      handleCloseModal();
+                      onDelete(entry.id);
+                    }}
+                  >
+                    Yes, delete
+                  </Button>
+                </div>
               </div>
             )}
           </div>
