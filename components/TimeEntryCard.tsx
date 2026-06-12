@@ -632,6 +632,24 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
               </div>
             )}
 
+            {/* Done Editing — shown only when editing an already submitted/approved
+                entry (e.g. admin pending review or profile edit). Drafts use the
+                Submit / Save Draft buttons above, so this stays scoped to avoid the
+                redundant button that was removed for drafts. Renders on mobile + desktop. */}
+            {isEditMode && (entry.status === 'submitted' || entry.status === 'approved') && (
+              <Button
+                className="w-full mt-3 !bg-green-600 hover:!bg-green-700 text-white cursor-pointer font-semibold"
+                onClick={() => {
+                  setIsEditMode(false);
+                  setShowModal(false);
+                  setSummaryFromEdit(false);
+                  setShowSummaryModal(true);
+                }}
+              >
+                <FileCheck className="w-4 h-4 mr-2" />
+                Done Editing
+              </Button>
+            )}
 
             {/* Delete time card confirm */}
             {!isLocked && showDeleteConfirm && (
