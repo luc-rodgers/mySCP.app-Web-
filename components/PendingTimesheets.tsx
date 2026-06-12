@@ -352,7 +352,7 @@ export function PendingTimesheets({ entries: initialEntries, draftEntries: initi
   const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top?: number; bottom?: number; right: number } | null>(null);
   const [showNewPicker, setShowNewPicker] = useState(false);
   const [newEmployeeId, setNewEmployeeId] = useState("");
   const [newDate, setNewDate] = useState(today);
@@ -672,7 +672,13 @@ export function PendingTimesheets({ entries: initialEntries, draftEntries: initi
                                 setMenuPos(null);
                               } else {
                                 const rect = e.currentTarget.getBoundingClientRect();
-                                setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                                const menuHeight = 220;
+const spaceBelow = window.innerHeight - rect.bottom;
+if (spaceBelow < menuHeight) {
+  setMenuPos({ bottom: window.innerHeight - rect.top + 4, right: window.innerWidth - rect.right });
+} else {
+  setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+}
                                 setOpenMenuId(entry.id);
                               }
                             }}
@@ -768,7 +774,13 @@ export function PendingTimesheets({ entries: initialEntries, draftEntries: initi
                             if (openMenuId === entry.id) { setOpenMenuId(null); setMenuPos(null); }
                             else {
                               const rect = e.currentTarget.getBoundingClientRect();
-                              setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                              const menuHeight = 220;
+const spaceBelow = window.innerHeight - rect.bottom;
+if (spaceBelow < menuHeight) {
+  setMenuPos({ bottom: window.innerHeight - rect.top + 4, right: window.innerWidth - rect.right });
+} else {
+  setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+}
                               setOpenMenuId(entry.id);
                             }
                           }}
@@ -820,7 +832,7 @@ export function PendingTimesheets({ entries: initialEntries, draftEntries: initi
           />
           <div
             className="fixed z-50 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 overflow-hidden"
-            style={{ top: menuPos.top, right: menuPos.right }}
+            style={{ top: menuPos.top, bottom: menuPos.bottom, right: menuPos.right }}
           >
             {(() => {
               const entry = entries.find((e) => e.id === openMenuId) ?? draftEntries.find((e) => e.id === openMenuId);
