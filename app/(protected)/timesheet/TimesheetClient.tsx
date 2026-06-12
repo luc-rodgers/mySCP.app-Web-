@@ -161,6 +161,13 @@ export default function TimesheetClient({ supabaseEmployee, userEmail, activePro
   const roundToQuarterHour = (hours: number) => Math.floor(hours * 4) / 4;
 
   const calculateTotalHours = (entry: TimeEntry) => {
+    // Leave hours count toward paid hours, so they're always included — even on
+    // leave-only days that have no depot/site times. Mirrors the time card total
+    // and summariseHours() used by the history/analytics headers.
+    const leaveHours = entry.projects
+      .filter((p) => p.type === "leave")
+      .reduce((sum, p) => sum + parseFloat((p as any).leaveTotalHours || "0"), 0);
+
     let effectiveStart = entry.depotStart;
     if (!effectiveStart) {
       const allStartTimes: string[] = [];
@@ -180,12 +187,12 @@ export default function TimesheetClient({ supabaseEmployee, userEmail, activePro
       if (allFinishTimes.length > 0)
         effectiveFinish = allFinishTimes.sort().reverse()[0];
     }
-    if (!effectiveStart || !effectiveFinish) return 0;
+    if (!effectiveStart || !effectiveFinish) return roundToQuarterHour(leaveHours);
     const [sh, sm] = effectiveStart.split(":").map(Number);
     const [fh, fm] = effectiveFinish.split(":").map(Number);
     const hours = (fh * 60 + fm - sh * 60 - sm) / 60;
     const hasLunch = entry.projects.some((p) => p.lunch);
-    return roundToQuarterHour(Math.max(0, hours - (hasLunch ? 0.5 : 0)));
+    return roundToQuarterHour(Math.max(0, hours - (hasLunch ? 0.5 : 0)) + leaveHours);
   };
 
   const today = new Date();
