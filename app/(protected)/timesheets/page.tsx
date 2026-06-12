@@ -64,8 +64,6 @@ export default async function TimesheetsPage({
       .from("time_entries")
       .select("id, date, status, reference_number, data, employee_id, employees(first_name, last_name)")
       .eq("status", "draft")
-      .gte("date", weekStart)
-      .lte("date", weekEnd)
       .order("date", { ascending: false }),
     supabase
       .from("projects")
