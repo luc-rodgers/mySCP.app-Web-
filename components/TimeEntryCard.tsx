@@ -632,21 +632,6 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
               </div>
             )}
 
-            {/* Done Editing Button - Visible when in edit mode */}
-            {isEditMode && (
-              <Button
-                className="w-full mt-3 bg-green-600 hover:bg-green-700 text-white cursor-pointer"
-                onClick={() => {
-                  setIsEditMode(false);
-                  setShowModal(false);
-                  setSummaryFromEdit(false);
-                  setShowSummaryModal(true);
-                }}
-              >
-                <FileCheck className="w-4 h-4 mr-2" />
-                Done Editing
-              </Button>
-            )}
 
             {/* Delete time card confirm */}
             {!isLocked && showDeleteConfirm && (
