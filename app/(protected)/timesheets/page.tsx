@@ -52,11 +52,18 @@ export default async function TimesheetsPage({
   const weekEnd = addDaysStr(weekStart, 6);
   const today = todayStr();
 
-  const [{ data: rows }, { data: projectRows }, { data: employeeRows }] = await Promise.all([
+  const [{ data: rows }, { data: draftRows }, { data: projectRows }, { data: employeeRows }] = await Promise.all([
     supabase
       .from("time_entries")
       .select("id, date, status, reference_number, data, employee_id, employees(first_name, last_name)")
       .in("status", ["submitted", "approved"])
+      .gte("date", weekStart)
+      .lte("date", weekEnd)
+      .order("date", { ascending: false }),
+    supabase
+      .from("time_entries")
+      .select("id, date, status, reference_number, data, employee_id, employees(first_name, last_name)")
+      .eq("status", "draft")
       .gte("date", weekStart)
       .lte("date", weekEnd)
       .order("date", { ascending: false }),
@@ -84,6 +91,18 @@ export default async function TimesheetsPage({
     employeeId: row.employee_id,
   }));
 
+  const draftEntries: (TimeEntry & { employeeId: string })[] = (draftRows ?? []).map((row: any) => ({
+    ...(row.data as Partial<TimeEntry>),
+    id: row.id,
+    date: row.date,
+    status: row.status as TimeEntry["status"],
+    timeCardNumber: row.reference_number ?? (row.data as any)?.timeCardNumber,
+    employeeName: row.employees
+      ? `${row.employees.first_name} ${row.employees.last_name}`
+      : "Unknown",
+    employeeId: row.employee_id,
+  }));
+
   const activeProjects = (projectRows ?? []).map((p: any) => ({ id: p.id, name: p.name }));
   const projectsByState = {
     QLD: (projectRows ?? []).filter((p: any) => !p.state || p.state === "QLD").map((p: any) => ({ id: p.id, name: p.name })),
@@ -97,6 +116,7 @@ export default async function TimesheetsPage({
   return (
     <PendingTimesheets
       entries={entries}
+      draftEntries={draftEntries}
       activeProjects={activeProjects}
       projectsByState={projectsByState}
       weekStart={weekStart}

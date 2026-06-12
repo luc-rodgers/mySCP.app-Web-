@@ -7,6 +7,7 @@ import { TimeEntry } from "@/lib/types";
 import { isTimeOutsideShift, shiftMinutes } from "@/lib/timeMath";
 import { TimeEntryEditorModal } from "./TimeEntryEditorModal";
 import { approveTimeEntry } from "@/app/actions/approveTimeEntry";
+import { submitTimeEntry } from "@/app/actions/submitTimeEntry";
 import { useToast } from "@/components/Toast";
 import {
   ClipboardList, Clock, Users, Printer, Download,
@@ -21,6 +22,7 @@ interface EmployeeOption { id: string; name: string; }
 
 interface Props {
   entries: (TimeEntry & { employeeId: string })[];
+  draftEntries: (TimeEntry & { employeeId: string })[];
   activeProjects: ProjectOption[];
   projectsByState: { QLD: ProjectOption[]; NSW: ProjectOption[] };
   weekStart: string;
@@ -333,14 +335,17 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
 
 // ── Main component ───────────────────────────────────────────────────────────
 
-export function PendingTimesheets({ entries: initialEntries, activeProjects, projectsByState, weekStart, today, employees }: Props) {
+export function PendingTimesheets({ entries: initialEntries, draftEntries: initialDraftEntries, activeProjects, projectsByState, weekStart, today, employees }: Props) {
   const router = useRouter();
   const { showToast } = useToast();
   const [entries, setEntries] = useState(initialEntries);
+  const [draftEntries, setDraftEntries] = useState(initialDraftEntries);
+  const [draftsExpanded, setDraftsExpanded] = useState(false);
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingEntry, setEditingEntry] = useState<(TimeEntry & { employeeId: string }) | null>(null);
   const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
   const [showNewPicker, setShowNewPicker] = useState(false);
@@ -353,6 +358,10 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
   useEffect(() => {
     setEntries(initialEntries);
   }, [initialEntries]);
+
+  useEffect(() => {
+    setDraftEntries(initialDraftEntries);
+  }, [initialDraftEntries]);
 
   // Reset expanded state only on week navigation
   useEffect(() => {
@@ -403,6 +412,21 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
       if (result.success) {
         setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "approved" } : e));
         showToast(`${entry.employeeName}'s timesheet approved`);
+      }
+    });
+  }
+
+  function handleSubmitOnBehalf(entry: TimeEntry & { employeeId: string }) {
+    setSubmittingId(entry.id);
+    startTransition(async () => {
+      const result = await submitTimeEntry(entry.id);
+      setSubmittingId(null);
+      if (result.success) {
+        setDraftEntries((prev) => prev.filter((e) => e.id !== entry.id));
+        setEntries((prev) => [...prev, { ...entry, status: "submitted" }]);
+        showToast(`${entry.employeeName}'s timesheet submitted`);
+      } else {
+        showToast(`Failed to submit: ${'error' in result ? result.error : 'Unknown error'}`);
       }
     });
   }
@@ -680,6 +704,53 @@ export function PendingTimesheets({ entries: initialEntries, activeProjects, pro
           </div>
         );
       })}
+
+      {/* Drafts Section */}
+      {draftEntries.length > 0 && (
+        <div className="mt-4 border border-amber-200 rounded-2xl overflow-hidden">
+          <button
+            onClick={() => setDraftsExpanded((v) => !v)}
+            className="w-full flex items-center justify-between px-5 py-4 bg-amber-50 hover:bg-amber-100 transition-colors cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <ClipboardList className="w-4 h-4 text-amber-600" />
+              <span className="text-sm font-semibold text-amber-800">Draft Timesheets</span>
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-200 text-amber-800">{draftEntries.length}</span>
+            </div>
+            {draftsExpanded ? <ChevronUp className="w-4 h-4 text-amber-600" /> : <ChevronDown className="w-4 h-4 text-amber-600" />}
+          </button>
+
+          {draftsExpanded && (
+            <div className="divide-y divide-amber-100">
+              {draftEntries.map((entry) => {
+                const hours = calcHours(entry);
+                const isSubmitting = submittingId === entry.id;
+                return (
+                  <div key={entry.id} className="flex items-center justify-between px-5 py-3.5 bg-white">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900">{entry.employeeName}</span>
+                        {entry.isNightShift && <Moon className="w-3.5 h-3.5 text-indigo-400" />}
+                        <span className="text-gray-300">·</span>
+                        <span className="text-sm text-gray-500">{hours.toFixed(1)} hrs</span>
+                      </div>
+                      <div className="text-xs text-gray-400 mt-0.5">{entry.depotStart || '--:--'} → {entry.depotFinish || '--:--'}</div>
+                    </div>
+                    <button
+                      onClick={() => handleSubmitOnBehalf(entry)}
+                      disabled={isSubmitting}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#030213] hover:bg-[#1a1a2e] text-white text-xs font-medium transition-colors disabled:opacity-50 cursor-pointer shrink-0 ml-4"
+                    >
+                      {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                      {isSubmitting ? 'Submitting…' : 'Submit'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Three-dot dropdown — rendered in a portal to escape overflow:hidden */}
       {openMenuId && menuPos && createPortal(
