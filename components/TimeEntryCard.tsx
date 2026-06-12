@@ -70,7 +70,11 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
   }, [entry.projects.length]);
 
   const handleToggleExpanded = () => {
-    if ((entry.status === 'submitted' || entry.status === 'approved') && !isEditMode) {
+    // Open behaviour is driven purely by status, never by transient edit state:
+    // pending/approved always open the review summary; drafts open the editor.
+    // (Previously this also checked !isEditMode, so a card edited then closed via
+    // the X kept isEditMode=true and re-opened straight into edit — inconsistent.)
+    if (entry.status === 'submitted' || entry.status === 'approved') {
       setShowSummaryModal(true);
       return;
     }
@@ -80,6 +84,11 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
   const handleCloseModal = () => {
     setShowModal(false);
     setShowDeleteConfirm(false);
+    // Clear edit state so the card returns to its locked review view and the
+    // next open is decided solely by status.
+    setIsEditMode(false);
+    setWasSubmittedWhenEditStarted(false);
+    setHasBeenEdited(false);
     onModalClose?.();
   };
 
