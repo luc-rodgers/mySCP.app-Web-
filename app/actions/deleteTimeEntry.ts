@@ -26,6 +26,5 @@ export async function deleteTimeEntry(entryId: string): Promise<DeleteResult> {
 
   if (error) return { success: false, error: error.message };
 
-  revalidatePath("/timesheets");
   return { success: true };
 }
