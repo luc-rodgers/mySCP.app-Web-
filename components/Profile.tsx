@@ -60,13 +60,23 @@ export function Profile({
   const submittedTimeCards = localEntries
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+  // Depot hours only — used for stats, totals, heatmap (excludes leave)
   const calculateTotalHours = (entry: TimeEntry) => {
     if (!entry.depotStart || !entry.depotFinish) return 0;
     const [sh, sm] = entry.depotStart.split(':').map(Number);
     const [fh, fm] = entry.depotFinish.split(':').map(Number);
-    const hours = (fh * 60 + fm - sh * 60 - sm) / 60;
+    let mins = fh * 60 + fm - sh * 60 - sm;
+    if (mins < 0) mins += 24 * 60; // night shift crosses midnight
     const hasLunch = (entry.projects ?? []).some(p => p.lunch);
-    return Math.max(0, hours - (hasLunch ? 0.5 : 0));
+    return Math.max(0, mins / 60 - (hasLunch ? 0.5 : 0));
+  };
+
+  // Payable hours — depot + leave, used for history row display
+  const calcPayableHours = (entry: TimeEntry) => {
+    const leaveHours = (entry.projects ?? [])
+      .filter(p => p.type === 'leave')
+      .reduce((sum, p) => sum + parseFloat((p as any).leaveTotalHours || '0'), 0);
+    return calculateTotalHours(entry) + leaveHours;
   };
 
   const formatDate = (dateStr: string) => {
@@ -220,7 +230,7 @@ export function Profile({
                 <div className="divide-y divide-gray-100">
                   {sortedWeekKeys.map((weekKey) => {
                     const weekEntries = weekGroups[weekKey];
-                    const weekTotal = weekEntries.reduce((sum, e) => sum + calculateTotalHours(e), 0);
+                    const weekTotal = weekEntries.reduce((sum, e) => sum + calcPayableHours(e), 0);
                     const isOpen = expandedWeeks.has(weekKey);
 
                     return (
@@ -247,7 +257,7 @@ export function Profile({
                         {isOpen && (
                           <div className="divide-y divide-gray-100 border-l-4 border-l-blue-300">
                             {weekEntries.map((entry) => {
-                              const hrs = calculateTotalHours(entry);
+                              const hrs = calcPayableHours(entry);
                               return (
                                 <button
                                   key={entry.id}
