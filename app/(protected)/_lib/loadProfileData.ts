@@ -15,6 +15,8 @@ export function summariseHours(entries: TimeEntry[]) {
 
   let todayHours = 0, weekHours = 0;
   for (const e of entries) {
+    // Drafts aren't counted toward paid hours until they're submitted.
+    if (e.status !== "submitted" && e.status !== "approved") continue;
     const depot = diffHours(e.depotStart, e.depotFinish, e.isNightShift);
     const hasLunch = (e.projects ?? []).some(p => p.lunch);
     const leave = (e.projects ?? []).filter(p => p.type === "leave")

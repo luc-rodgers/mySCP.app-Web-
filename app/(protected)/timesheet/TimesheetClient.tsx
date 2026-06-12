@@ -204,12 +204,17 @@ export default function TimesheetClient({ supabaseEmployee, userEmail, activePro
     return new Date(y, m - 1, d);
   };
 
+  // Only submitted/approved hours count toward the paid-hours totals; drafts
+  // are still being worked on and shouldn't be counted until submitted.
+  const isCounted = (e: TimeEntry) => e.status === "submitted" || e.status === "approved";
+
   const todayHours = entries
-    .filter((e) => parseLocalDate(e.date).getTime() === today.getTime())
+    .filter((e) => isCounted(e) && parseLocalDate(e.date).getTime() === today.getTime())
     .reduce((sum, e) => sum + calculateTotalHours(e), 0);
 
   const weekHours = entries
     .filter((e) => {
+      if (!isCounted(e)) return false;
       const d = parseLocalDate(e.date);
       const cur = today.getDay();
       const toMon = cur === 0 ? 6 : cur - 1;
