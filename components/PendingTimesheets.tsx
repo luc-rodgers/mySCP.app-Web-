@@ -8,9 +8,10 @@ import { isTimeOutsideShift, shiftMinutes } from "@/lib/timeMath";
 import { TimeEntryEditorModal } from "./TimeEntryEditorModal";
 import { approveTimeEntry } from "@/app/actions/approveTimeEntry";
 import { submitTimeEntry } from "@/app/actions/submitTimeEntry";
+import { deleteTimeEntry } from "@/app/actions/deleteTimeEntry";
 import { useToast } from "@/components/Toast";
 import {
-  ClipboardList, Clock, Users, Printer, Download,
+  ClipboardList, Clock, Users, Printer, Download, Trash2,
   CheckCircle, Loader2, AlertTriangle, ChevronDown, ChevronUp,
   Pencil, ChevronLeft, ChevronRight, CalendarDays, MoreHorizontal,
   Plus, X, Moon,
@@ -349,6 +350,7 @@ export function PendingTimesheets({ entries: initialEntries, draftEntries: initi
   const [editingEntry, setEditingEntry] = useState<(TimeEntry & { employeeId: string }) | null>(null);
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [submittingId, setSubmittingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
   const [showNewPicker, setShowNewPicker] = useState(false);
@@ -430,6 +432,20 @@ export function PendingTimesheets({ entries: initialEntries, draftEntries: initi
         showToast(`${entry.employeeName}'s timesheet submitted`);
       } else {
         showToast(`Failed to submit: ${'error' in result ? result.error : 'Unknown error'}`);
+      }
+    });
+  }
+
+  function handleDeleteDraft(entry: TimeEntry & { employeeId: string }) {
+    setDeletingId(entry.id);
+    startTransition(async () => {
+      const result = await deleteTimeEntry(entry.id);
+      setDeletingId(null);
+      if (result.success) {
+        setDraftEntries((prev) => prev.filter((e) => e.id !== entry.id));
+        showToast(`Draft deleted`);
+      } else {
+        showToast(`Failed to delete: ${'error' in result ? result.error : 'Unknown error'}`);
       }
     });
   }
@@ -833,6 +849,19 @@ export function PendingTimesheets({ entries: initialEntries, draftEntries: initi
                     <Download className="w-4 h-4 text-gray-400" />
                     Export CSV
                   </button>
+                  {draftEntries.find((e) => e.id === openMenuId) && (
+                    <>
+                      <div className="border-t border-gray-100 my-1" />
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); setMenuPos(null); handleDeleteDraft(entry as TimeEntry & { employeeId: string }); }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                        disabled={deletingId === entry.id}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-400" />
+                        {deletingId === entry.id ? "Deleting…" : "Delete Draft"}
+                      </button>
+                    </>
+                  )}
                 </>
               );
             })()}
