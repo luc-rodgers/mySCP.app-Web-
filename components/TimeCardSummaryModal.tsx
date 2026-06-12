@@ -268,7 +268,7 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
         {/* Review prompt — dismissible overlay, centred over content */}
         {!viewOnly && showReviewPrompt && (
           <div className="absolute inset-0 z-10 flex items-center justify-center px-6">
-            <div className="w-full rounded-2xl bg-[#030213] text-white px-6 py-8 flex flex-col items-center gap-6 shadow-2xl">
+            <div className="w-full max-w-sm rounded-2xl bg-[#030213] text-white px-6 py-8 flex flex-col items-center gap-6 shadow-2xl">
               <p className="text-xl font-bold text-center leading-snug">Please Review, Confirm and Sign your Time Sheet</p>
               <button
                 onClick={() => setShowReviewPrompt(false)}
