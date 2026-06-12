@@ -61,7 +61,7 @@ export default function TimesheetClient({ supabaseEmployee, userEmail, activePro
     const supabase = createClient();
     supabase
       .from("time_entries")
-      .select("id, date, status, data")
+      .select("id, date, status, reference_number, data")
       .eq("employee_id", employeeDbId)
       .order("date", { ascending: false })
       .then(({ data }) => {
@@ -72,6 +72,7 @@ export default function TimesheetClient({ supabaseEmployee, userEmail, activePro
             date: row.date,
             status: row.status as TimeEntry["status"],
             employeeName: mockEmployee.name,
+            timeCardNumber: (row as any).reference_number ?? (row.data as any)?.timeCardNumber ?? undefined,
           }));
           // Deduplicate by date — keep first occurrence (rows ordered by date desc,
           // so first = most recently updated for any duplicate dates)
