@@ -78,10 +78,13 @@ function subHrs(start: string, finish: string, allowNextDay = false): number {
 }
 
 function calcHours(entry: TimeEntry): number {
-  if (!entry.depotStart || !entry.depotFinish) return 0;
+  const leaveHours = (entry.projects ?? [])
+    .filter((p) => p.type === "leave")
+    .reduce((sum, p) => sum + parseFloat((p as any).leaveTotalHours || "0"), 0);
+  if (!entry.depotStart || !entry.depotFinish) return leaveHours;
   const total = subHrs(entry.depotStart, entry.depotFinish, entry.isNightShift);
   const hasLunch = (entry.projects ?? []).some((p) => p.lunch);
-  return Math.max(0, total - (hasLunch ? 0.5 : 0));
+  return Math.max(0, total - (hasLunch ? 0.5 : 0)) + leaveHours;
 }
 
 interface Flags { weather: boolean; lunchPenalty: boolean; unallocatedHours: number; unknownProject: boolean; invalidTimes: boolean; }
