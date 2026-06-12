@@ -725,25 +725,65 @@ export function PendingTimesheets({ entries: initialEntries, draftEntries: initi
               {draftEntries.map((entry) => {
                 const hours = calcHours(entry);
                 const isSubmitting = submittingId === entry.id;
+                const isDraftExpanded = expandedId === entry.id;
                 return (
-                  <div key={entry.id} className="flex items-center justify-between px-5 py-3.5 bg-white">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
+                  <div key={entry.id}>
+                    <div
+                      className={`flex items-center justify-between px-5 py-3.5 cursor-pointer hover:bg-amber-50 transition-colors ${isDraftExpanded ? "bg-amber-50" : "bg-white"}`}
+                      onClick={() => setExpandedId(isDraftExpanded ? null : entry.id)}
+                    >
+                      <div className="min-w-0 flex items-center gap-2">
                         <span className="text-sm font-medium text-gray-900">{entry.employeeName}</span>
                         {entry.isNightShift && <Moon className="w-3.5 h-3.5 text-indigo-400" />}
                         <span className="text-gray-300">·</span>
                         <span className="text-sm text-gray-500">{hours.toFixed(1)} hrs</span>
+                        <span className="text-xs text-gray-400">{entry.date}</span>
                       </div>
-                      <div className="text-xs text-gray-400 mt-0.5">{entry.depotStart || '--:--'} → {entry.depotFinish || '--:--'}</div>
+                      <div className="flex items-center gap-2 ml-4 shrink-0">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">
+                          Draft
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (openMenuId === entry.id) { setOpenMenuId(null); setMenuPos(null); }
+                            else {
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                              setOpenMenuId(entry.id);
+                            }
+                          }}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-amber-200 hover:text-gray-600 transition-colors cursor-pointer"
+                        >
+                          <MoreHorizontal className="w-4 h-4" />
+                        </button>
+                        <div className="w-8 h-8 flex items-center justify-center text-gray-400">
+                          {isDraftExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </div>
+                      </div>
                     </div>
-                    <button
-                      onClick={() => handleSubmitOnBehalf(entry)}
-                      disabled={isSubmitting}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#030213] hover:bg-[#1a1a2e] text-white text-xs font-medium transition-colors disabled:opacity-50 cursor-pointer shrink-0 ml-4"
-                    >
-                      {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
-                      {isSubmitting ? 'Submitting…' : 'Submit'}
-                    </button>
+
+                    {isDraftExpanded && (
+                      <>
+                        <TimecardDetail entry={entry} />
+                        <div className="flex items-center justify-between px-5 py-4 border-t border-amber-100 bg-amber-50/50">
+                          <button
+                            onClick={() => handleSubmitOnBehalf(entry)}
+                            disabled={isSubmitting}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors disabled:opacity-50 cursor-pointer"
+                          >
+                            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                            {isSubmitting ? "Submitting…" : "Submit on Behalf"}
+                          </button>
+                          <button
+                            onClick={() => setExpandedId(null)}
+                            className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 );
               })}
@@ -764,7 +804,7 @@ export function PendingTimesheets({ entries: initialEntries, draftEntries: initi
             style={{ top: menuPos.top, right: menuPos.right }}
           >
             {(() => {
-              const entry = entries.find((e) => e.id === openMenuId);
+              const entry = entries.find((e) => e.id === openMenuId) ?? draftEntries.find((e) => e.id === openMenuId);
               if (!entry) return null;
               return (
                 <>
