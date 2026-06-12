@@ -57,7 +57,7 @@ export function EditEmployeeModal({ employee, isAdmin, onClose, onSaved, onDelet
     setLoading(false);
 
     if (!result.success) {
-      setError(result.error);
+      setError('error' in result ? result.error : 'Unknown error');
       return;
     }
 
@@ -260,7 +260,7 @@ export function EditEmployeeModal({ employee, isAdmin, onClose, onSaved, onDelet
                         if (result.success) {
                           onDeleted?.();
                         } else {
-                          setError(result.error);
+                          setError('error' in result ? result.error : 'Unknown error');
                           setConfirmDelete(false);
                         }
                       }}

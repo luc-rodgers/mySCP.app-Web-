@@ -12,7 +12,7 @@ interface TimeEntryListProps {
   activeProjects: ProjectOption[];
   projectsByState?: { QLD: ProjectOption[]; NSW: ProjectOption[] };
   onDelete: (id: string) => void;
-  onStatusChange: (id: string, status: TimeEntry['status']) => void;
+  onStatusChange: (id: string, status: TimeEntry['status']) => Promise<boolean>;
   onAddProject: (entryId: string, type?: 'project' | 'yardwork' | 'leave') => void;
   onDeleteProject: (entryId: string, projectId: string) => void;
   onUpdateProject: (entryId: string, projectId: string, updatedProject: any) => void;

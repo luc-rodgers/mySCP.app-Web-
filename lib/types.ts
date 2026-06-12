@@ -44,6 +44,7 @@ export interface TimeEntry {
   employeeName?: string;
   timeCardNumber?: string;
   isNightShift?: boolean;
+  approvedBy?: string;
 }
 
 export type ProjectEntry = Project & {
@@ -60,4 +61,5 @@ export interface Employee {
   startDate: string;
   avatar?: string;
   workStatus?: string;
+  role?: string;
 }

@@ -112,9 +112,11 @@ export function AddEntryModal({ isOpen, onClose, onSubmit }: AddEntryModalProps)
         ...formData.projects,
         {
           id: `temp-${Date.now()}`,
+          type: 'project' as const,
           project: '',
           siteStart: '09:00',
           siteFinish: '17:00',
+          subActivities: [],
           weather: false,
           lunch: false,
           lunchPenalty: false,

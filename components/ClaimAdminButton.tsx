@@ -16,7 +16,7 @@ export function ClaimAdminButton() {
     const result = await bootstrapAdmin();
     setLoading(false);
     if (!result.success) {
-      setError(result.error);
+      setError('error' in result ? result.error : 'Unknown error');
       return;
     }
     router.refresh();

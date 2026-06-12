@@ -65,7 +65,7 @@ export function AddProjectModal({ clients: initialClients = [], onClose }: Props
     try {
       const formData = new FormData(e.currentTarget);
       const result = await createProject(formData);
-      if (!result.success) { setError(result.error); return; }
+      if (!result.success) { setError('error' in result ? result.error : 'Unknown error'); return; }
       router.refresh();
       showToast("Project created");
       onClose();
@@ -83,7 +83,7 @@ export function AddProjectModal({ clients: initialClients = [], onClose }: Props
     const formData = new FormData(e.currentTarget);
     const result = await createClientAction(formData);
     setNewClientLoading(false);
-    if (!result.success) { setNewClientError(result.error); return; }
+    if (!result.success) { setNewClientError('error' in result ? result.error : 'Unknown error'); return; }
     if (!result.client) { setNewClientError("Client saved but could not be retrieved."); return; }
     // Add new client to list and auto-select it
     const created = result.client;

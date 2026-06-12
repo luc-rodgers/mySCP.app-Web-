@@ -38,8 +38,9 @@ export function TimeEntryEditorModal({ initialEntry, employeeDbId, activeProject
     setEntry(e => { const u = { ...e, ...updates }; persist(u); return u; });
   };
 
-  const handleStatusChange = async (_id: string, status: TimeEntry["status"]) => {
+  const handleStatusChange = async (_id: string, status: TimeEntry["status"]): Promise<boolean> => {
     setEntry(e => { const u = { ...e, status }; persist(u); return u; });
+    return true;
   };
 
   const handleAddProject = (_entryId: string, type: "project" | "yardwork" | "leave" = "project") => {

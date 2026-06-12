@@ -247,7 +247,7 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
     const formData = new FormData(e.currentTarget);
     const result = await updateProject(project.id, formData);
     setSaving(false);
-    if (!result.success) { setError(result.error); return; }
+    if (!result.success) { setError('error' in result ? result.error : 'Unknown error'); return; }
     // Update local state immediately so the view reflects the saved values
     const latRaw = (formData.get('lat') as string) || '';
     const lngRaw = (formData.get('lng') as string) || '';
@@ -274,7 +274,7 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
     setDeleting(true);
     const result = await deleteProject(project.id);
     setDeleting(false);
-    if (!result.success) { setError(result.error); return; }
+    if (!result.success) { setError('error' in result ? result.error : 'Unknown error'); return; }
     onDeleted?.();
     router.refresh();
     onBack();

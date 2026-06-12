@@ -69,7 +69,7 @@ export function ClientProfile({ client, onBack, isAdmin = false, onUpdate, onDel
     const formData = new FormData(e.currentTarget);
     const result = await updateClient(client.id, formData);
     setSaving(false);
-    if (!result.success) { setError(result.error); return; }
+    if (!result.success) { setError('error' in result ? result.error : 'Unknown error'); return; }
     const merged: Client = {
       ...localClient,
       name:    (formData.get('name')        as string)?.trim() || localClient.name,
@@ -88,7 +88,7 @@ export function ClientProfile({ client, onBack, isAdmin = false, onUpdate, onDel
     setDeleting(true);
     const result = await deleteClient(client.id);
     setDeleting(false);
-    if (!result.success) { setError(result.error); return; }
+    if (!result.success) { setError('error' in result ? result.error : 'Unknown error'); return; }
     onDeleted?.();
     router.refresh();
     onBack();

@@ -20,6 +20,7 @@ interface Employee {
   hoursThisWeek: number;
   status?: string;
   accountStatus?: 'none' | 'pending' | 'confirmed';
+  role?: string;
 }
 
 interface EmployeeProfileProps {
@@ -216,7 +217,7 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
                               onUpdate?.({ ...localEmployee, accountStatus: newStatus });
                               setInviteMessage({ ok: true, text: result.action === 'reset' ? 'Password reset sent!' : 'Invite sent!' });
                             } else {
-                              setInviteMessage({ ok: false, text: result.error });
+                              setInviteMessage({ ok: false, text: 'error' in result ? result.error : 'Unknown error' });
                             }
                             setTimeout(() => setInviteMessage(null), 4000);
                           }}
@@ -235,7 +236,7 @@ export function EmployeeProfile({ employee, onBack, isAdmin = false, onUpdate }:
                             const result = await generateInviteLink(localEmployee.id);
                             setInviting(false);
                             if (!result.success) {
-                              setInviteMessage({ ok: false, text: result.error });
+                              setInviteMessage({ ok: false, text: 'error' in result ? result.error : 'Unknown error' });
                               setTimeout(() => setInviteMessage(null), 4000);
                               return;
                             }

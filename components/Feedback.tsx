@@ -90,7 +90,7 @@ export function Feedback({ isAdmin, submissions: initialSubmissions }: Props) {
       const formData = new FormData(e.currentTarget);
       const result = await createFeedback(formData);
       if (!result.success) {
-        setError(result.error);
+        setError('error' in result ? result.error : 'Unknown error');
         return;
       }
       // Reset form, toast, and (for admins) refresh the list.
@@ -111,7 +111,7 @@ export function Feedback({ isAdmin, submissions: initialSubmissions }: Props) {
       const result = await deleteFeedback(id);
       setDeletingId(null);
       if (!result.success) {
-        showToast(result.error, "error");
+        showToast('error' in result ? result.error : 'Unknown error', "error");
         return;
       }
       setSubmissions((prev) => prev.filter((s) => s.id !== id));

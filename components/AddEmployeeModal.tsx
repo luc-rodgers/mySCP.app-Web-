@@ -41,7 +41,7 @@ export function AddEmployeeModal({ onClose }: Props) {
     setLoading(false);
 
     if (!result.success) {
-      setError(result.error);
+      setError('error' in result ? result.error : 'Unknown error');
       return;
     }
 
