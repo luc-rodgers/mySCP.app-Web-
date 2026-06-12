@@ -437,12 +437,15 @@ export function PendingTimesheets({ entries: initialEntries, draftEntries: initi
   }
 
   function handleDeleteDraft(entry: TimeEntry & { employeeId: string }) {
+    const scrollY = window.scrollY;
     setDeletingId(entry.id);
     startTransition(async () => {
       const result = await deleteTimeEntry(entry.id);
       setDeletingId(null);
       if (result.success) {
         setDraftEntries((prev) => prev.filter((e) => e.id !== entry.id));
+        setDraftsExpanded(true);
+        requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({ top: scrollY, behavior: "instant" })));
         showToast(`Draft deleted`);
       } else {
         showToast(`Failed to delete: ${'error' in result ? result.error : 'Unknown error'}`);
