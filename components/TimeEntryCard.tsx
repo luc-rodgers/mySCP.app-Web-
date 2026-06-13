@@ -355,6 +355,9 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
               setIsEditMode(false);
               setWasSubmittedWhenEditStarted(false);
               setHasBeenEdited(false);
+              // In the editor-modal context (admin pending / profile edit) this
+              // closes the editor after a successful submit; no-op inline.
+              onModalClose?.();
             }, 1200);
           }
           return success;
@@ -613,7 +616,12 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                 <Button
                   className="w-full !bg-green-600 hover:!bg-green-700 text-white cursor-pointer font-semibold"
                   onClick={() => {
-                    handleCloseModal();
+                    // Hide the edit modal and open the review summary WITHOUT calling
+                    // onModalClose — in the editor context (admin/profile) that would
+                    // unmount the whole editor before the summary could open, so submit
+                    // silently did nothing. Keep the card mounted so the summary shows.
+                    setShowModal(false);
+                    setShowDeleteConfirm(false);
                     setSummaryFromEdit(true);
                     setShowSummaryModal(true);
                   }}
