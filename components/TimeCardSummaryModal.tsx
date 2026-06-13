@@ -229,33 +229,14 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                           Edit
                         </button>
                       )}
-                      {onDelete && !showDeleteConfirm && (
+                      {onDelete && (
                         <button
-                          onClick={() => setShowDeleteConfirm(true)}
+                          onClick={() => { setShowSettings(false); setShowDeleteConfirm(true); }}
                           className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 cursor-pointer"
                         >
                           <Trash2 className="w-4 h-4" />
                           Delete
                         </button>
-                      )}
-                      {onDelete && showDeleteConfirm && (
-                        <div className="px-4 py-2 space-y-2">
-                          <p className="text-xs text-red-600 font-medium">Delete this time card?</p>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => setShowDeleteConfirm(false)}
-                              className="flex-1 text-xs px-2 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 cursor-pointer"
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              onClick={() => { setShowSettings(false); setShowDeleteConfirm(false); onDelete(); }}
-                              className="flex-1 text-xs px-2 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 cursor-pointer"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
                       )}
                     </div>
                   )}
@@ -263,6 +244,31 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
               </div>
             </DialogTitle>
           </DialogHeader>
+        )}
+
+        {/* Delete confirmation — centred overlay above the card so it can never be
+            obscured by the Sign On/Off box (the cramped dropdown version was on mobile). */}
+        {showDeleteConfirm && onDelete && (
+          <div className="absolute inset-0 z-[60] flex items-center justify-center px-6 bg-black/40">
+            <div className="w-full max-w-xs rounded-2xl bg-white p-5 shadow-2xl space-y-2">
+              <p className="text-base font-semibold text-gray-900 text-center">Delete this time card?</p>
+              <p className="text-xs text-gray-500 text-center pb-1">This can&apos;t be undone.</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 text-sm px-3 py-2.5 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => { setShowSettings(false); setShowDeleteConfirm(false); onDelete(); }}
+                  className="flex-1 text-sm px-3 py-2.5 rounded-xl bg-red-600 text-white hover:bg-red-700 cursor-pointer font-medium"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Review prompt — dismissible overlay, centred over content */}
