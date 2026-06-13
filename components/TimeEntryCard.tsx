@@ -50,6 +50,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
   const [showSummaryModal, setShowSummaryModal] = useState(defaultSummaryOpen);
   const [isEditMode, setIsEditMode] = useState(defaultEditMode ?? defaultOpen);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showEditDeleteConfirm, setShowEditDeleteConfirm] = useState(false);
   const [hasBeenEdited, setHasBeenEdited] = useState(false);
   const [wasSubmittedWhenEditStarted, setWasSubmittedWhenEditStarted] = useState(false);
   const [summaryFromEdit, setSummaryFromEdit] = useState(false);
@@ -641,23 +642,57 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
               </div>
             )}
 
-            {/* Done Editing — shown only when editing an already submitted/approved
-                entry (e.g. admin pending review or profile edit). Drafts use the
-                Submit / Save Draft buttons above, so this stays scoped to avoid the
-                redundant button that was removed for drafts. Renders on mobile + desktop. */}
+            {/* Done Editing + Delete — shown only when editing an already
+                submitted/approved entry (admin pending review or profile edit).
+                Drafts use the Submit / Save Draft / Delete buttons above. */}
             {isEditMode && (entry.status === 'submitted' || entry.status === 'approved') && (
-              <Button
-                className="w-full mt-3 !bg-green-600 hover:!bg-green-700 text-white cursor-pointer font-semibold"
-                onClick={() => {
-                  setIsEditMode(false);
-                  setShowModal(false);
-                  setSummaryFromEdit(false);
-                  setShowSummaryModal(true);
-                }}
-              >
-                <FileCheck className="w-4 h-4 mr-2" />
-                Done Editing
-              </Button>
+              <div className="flex flex-col gap-3 mt-3">
+                <Button
+                  className="w-full !bg-green-600 hover:!bg-green-700 text-white cursor-pointer font-semibold"
+                  onClick={() => {
+                    setIsEditMode(false);
+                    setShowModal(false);
+                    setSummaryFromEdit(false);
+                    setShowSummaryModal(true);
+                  }}
+                >
+                  <FileCheck className="w-4 h-4 mr-2" />
+                  Done Editing
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full font-semibold !border-gray-200 text-red-500 hover:text-red-600"
+                  onClick={() => setShowEditDeleteConfirm(true)}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Time Card
+                </Button>
+              </div>
+            )}
+
+            {/* Delete confirmation for the submitted/approved edit view — centered
+                overlay so it's never obscured (matches the summary modal's confirm). */}
+            {showEditDeleteConfirm && (
+              <div className="fixed inset-0 z-[60] flex items-center justify-center px-6 bg-black/40">
+                <div className="w-full max-w-xs rounded-2xl bg-white p-5 shadow-2xl space-y-2">
+                  <p className="text-base font-semibold text-gray-900 text-center">Delete this time card?</p>
+                  <p className="text-xs text-gray-500 text-center pb-1">This can&apos;t be undone.</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowEditDeleteConfirm(false)}
+                      className="flex-1 text-sm px-3 py-2.5 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => { setShowEditDeleteConfirm(false); handleCloseModal(); onDelete(entry.id); }}
+                      className="flex-1 text-sm px-3 py-2.5 rounded-xl bg-red-600 text-white hover:bg-red-700 cursor-pointer font-medium"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* Delete time card confirm */}
