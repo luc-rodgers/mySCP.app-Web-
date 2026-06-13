@@ -97,6 +97,14 @@ export default function TimesheetClient({ supabaseEmployee, userEmail, activePro
     const supabase = createClient();
     const isNew = entry.id.startsWith("entry");
 
+    // Don't create a row for a brand-new entry that has no real content yet.
+    // Merely touching a day (e.g. toggling night shift) would otherwise persist
+    // an empty draft — the source of the phantom/duplicate drafts. Wait until
+    // there's at least a depot time or a project before inserting.
+    const isEmpty =
+      !entry.depotStart && !entry.depotFinish && (entry.projects?.length ?? 0) === 0;
+    if (isNew && isEmpty) return null;
+
     if (isNew) {
       const { data, error } = await supabase
         .from("time_entries")
