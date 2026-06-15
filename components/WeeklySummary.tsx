@@ -1,6 +1,6 @@
 "use client"
 import { TimeEntry, Employee } from '@/lib/types';
-import { shiftMinutes, lunchDeductionHours } from '@/lib/timeMath';
+import { shiftMinutes, lunchDeductionHours, yardWorkSpan } from '@/lib/timeMath';
 import { ArrowLeft, Download, Calendar } from 'lucide-react';
 import { Button } from './ui/button';
 
@@ -78,7 +78,9 @@ export function WeeklySummary({ entries, employee, onBack }: WeeklySummaryProps)
   // Get on-site / off-site times for a project entry
   const getProjectSlot = (p: any, signOn: string, isNightShift: boolean): ProjectSlot => {
     if (p.type === 'yardwork') {
-      return { onSite: p.siteStart || '', offSite: p.siteFinish || '', siteName: p.yardActivity || 'Yard Work' };
+      const span = yardWorkSpan(p);
+      const firstAct = (p.subActivities || []).find((sa: any) => sa.type === 'yardwork' && sa.activityType);
+      return { onSite: span.start, offSite: span.finish, siteName: firstAct?.activityType || p.project || 'Yard Work' };
     }
     if (p.type === 'leave') {
       return { onSite: '', offSite: '', siteName: p.leaveType || 'Leave' };

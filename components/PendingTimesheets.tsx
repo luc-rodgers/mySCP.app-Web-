@@ -94,7 +94,10 @@ function getFlags(entry: TimeEntry): Flags {
     if (p.lunchPenalty) hasLunchPenalty = true;
     if (p.type === "project" && !p.project) hasUnknownProject = true;
     if (p.type === "yardwork") {
-      if (outside(p.siteStart) || outside(p.siteFinish)) hasInvalidTimes = true;
+      const acts = (p.subActivities ?? []).filter((sa) => sa.start || sa.finish);
+      if (acts.length > 0) {
+        if (acts.some((sa) => outside(sa.start) || outside(sa.finish))) hasInvalidTimes = true;
+      } else if (outside(p.siteStart) || outside(p.siteFinish)) hasInvalidTimes = true;
     } else if (p.type !== "leave") {
       (p.subActivities ?? []).forEach((sa) => {
         if (outside(sa.start) || outside(sa.finish)) hasInvalidTimes = true;
@@ -141,7 +144,14 @@ function exportCSV(entry: TimeEntry) {
       if (proj.type === "leave") {
         rows.push([...base(), `Leave - ${proj.leaveType ?? ""}`, "", proj.leaveStart ?? "", proj.leaveFinish ?? ""]);
       } else if (proj.type === "yardwork") {
-        rows.push([...base(), "Yard Work", "", proj.siteStart ?? "", proj.siteFinish ?? ""]);
+        const acts = (proj.subActivities ?? []).filter((sa) => sa.type === "yardwork" || sa.type === "lunch");
+        if (acts.length > 0) {
+          acts.forEach((sa, si) => {
+            rows.push([...base(si), sa.type === "lunch" ? "Lunch" : (sa.activityType || "Yard Work"), sa.type ?? "", sa.start ?? "", sa.finish ?? ""]);
+          });
+        } else {
+          rows.push([...base(), "Yard Work", "", proj.siteStart ?? "", proj.siteFinish ?? ""]);
+        }
       } else {
         (proj.subActivities ?? []).forEach((sa, si) => {
           rows.push([...base(si), proj.project ?? "", sa.type ?? "", sa.start ?? "", sa.finish ?? ""]);
@@ -164,7 +174,11 @@ function printTimecard(entry: TimeEntry) {
   const hours = calcHours(entry);
   const projectRows = (entry.projects ?? []).map((proj) => {
     if (proj.type === "leave") return `<tr><td>${proj.leaveType ?? "Leave"}</td><td>Leave</td><td>${proj.leaveStart ?? ""}–${proj.leaveFinish ?? ""}</td><td>${proj.leaveTotalHours ?? ""} hrs</td></tr>`;
-    if (proj.type === "yardwork") return `<tr><td>Yard Work</td><td>Yard Work</td><td>${proj.siteStart ?? ""}–${proj.siteFinish ?? ""}</td><td>—</td></tr>`;
+    if (proj.type === "yardwork") {
+      const acts = (proj.subActivities ?? []).filter((sa) => sa.type === "yardwork" || sa.type === "lunch");
+      if (acts.length > 0) return acts.map((sa) => `<tr><td>${sa.type === "lunch" ? "Lunch" : (sa.activityType || "Yard Work")}</td><td>${sa.type ?? ""}</td><td>${sa.start ?? ""}–${sa.finish ?? ""}</td><td>—</td></tr>`).join("");
+      return `<tr><td>Yard Work</td><td>Yard Work</td><td>${proj.siteStart ?? ""}–${proj.siteFinish ?? ""}</td><td>—</td></tr>`;
+    }
     return (proj.subActivities ?? []).map((sa) => `<tr><td>${proj.project ?? ""}</td><td>${sa.type ?? ""}</td><td>${sa.start ?? ""}–${sa.finish ?? ""}</td><td>—</td></tr>`).join("") || `<tr><td>${proj.project ?? ""}</td><td>—</td><td>—</td><td>—</td></tr>`;
   }).join("");
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Time Card – ${entry.timeCardNumber ?? entry.date}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:12px;color:#111;padding:32px}h1{font-size:18px;font-weight:bold;margin-bottom:4px}.meta{color:#555;font-size:11px;margin-bottom:20px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}.box{border:1px solid #e5e7eb;border-radius:6px;padding:10px}.label{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:4px}.box-value{font-size:16px;font-weight:bold}table{width:100%;border-collapse:collapse;margin-top:8px}th{background:#f9fafb;text-align:left;font-size:10px;text-transform:uppercase;color:#888;padding:6px 10px;border-bottom:1px solid #e5e7eb}td{padding:7px 10px;border-bottom:1px solid #f3f4f6;font-size:12px}.footer{margin-top:32px;border-top:1px solid #e5e7eb;padding-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:24px}.sig-line{border-bottom:1px solid #111;margin-top:24px}</style></head><body><h1>MySCP – Time Card</h1><div class="meta">${entry.timeCardNumber ?? "No reference"} · ${formatDate(entry.date)}</div><div class="grid"><div class="box"><div class="label">Employee</div><div class="box-value">${entry.employeeName ?? "—"}</div></div><div class="box"><div class="label">Sign On</div><div class="box-value">${entry.depotStart ?? "—"}</div></div><div class="box"><div class="label">Sign Off</div><div class="box-value">${entry.depotFinish ?? "—"}</div></div></div><div class="grid"><div class="box"><div class="label">Total Hours</div><div class="box-value">${hours.toFixed(2)}</div></div><div class="box"><div class="label">Status</div><div class="box-value">Pending Approval</div></div></div><div><div class="label">Work Detail</div><table><thead><tr><th>Project / Activity</th><th>Type</th><th>Time</th><th>Notes</th></tr></thead><tbody>${projectRows || '<tr><td colspan="4" style="color:#aaa">No work detail recorded</td></tr>'}</tbody></table></div>${entry.remarks ? `<div style="margin-top:16px"><div class="label">Comments</div><p>${entry.remarks}</p></div>` : ""}<div class="footer"><div><div class="label">Employee Signature</div><div class="sig-line"></div></div><div><div class="label">Approved By</div><div class="sig-line"></div></div></div></body></html>`;
@@ -224,26 +238,46 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
                 );
               }
               if (proj.type === "yardwork") {
-                const yardHrs = Math.max(0, subHrs(proj.siteStart, proj.siteFinish, entry.isNightShift) - (proj.lunch ? 0.5 : 0));
+                const yardHrs = projectPaidHours(proj, !!entry.isNightShift);
+                const acts = [...(proj.subActivities ?? [])]
+                  .filter((sa) => (sa.type === "yardwork" || sa.type === "lunch") && (sa.start || sa.finish))
+                  .sort((a, b) => shiftMinutes(a.start, entry.depotStart || '', !!entry.isNightShift) - shiftMinutes(b.start, entry.depotStart || '', !!entry.isNightShift));
                 return (
                   <div key={i} className="px-4 py-3">
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-sm font-medium text-gray-900">Yard Work</p>
                       <span className="text-sm font-semibold text-gray-700">{yardHrs.toFixed(2)} hrs</span>
                     </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between text-xs text-gray-500 pl-3 border-l-2 border-gray-200">
-                        <span>Yard Work</span>
-                        <span className="flex items-center gap-3">
-                          <span className="text-gray-400">{proj.siteStart} – {proj.siteFinish}</span>
-                          <span className="font-medium text-gray-600 w-14 text-right">{yardHrs.toFixed(2)} hrs</span>
-                        </span>
+                    {acts.length > 0 ? (
+                      <div className="space-y-1">
+                        {acts.map((sa, j) => {
+                          const saHrs = subHrs(sa.start, sa.finish, entry.isNightShift);
+                          const saIsLunch = isLunchActivity(sa);
+                          return (
+                            <div key={j} className="flex items-start justify-between text-xs text-gray-500 pl-3 border-l-2 border-gray-200">
+                              <span>{saIsLunch ? "Lunch Break" : (sa.activityType || "Yard Work")}</span>
+                              <span className="flex items-center gap-3 shrink-0 ml-2">
+                                <span className="text-gray-400">{sa.start} – {sa.finish}</span>
+                                <span className={`font-medium w-14 text-right ${saIsLunch ? "text-amber-600" : "text-gray-600"}`}>{saIsLunch ? `-${saHrs.toFixed(2)}` : saHrs.toFixed(2)} hrs</span>
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
-                    </div>
-                    {(proj.lunch || proj.lunchPenalty) && (
+                    ) : (
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-xs text-gray-500 pl-3 border-l-2 border-gray-200">
+                          <span>{proj.project || "Yard Work"}</span>
+                          <span className="flex items-center gap-3">
+                            <span className="text-gray-400">{proj.siteStart} – {proj.siteFinish}</span>
+                            <span className="font-medium text-gray-600 w-14 text-right">{yardHrs.toFixed(2)} hrs</span>
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    {proj.lunchPenalty && (
                       <div className="flex gap-2 mt-2">
-                        {proj.lunch && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Lunch</span>}
-                        {proj.lunchPenalty && <span className="text-xs px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">Lunch Penalty</span>}
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">Lunch Penalty</span>
                       </div>
                     )}
                   </div>

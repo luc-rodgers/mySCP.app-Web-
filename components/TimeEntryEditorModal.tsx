@@ -74,7 +74,7 @@ export function TimeEntryEditorModal({ initialEntry, employeeDbId, activeProject
     });
   };
 
-  const handleAddSubActivity = (_entryId: string, projectId: string, type: "pouring" | "non-pouring" | "travel" | "lunch") => {
+  const handleAddSubActivity = (_entryId: string, projectId: string, type: "pouring" | "non-pouring" | "travel" | "lunch" | "yardwork") => {
     setEntry(e => {
       const proj = e.projects.find(p => p.id === projectId);
       const existing = proj?.subActivities || [];

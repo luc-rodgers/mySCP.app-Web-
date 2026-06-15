@@ -27,7 +27,7 @@ interface TimeEntryCardProps {
   onDeleteProject: (entryId: string, projectId: string) => void;
   onUpdateProject: (entryId: string, projectId: string, updatedProject: Partial<Project>) => void;
   onUpdateEntry: (entryId: string, updatedEntry: Partial<TimeEntry>) => void;
-  onAddSubActivity: (entryId: string, projectId: string, type: 'pouring' | 'non-pouring' | 'travel' | 'lunch') => void;
+  onAddSubActivity: (entryId: string, projectId: string, type: 'pouring' | 'non-pouring' | 'travel' | 'lunch' | 'yardwork') => void;
   onUpdateSubActivity: (entryId: string, projectId: string, subActivityId: string, updatedSubActivity: Partial<SubActivity>) => void;
   onDeleteSubActivity: (entryId: string, projectId: string, subActivityId: string) => void;
   /** Open the edit modal immediately on mount (e.g. when launched from another page) */
@@ -120,7 +120,9 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
     onDeleteProject(entryId, projectId);
   };
 
-  const handleAddSubActivity = (entryId: string, projectId: string, type: 'pouring' | 'non-pouring' | 'travel' | 'lunch') => {
+  const handleAddSubActivity = (entryId: string, projectId: string, type: 'pouring' | 'non-pouring' | 'travel' | 'lunch' | 'yardwork') => {
+    // Only one lunch break per day — across every project / yard work on the entry.
+    if (type === 'lunch' && entry.projects.some((p) => (p.subActivities || []).some((sa) => sa.type === 'lunch'))) return;
     markAsEdited();
     onAddSubActivity(entryId, projectId, type);
   };
@@ -768,7 +770,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                   {/* Project / Yard Work form */}
                   {(project.type === 'project' || project.type === 'yardwork') && (
                     <>
-                      {project.type === 'project' ? (
+                      {project.type === 'project' && (
                         <div className="space-y-3 pt-2">
                           <p className="text-xs text-gray-400 text-center">Choose a project</p>
                           {/* Project dropdown + QLD/NSW toggle */}
@@ -808,18 +810,21 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                               )}
                             </div>
                           </div>
+                        </div>
+                      )}
 
-                          {/* Sub-activity cards */}
-                          {(project.subActivities || []).length > 0 && (
-                            <div className="space-y-3">
+                      {/* Sub-activity cards — shared by project & yard work */}
+                      {(project.subActivities || []).length > 0 && (
+                        <div className="space-y-3 pt-2">
                               {(project.subActivities || []).map((sa) => {
                                 const isTravel = sa.type === 'travel';
                                 const isPouring = sa.type === 'pouring';
                                 const isLunch = sa.type === 'lunch';
+                                const isYardwork = sa.type === 'yardwork';
                                 const pouringOptions = ['Mobile', 'Placing Boom / Skid Pump'];
                                 const nonPouringOptions = NON_POURING_WORK_OPTIONS;
-                                const ActivityIcon = isLunch ? Utensils : isTravel ? Car : isPouring ? Droplet : Hammer;
-                                const activityLabel = isLunch ? 'Lunch' : isTravel ? 'Travel' : isPouring ? 'Pouring' : 'Non-Pouring';
+                                const ActivityIcon = isLunch ? Utensils : isTravel ? Car : isPouring ? Droplet : isYardwork ? Truck : Hammer;
+                                const activityLabel = isLunch ? 'Lunch' : isTravel ? 'Travel' : isPouring ? 'Pouring' : isYardwork ? 'Yard Work' : 'Non-Pouring';
                                 const isCollapsed = collapsedActivities.has(sa.id);
                                 const collapseActivity = () => setCollapsedActivities(prev => new Set([...prev, sa.id]));
                                 const expandActivity = () => setCollapsedActivities(prev => { const n = new Set(prev); n.delete(sa.id); return n; });
@@ -877,6 +882,16 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                                       {/* ── Type selector — Travel and Lunch have no type, just a spacer ── */}
                                       {isTravel || isLunch ? (
                                         <div className="hidden md:block md:flex-1" />
+                                      ) : isYardwork ? (
+                                        <Select
+                                          value={sa.activityType || ''}
+                                          className="h-10 text-sm w-full md:h-8 md:text-xs md:flex-1 md:min-w-0"
+                                          onChange={(e) => handleUpdateSubActivity(entry.id, project.id, sa.id, { activityType: e.target.value })}
+                                          disabled={isLocked}
+                                        >
+                                          <option value="">Select yard work type...</option>
+                                          {yardWorkOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                                        </Select>
                                       ) : isPouring ? (
                                         <div className="flex rounded-lg border border-gray-200 overflow-hidden w-full md:flex-1 md:min-w-0">
                                           {pouringOptions.map(o => (
@@ -949,60 +964,6 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                               })}
                             </div>
                           )}
-
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          {/* Yard work type dropdown */}
-                          <div>
-                            <label className="block text-xs text-gray-500 mb-1.5">Yard Work Type</label>
-                            <Select
-                              value={project.project || ''}
-                              className="h-11 text-sm w-full font-semibold cursor-pointer !border !border-gray-300 !bg-white"
-                              onChange={(e) => onUpdateProject(entry.id, project.id, { project: e.target.value })}
-                              disabled={isLocked}
-                            >
-                              <option value="">Select Yard Work Type</option>
-                              {yardWorkOptions.map(p => <option key={p} value={p}>{p}</option>)}
-                            </Select>
-                          </div>
-
-                          {/* Start / Finish times */}
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <label className="block text-[10px] text-gray-400 mb-1 text-center">Start</label>
-                              <TimePicker
-                                value={project.siteStart || ''}
-                                onChange={(v) => onUpdateProject(entry.id, project.id, { siteStart: v })}
-                                disabled={isLocked}
-                                className="justify-center"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-[10px] text-gray-400 mb-1 text-center">Finish</label>
-                              <TimePicker
-                                value={project.siteFinish || ''}
-                                onChange={(v) => onUpdateProject(entry.id, project.id, { siteFinish: v })}
-                                disabled={isLocked}
-                                className="justify-center"
-                              />
-                            </div>
-                          </div>
-
-                          {/* Add lunch break */}
-                          <div>
-                            <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">Options</p>
-                            <button
-                              onClick={() => handleAddSubActivity(entry.id, project.id, 'lunch')}
-                              disabled={isLocked}
-                              className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer disabled:opacity-40"
-                            >
-                              <Utensils className="w-4 h-4 shrink-0" />
-                              <span>Lunch</span>
-                            </button>
-                          </div>
-                        </div>
-                      )}
 
                       {/* Lunch Penalty / Inclement Weather detail boxes */}
                       {project.type === 'project' && (project.lunchPenalty || project.weather) && (
@@ -1129,6 +1090,33 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                 </div>
 
                 {/* Sticky activity picker — Travel/Pouring/Non-Pouring + Lunch/Penalty/Weather */}
+                {project.type === 'yardwork' && !isLocked && (() => {
+                  const hasLunch = entry.projects.some(p => (p.subActivities || []).some(sa => sa.type === 'lunch'));
+                  return (
+                    <div className="px-4 pt-3 pb-5 border-t border-gray-100 shrink-0 space-y-2 bg-white">
+                      <p className="text-xs text-gray-400 text-center">Choose an activity</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => handleAddSubActivity(entry.id, project.id, 'yardwork')}
+                          className="flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2 px-2 md:px-3 py-3 md:py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
+                        >
+                          <Truck className="w-4 h-4 shrink-0" />
+                          <span>Yard Work</span>
+                        </button>
+                        <button
+                          onClick={() => handleAddSubActivity(entry.id, project.id, 'lunch')}
+                          disabled={isLocked || hasLunch}
+                          className="flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2 px-2 md:px-3 py-3 md:py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <Utensils className="w-4 h-4 shrink-0" />
+                          <span>Lunch</span>
+                        </button>
+                      </div>
+                      {hasLunch && <p className="text-[10px] text-gray-400 text-center">Only one lunch break per entry.</p>}
+                    </div>
+                  );
+                })()}
+
                 {project.type === 'project' && !isLocked && (
                   <div className="px-4 pt-3 pb-5 border-t border-gray-100 shrink-0 space-y-2 bg-white">
                     <p className="text-xs text-gray-400 text-center">Choose an activity</p>
@@ -1158,8 +1146,8 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                     <div className="grid grid-cols-3 gap-2">
                       <button
                         onClick={() => handleAddSubActivity(entry.id, project.id, 'lunch')}
-                        disabled={isLocked}
-                        className="flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2 px-2 md:px-3 py-3 md:py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer disabled:opacity-40"
+                        disabled={isLocked || entry.projects.some(p => (p.subActivities || []).some(sa => sa.type === 'lunch'))}
+                        className="flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2 px-2 md:px-3 py-3 md:py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         <Utensils className="w-4 h-4 shrink-0" />
                         <span>Lunch</span>
@@ -1194,6 +1182,9 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                         <span>More</span>
                       </button>
                     </div>
+                    {entry.projects.some(p => (p.subActivities || []).some(sa => sa.type === 'lunch')) && (
+                      <p className="text-[10px] text-gray-400 text-center">Only one lunch break per entry.</p>
+                    )}
                     {moreOpen && (
                       <div className="grid grid-cols-3 gap-2">
                         <button
@@ -1235,7 +1226,10 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                   </div>
                   <button
                     onClick={() => setSelectedProjectId(null)}
-                    disabled={project.type === 'yardwork' && !project.project}
+                    disabled={project.type === 'yardwork' && (() => {
+                      const ywActs = (project.subActivities || []).filter(sa => sa.type === 'yardwork');
+                      return ywActs.length > 0 ? ywActs.some(a => !a.activityType) : !project.project;
+                    })()}
                     className="w-32 h-14 flex items-center justify-center rounded-xl bg-green-600 text-white text-base font-medium active:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
                     Save

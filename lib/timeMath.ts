@@ -118,6 +118,18 @@ export function projectPaidHours(project: Project, allowNextDay: boolean): numbe
     return Math.max(0, parseFloat(project.leaveTotalHours || '0'));
   }
   if (project.type === 'yardwork') {
+    const subs = project.subActivities || [];
+    const work = subs.filter((sa) => sa.type === 'yardwork' && sa.start && sa.finish);
+    const lunches = subs.filter((sa) => isLunchActivity(sa) && sa.start && sa.finish);
+    if (work.length > 0) {
+      // New model: yard-work activities, lunch carved out (same as the project branch).
+      return Math.max(0, subtractMinutes(toIntervals(work, allowNextDay), toIntervals(lunches, allowNextDay)) / 60);
+    }
+    // Legacy single block (siteStart/siteFinish), with optional lunch node or boolean flag.
+    const site = toIntervals([{ start: project.siteStart, finish: project.siteFinish }], allowNextDay);
+    if (lunches.length > 0) {
+      return Math.max(0, subtractMinutes(site, toIntervals(lunches, allowNextDay)) / 60);
+    }
     const h = diffHours(project.siteStart, project.siteFinish, allowNextDay);
     return Math.max(0, h - (project.lunch ? LEGACY_LUNCH_HOURS : 0));
   }
@@ -197,4 +209,14 @@ export function entryTotalHours(entry: TimeEntry): number {
 // Paid on-clock time not allocated to a project / yard work (idle, depot overhead).
 export function entryNonAllocatedHours(entry: TimeEntry): number {
   return Math.max(0, entryWorkedHours(entry) - entryBillableHours(entry));
+}
+
+// Single span for a yard-work row: envelope of its activities (earliest start →
+// latest finish), or the legacy siteStart/siteFinish when there are no activities.
+export function yardWorkSpan(project: Project): { start: string; finish: string } {
+  const work = (project.subActivities || []).filter((sa) => sa.type === 'yardwork' && sa.start && sa.finish);
+  if (work.length === 0) return { start: project.siteStart || '', finish: project.siteFinish || '' };
+  const starts = work.map((w) => w.start).sort();
+  const finishes = work.map((w) => w.finish).sort();
+  return { start: starts[0], finish: finishes[finishes.length - 1] };
 }
