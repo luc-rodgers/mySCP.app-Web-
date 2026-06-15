@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { Employee, TimeEntry } from "@/lib/types";
-import { diffHours } from "@/lib/timeMath";
+import { entryTotalHours } from "@/lib/timeMath";
 
 export function summariseHours(entries: TimeEntry[]) {
   const today = new Date();
@@ -17,11 +17,7 @@ export function summariseHours(entries: TimeEntry[]) {
   for (const e of entries) {
     // Drafts aren't counted toward paid hours until they're submitted.
     if (e.status !== "submitted" && e.status !== "approved") continue;
-    const depot = diffHours(e.depotStart, e.depotFinish, e.isNightShift);
-    const hasLunch = (e.projects ?? []).some(p => p.lunch);
-    const leave = (e.projects ?? []).filter(p => p.type === "leave")
-      .reduce((sum, p) => sum + parseFloat((p as any).leaveTotalHours || "0"), 0);
-    const hrs = Math.max(0, depot - (hasLunch ? 0.5 : 0)) + leave;
+    const hrs = entryTotalHours(e);
 
     if (e.date === localToday) todayHours += hrs;
     const [y, m, d] = e.date.split("-").map(Number);

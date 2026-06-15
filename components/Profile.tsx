@@ -1,6 +1,7 @@
 "use client"
 import { Mail, Phone, Clock, Settings, ChevronDown, ChevronUp, Car, Droplets, Wrench, AlertTriangle, Moon } from 'lucide-react';
 import { Employee, TimeEntry } from '@/lib/types';
+import { entryWorkedHours, entryNonAllocatedHours } from '@/lib/timeMath';
 import { useState, useRef, useEffect } from 'react';
 import { TimeCardSummaryModal } from './TimeCardSummaryModal';
 import { TimeEntryEditorModal } from './TimeEntryEditorModal';
@@ -62,13 +63,8 @@ export function Profile({
 
   // Depot hours only — used for stats, totals, heatmap (excludes leave)
   const calculateTotalHours = (entry: TimeEntry) => {
-    if (!entry.depotStart || !entry.depotFinish) return 0;
-    const [sh, sm] = entry.depotStart.split(':').map(Number);
-    const [fh, fm] = entry.depotFinish.split(':').map(Number);
-    let mins = fh * 60 + fm - sh * 60 - sm;
-    if (mins < 0) mins += 24 * 60; // night shift crosses midnight
-    const hasLunch = (entry.projects ?? []).some(p => p.lunch);
-    return Math.max(0, mins / 60 - (hasLunch ? 0.5 : 0));
+    // Worked on-clock hours = sign-on→sign-off minus lunch (excludes leave).
+    return entryWorkedHours(entry);
   };
 
   // Payable hours — depot + leave, used for history row display
@@ -115,7 +111,10 @@ export function Profile({
     const mon = new Date(y, m - 1, d);
     const sun = new Date(y, m - 1, d + 6);
     const pad = (n: number) => String(n).padStart(2, '0');
-    const monthStr = (dt: Date) => dt.toLocaleDateString('en-AU', { month: 'short' });
+    // Fixed month abbreviations — deterministic across server and client (avoids a
+    // locale/ICU hydration mismatch where Node renders 'short' as the full month).
+    const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthStr = (dt: Date) => MONTHS[dt.getMonth()];
     const fmtDay = (dt: Date) => `${pad(dt.getDate())} ${monthStr(dt)}`;
     const fmtDayYear = (dt: Date) => `${pad(dt.getDate())} ${monthStr(dt)} ${dt.getFullYear()}`;
     if (mon.getFullYear() !== sun.getFullYear()) return `${fmtDayYear(mon)} – ${fmtDayYear(sun)}`;
@@ -447,29 +446,13 @@ export function Profile({
 
           {/* Non-Allocated Hours */}
           {(() => {
-            const subHours = (s: string, f: string) => {
-              if (!s || !f) return 0;
-              const [sh, sm] = s.split(':').map(Number);
-              const [fh, fm] = f.split(':').map(Number);
-              return Math.max(0, (fh * 60 + fm - sh * 60 - sm) / 60);
-            };
+            // Non-allocated = paid on-clock time not billed to a project / yard work.
             let totalNonAlloc = 0;
             const weekSet = new Set<string>();
             localEntries.forEach(entry => {
-              const depotHrs = calculateTotalHours(entry);
-              if (depotHrs <= 0) return;
-              let allocated = 0;
-              (entry.projects ?? []).forEach(p => {
-                if (p.type === 'yardwork') {
-                  allocated += subHours(p.siteStart, p.siteFinish);
-                  if (p.lunch) allocated -= 0.5;
-                } else if (p.type === 'leave') {
-                  allocated += parseFloat(p.leaveTotalHours || '0');
-                } else {
-                  (p.subActivities ?? []).forEach(sa => { allocated += subHours(sa.start, sa.finish); });
-                }
-              });
-              totalNonAlloc += Math.max(0, depotHrs - allocated);
+              const nonAlloc = entryNonAllocatedHours(entry);
+              if (nonAlloc <= 0) return;
+              totalNonAlloc += nonAlloc;
               const d = new Date(entry.date);
               d.setHours(0, 0, 0, 0);
               const dow = d.getDay();

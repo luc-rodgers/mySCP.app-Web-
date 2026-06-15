@@ -4,7 +4,7 @@ import { useState, useEffect, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { TimeEntry } from "@/lib/types";
-import { isTimeOutsideShift, shiftMinutes } from "@/lib/timeMath";
+import { isTimeOutsideShift, shiftMinutes, entryTotalHours, entryNonAllocatedHours, projectPaidHours, isLunchActivity } from "@/lib/timeMath";
 import { TimeEntryEditorModal } from "./TimeEntryEditorModal";
 import { approveTimeEntry } from "@/app/actions/approveTimeEntry";
 import { submitTimeEntry } from "@/app/actions/submitTimeEntry";
@@ -79,20 +79,14 @@ function subHrs(start: string, finish: string, allowNextDay = false): number {
 }
 
 function calcHours(entry: TimeEntry): number {
-  const leaveHours = (entry.projects ?? [])
-    .filter((p) => p.type === "leave")
-    .reduce((sum, p) => sum + parseFloat((p as any).leaveTotalHours || "0"), 0);
-  if (!entry.depotStart || !entry.depotFinish) return leaveHours;
-  const total = subHrs(entry.depotStart, entry.depotFinish, entry.isNightShift);
-  const hasLunch = (entry.projects ?? []).some((p) => p.lunch);
-  return Math.max(0, total - (hasLunch ? 0.5 : 0)) + leaveHours;
+  // Paid total = on-clock span (sign-on→sign-off) minus lunch, plus leave.
+  return entryTotalHours(entry);
 }
 
 interface Flags { weather: boolean; lunchPenalty: boolean; unallocatedHours: number; unknownProject: boolean; invalidTimes: boolean; }
 
 function getFlags(entry: TimeEntry): Flags {
-  const depotHrs = calcHours(entry);
-  let hasWeather = false, hasLunchPenalty = false, allocated = 0, hasUnknownProject = false, hasInvalidTimes = false;
+  let hasWeather = false, hasLunchPenalty = false, hasUnknownProject = false, hasInvalidTimes = false;
   const ns = !!entry.isNightShift;
   const outside = (t?: string) => !!t && !!entry.depotStart && !!entry.depotFinish && isTimeOutsideShift(t, entry.depotStart, entry.depotFinish, ns);
   (entry.projects ?? []).forEach((p) => {
@@ -100,19 +94,17 @@ function getFlags(entry: TimeEntry): Flags {
     if (p.lunchPenalty) hasLunchPenalty = true;
     if (p.type === "project" && !p.project) hasUnknownProject = true;
     if (p.type === "yardwork") {
-      allocated += subHrs(p.siteStart, p.siteFinish, ns);
-      if (p.lunch) allocated -= 0.5;
       if (outside(p.siteStart) || outside(p.siteFinish)) hasInvalidTimes = true;
-    } else if (p.type === "leave") {
-      allocated += parseFloat(p.leaveTotalHours || "0");
-    } else {
+    } else if (p.type !== "leave") {
       (p.subActivities ?? []).forEach((sa) => {
-        allocated += subHrs(sa.start, sa.finish, ns);
         if (outside(sa.start) || outside(sa.finish)) hasInvalidTimes = true;
       });
     }
   });
-  return { weather: hasWeather, lunchPenalty: hasLunchPenalty, unallocatedHours: depotHrs > 0 ? Math.max(0, depotHrs - allocated) : 0, unknownProject: hasUnknownProject, invalidTimes: hasInvalidTimes };
+  // Non-allocated = paid on-clock time not billed to a project / yard work
+  // (idle, depot overhead) = (span − lunch) − billable activity hours.
+  const unallocatedHours = entryNonAllocatedHours(entry);
+  return { weather: hasWeather, lunchPenalty: hasLunchPenalty, unallocatedHours, unknownProject: hasUnknownProject, invalidTimes: hasInvalidTimes };
 }
 
 // ── Format helpers ───────────────────────────────────────────────────────────
@@ -257,7 +249,7 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
                   </div>
                 );
               }
-              const projHrs = (proj.subActivities ?? []).reduce((sum, sa) => sum + subHrs(sa.start, sa.finish, entry.isNightShift), 0);
+              const projHrs = projectPaidHours(proj, !!entry.isNightShift);
               return (
                 <div key={i} className="px-4 py-3">
                   <div className="flex items-center justify-between mb-2">
@@ -277,12 +269,13 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
                         .sort((a, b) => shiftMinutes(a.start, entry.depotStart || '', !!entry.isNightShift) - shiftMinutes(b.start, entry.depotStart || '', !!entry.isNightShift))
                         .map((sa, j) => {
                         const saHrs = subHrs(sa.start, sa.finish, entry.isNightShift);
+                        const saIsLunch = isLunchActivity(sa);
                         return (
                           <div key={j} className="flex items-start justify-between text-xs text-gray-500 pl-3 border-l-2 border-gray-200">
-                            <span className="capitalize">{sa.type}{sa.activityType ? ` — ${sa.activityType}` : ""}</span>
+                            <span className="capitalize">{saIsLunch ? "🍽️ Lunch Break" : `${sa.type}${sa.activityType ? ` — ${sa.activityType}` : ""}`}</span>
                             <span className="flex items-center gap-3 shrink-0 ml-2">
                               <span className="text-gray-400">{sa.start} – {sa.finish}</span>
-                              <span className="font-medium text-gray-600 w-14 text-right">{saHrs.toFixed(2)} hrs</span>
+                              <span className={`font-medium w-14 text-right ${saIsLunch ? "text-amber-600" : "text-gray-600"}`}>{saIsLunch ? `-${saHrs.toFixed(2)}` : saHrs.toFixed(2)} hrs</span>
                             </span>
                           </div>
                         );

@@ -10,6 +10,7 @@ import { deleteProject } from '@/app/actions/deleteProject';
 import { WorkHeatmap } from './WorkHeatmap';
 import { TimeEntryEditorModal } from './TimeEntryEditorModal';
 import { TimeEntry } from '@/lib/types';
+import { entryWorkedHours } from '@/lib/timeMath';
 import { PlacesAutocompleteInput, type PickedPlace } from './PlacesAutocompleteInput';
 
 interface WorkHistoryRow {
@@ -131,13 +132,8 @@ export function ProjectProfile({ project, onBack, isAdmin = false, onUpdate, onD
   const [openEntry, setOpenEntry] = useState<WorkHistoryRow | null>(null);
 
   const calculateHours = useCallback((entry: any): number => {
-    if (!entry.depotStart || !entry.depotFinish) return 0;
-    const [sh, sm] = (entry.depotStart as string).split(':').map(Number);
-    const [fh, fm] = (entry.depotFinish as string).split(':').map(Number);
-    let mins = fh * 60 + fm - sh * 60 - sm;
-    if (mins < 0) mins += 24 * 60; // crosses midnight (night shift)
-    const hasLunch = (entry.projects ?? []).some((p: any) => p.lunch);
-    return Math.max(0, mins / 60 - (hasLunch ? 0.5 : 0));
+    // Worked on-clock hours = sign-on→sign-off minus lunch (excludes leave).
+    return entryWorkedHours(entry);
   }, []);
 
   useEffect(() => {

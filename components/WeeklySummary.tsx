@@ -1,6 +1,6 @@
 "use client"
 import { TimeEntry, Employee } from '@/lib/types';
-import { shiftMinutes } from '@/lib/timeMath';
+import { shiftMinutes, lunchDeductionHours } from '@/lib/timeMath';
 import { ArrowLeft, Download, Calendar } from 'lucide-react';
 import { Button } from './ui/button';
 
@@ -125,12 +125,15 @@ export function WeeklySummary({ entries, employee, onBack }: WeeklySummaryProps)
     const leaveTotal = entry.projects
       .filter((p: any) => p.type === 'leave')
       .reduce((sum: number, p: any) => sum + parseFloat(p.leaveTotalHours || '0'), 0);
-    const grossHours = isLeaveOnly ? 0 : calcHrs(entry.depotStart, entry.depotFinish, entry.isNightShift) + leaveTotal;
-    const hasLunch = !isLeaveOnly && entry.projects.some(p => p.lunch);
+    const ns = !!entry.isNightShift;
+    // Gross = "on the clock" span (+ leave). Net = gross minus lunch and any lunch penalty
+    // (idle/gaps stay paid). Lunch is the only break deducted from pay.
+    const grossHours = isLeaveOnly ? 0 : calcHrs(entry.depotStart, entry.depotFinish, ns) + leaveTotal;
+    const lunchDed = isLeaveOnly ? 0 : entry.projects.reduce((s, p) => s + lunchDeductionHours(p, ns), 0);
+    const hasLunch = lunchDed > 0;
     const hasLunchPenalty = !isLeaveOnly && entry.projects.some(p => p.lunchPenalty);
     const lunchPenaltyHours = hasLunchPenalty ? 0.5 : 0;
-    const lunchDeduct = hasLunch && !hasLunchPenalty ? 0.5 : 0;
-    const netHours = roundQ(grossHours - lunchDeduct - lunchPenaltyHours);
+    const netHours = roundQ(Math.max(0, grossHours - lunchDed - lunchPenaltyHours));
     const ordinaryTime = roundQ(Math.min(netHours, 8));
     const overtimeX2 = roundQ(Math.max(0, netHours - 8));
     const hasWeather = !isLeaveOnly && entry.projects.some(p => p.weather);
@@ -148,7 +151,7 @@ export function WeeklySummary({ entries, employee, onBack }: WeeklySummaryProps)
       start: isLeaveOnly ? '' : entry.depotStart,
       finish: isLeaveOnly ? '' : entry.depotFinish,
       grossHours,
-      timeLunchTaken: hasLunch ? '30 min' : '',
+      timeLunchTaken: hasLunch ? `${Math.round(lunchDed * 60)} min` : '',
       lunchDeduct: hasLunch && !hasLunchPenalty ? 'Y' : '',
       noClaim: hasLunch ? '' : 'N',
       netHours,

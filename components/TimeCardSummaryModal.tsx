@@ -1,6 +1,6 @@
 "use client"
 import { TimeEntry } from '@/lib/types';
-import { diffHours, isTimeOutsideShift, shiftMinutes } from '@/lib/timeMath';
+import { diffHours, isTimeOutsideShift, shiftMinutes, entryTotalHours, entryNonAllocatedHours, projectPaidHours } from '@/lib/timeMath';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -145,41 +145,12 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
     return diffHours(start ?? '', end ?? '', entry.isNightShift);
   };
 
-  const totalHours = (() => {
-    if (isLeaveOnly) {
-      return entry.projects.reduce((sum, p) => sum + parseFloat((p as any).leaveTotalHours || '0'), 0);
-    }
-    if (!entry.depotStart || !entry.depotFinish) return 0;
-    const hours = diffHours(entry.depotStart, entry.depotFinish, entry.isNightShift);
-    const hasLunch = entry.projects.some(project => project.lunch);
-    const depotHours = Math.max(0, hours - (hasLunch ? 0.5 : 0));
-    const leaveHours = entry.projects
-      .filter(p => p.type === 'leave')
-      .reduce((sum, p) => sum + parseFloat((p as any).leaveTotalHours || '0'), 0);
-    return depotHours + leaveHours;
-  })();
+  // Paid total = on-clock span (sign-on→sign-off) minus lunch, plus leave.
+  const totalHours = entryTotalHours(entry);
 
-  // Calculate total productive hours (project + yard work)
-  const totalProductiveHours = (() => {
-    let total = 0;
-    entry.projects.forEach(project => {
-      if (project.type === 'project') {
-        if (project.subActivities) {
-          project.subActivities.forEach(subActivity => {
-            total += diffHours(subActivity.start, subActivity.finish, entry.isNightShift);
-          });
-        }
-      } else if (project.type === 'yardwork') {
-        total += calculateProjectHours(project);
-      } else if (project.type === 'leave') {
-        total += parseFloat((project as any).leaveTotalHours || '0');
-      }
-    });
-    return total;
-  })();
-
-  // Calculate non-productive hours
-  const nonProductiveHours = Math.max(0, totalHours - totalProductiveHours);
+  // Non-allocated = paid on-clock time not billed to a project / yard work
+  // (idle and depot overhead) = (span − lunch) − billable activity hours.
+  const nonProductiveHours = entryNonAllocatedHours(entry);
 
   const handleSubmit = async () => {
     if (!signature.trim() || !onSubmit) return;
@@ -386,10 +357,8 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                     ? workActivitiesOnly[workActivitiesOnly.length - 1].finish 
                     : project.siteFinish || '--:--';
 
-                  // Calculate total project hours from sub-activities
-                  const totalProjectHours = sortedSubActivities.reduce((total, subActivity) => {
-                    return total + diffHours(subActivity.start, subActivity.finish, ns);
-                  }, 0);
+                  // Total paid project hours (work activities minus lunch/gaps)
+                  const totalProjectHours = projectPaidHours(project, ns);
 
                   const weatherHours = calculateWeatherHours(project.weatherStart, project.weatherEnd);
                   
@@ -397,12 +366,12 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                   if (project.type === 'leave') {
                     const leaveHours = parseFloat(project.leaveTotalHours || '0');
                     return (
-                      <div key={project.id} className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 flex items-center justify-between">
-                        <div>
+                      <div key={project.id} className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 flex items-center justify-between gap-2">
+                        <div className="min-w-0 flex-1">
                           <div className="text-xs text-gray-400 mb-0.5">Leave</div>
-                          <div className="text-sm font-medium text-gray-900">{project.leaveType || 'Leave'}</div>
+                          <div className="text-sm font-medium text-gray-900 truncate">{project.leaveType || 'Leave'}</div>
                         </div>
-                        <span className="text-sm text-gray-500">{leaveHours > 0 ? `${leaveHours.toFixed(2)} hrs` : '--'}</span>
+                        <span className="text-lg font-bold text-gray-700 whitespace-nowrap shrink-0">{leaveHours > 0 ? `${leaveHours.toFixed(2)} hrs` : '--'}</span>
                       </div>
                     );
                   }
@@ -411,12 +380,12 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                   if (project.type === 'rdo') {
                     const rdoHrs = ((parseFloat(project.rdoPayout || '0') + parseFloat(project.rdoHold || '0')));
                     return (
-                      <div key={project.id} className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 flex items-center justify-between">
-                        <div>
+                      <div key={project.id} className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 flex items-center justify-between gap-2">
+                        <div className="min-w-0 flex-1">
                           <div className="text-xs text-gray-400 mb-0.5">Leave</div>
-                          <div className="text-sm font-medium text-gray-900">RDO</div>
+                          <div className="text-sm font-medium text-gray-900 truncate">RDO</div>
                         </div>
-                        <span className="text-sm text-gray-500">{rdoHrs > 0 ? `${rdoHrs.toFixed(2)} hrs` : '--'}</span>
+                        <span className="text-lg font-bold text-gray-700 whitespace-nowrap shrink-0">{rdoHrs > 0 ? `${rdoHrs.toFixed(2)} hrs` : '--'}</span>
                       </div>
                     );
                   }
@@ -430,24 +399,26 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                     return (
                       <div key={project.id} className={`border rounded-xl overflow-hidden ${hasInvalidTime || missingYardType ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}>
                         <button
-                          className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors ${hasInvalidTime || missingYardType ? 'bg-red-50 hover:bg-red-100' : 'bg-gray-50 hover:bg-gray-100'}`}
+                          className={`w-full px-4 py-3 text-left transition-colors ${hasInvalidTime || missingYardType ? 'bg-red-50 hover:bg-red-100' : 'bg-gray-50 hover:bg-gray-100'}`}
                           onClick={() => toggleProject(project.id)}
                         >
-                          <div>
-                            <div className="text-xs text-gray-400 mb-0.5 flex items-center gap-1">
-                              <Truck className="w-3.5 h-3.5 shrink-0" />
-                              Yard Work
-                              {missingYardType && <span className="text-red-500 ml-1">· Activity required</span>}
-                              {hasInvalidTime && !missingYardType && <AlertTriangle className="w-3 h-3 text-red-500 ml-1" />}
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <div className="text-xs text-gray-400 mb-0.5 flex items-center gap-1">
+                                <Truck className="w-3.5 h-3.5 shrink-0" />
+                                Yard Work
+                                {missingYardType && <span className="text-red-500 ml-1">· Activity required</span>}
+                                {hasInvalidTime && !missingYardType && <AlertTriangle className="w-3 h-3 text-red-500 ml-1" />}
+                              </div>
+                              <div className="text-sm font-medium text-gray-900 truncate">
+                                {project.project || 'Yard Work'}
+                                {project.lunch && <span className="ml-2 text-xs text-green-600 font-normal">· Lunch</span>}
+                              </div>
                             </div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {project.project || 'Yard Work'}
-                              {project.lunch && <span className="ml-2 text-xs text-green-600 font-normal">· Lunch</span>}
-                            </div>
+                            <span className="text-lg font-bold text-gray-700 whitespace-nowrap shrink-0">{yardWorkHours > 0 ? `${yardWorkHours.toFixed(2)} hrs` : '--'}</span>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500">{yardWorkHours > 0 ? `${yardWorkHours.toFixed(2)} hrs` : '--'}</span>
-                            {isExpanded ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
+                          <div className="flex justify-center mt-1">
+                            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                           </div>
                         </button>
 
@@ -503,31 +474,33 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                     <div key={project.id} className={`border rounded-xl overflow-hidden ${hasInvalidTime ? 'border-red-400' : 'border-gray-200'}`}>
                       {/* Collapsed header */}
                       <button
-                        className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors ${hasInvalidTime ? 'bg-red-50 hover:bg-red-100' : 'bg-gray-50 hover:bg-gray-100'}`}
+                        className={`w-full px-4 py-3 text-left transition-colors ${hasInvalidTime ? 'bg-red-50 hover:bg-red-100' : 'bg-gray-50 hover:bg-gray-100'}`}
                         onClick={() => toggleProject(project.id)}
                       >
-                        <div>
-                          <div className="text-xs text-gray-400 mb-0.5 flex items-center gap-1">
-                            <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <line x1="9" y1="22" x2="9" y2="5" /><line x1="9" y1="5" x2="21" y2="5" />
-                              <line x1="9" y1="5" x2="3" y2="5" /><line x1="21" y1="5" x2="21" y2="14" />
-                              <path d="M19 14 Q19 17 21 17 Q23 17 23 14" />
-                              <line x1="5" y1="22" x2="13" y2="22" /><line x1="3" y1="5" x2="9" y2="3" />
-                              <line x1="21" y1="5" x2="9" y2="3" />
-                            </svg>
-                            Project
-                            {hasInvalidTime && <AlertTriangle className="w-3 h-3 text-red-500 ml-1" />}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs text-gray-400 mb-0.5 flex items-center gap-1">
+                              <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="9" y1="22" x2="9" y2="5" /><line x1="9" y1="5" x2="21" y2="5" />
+                                <line x1="9" y1="5" x2="3" y2="5" /><line x1="21" y1="5" x2="21" y2="14" />
+                                <path d="M19 14 Q19 17 21 17 Q23 17 23 14" />
+                                <line x1="5" y1="22" x2="13" y2="22" /><line x1="3" y1="5" x2="9" y2="3" />
+                                <line x1="21" y1="5" x2="9" y2="3" />
+                              </svg>
+                              Project
+                              {hasInvalidTime && <AlertTriangle className="w-3 h-3 text-red-500 ml-1" />}
+                            </div>
+                            <div className="text-sm font-medium text-gray-900 truncate">
+                              {project.project || <span className="text-red-600">Unknown Project</span>}
+                              {project.lunch && <span className="ml-2 text-xs text-green-600 font-normal">· Lunch</span>}
+                              {project.weather && <span className="ml-2 text-xs text-orange-600 font-normal">· Weather ({weatherHours.toFixed(1)} hrs)</span>}
+                              {project.lunchPenalty && <span className="ml-2 text-xs text-orange-600 font-normal">· Lunch Penalty</span>}
+                            </div>
                           </div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {project.project || <span className="text-red-600">Unknown Project</span>}
-                            {project.lunch && <span className="ml-2 text-xs text-green-600 font-normal">· Lunch</span>}
-                            {project.weather && <span className="ml-2 text-xs text-orange-600 font-normal">· Weather ({weatherHours.toFixed(1)} hrs)</span>}
-                            {project.lunchPenalty && <span className="ml-2 text-xs text-orange-600 font-normal">· Lunch Penalty</span>}
-                          </div>
+                          <span className="text-lg font-bold text-gray-700 whitespace-nowrap shrink-0">{totalProjectHours > 0 ? `${totalProjectHours.toFixed(2)} hrs` : '--'}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-500">{totalProjectHours > 0 ? `${totalProjectHours.toFixed(2)} hrs` : '--'}</span>
-                          {isExpanded ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
+                        <div className="flex justify-center mt-1">
+                          <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                         </div>
                       </button>
                       
@@ -547,8 +520,8 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                                   {sortedSubActivities.map((subActivity, idx) => {
                                     const subActivityHours = diffHours(subActivity.start, subActivity.finish, ns);
                                     
-                                    // Determine if this is the first or last work activity (non-travel)
-                                    const workActivities = sortedSubActivities.filter(sa => sa.type !== 'travel');
+                                    // Determine if this is the first or last work activity (non-travel, non-lunch)
+                                    const workActivities = sortedSubActivities.filter(sa => sa.type !== 'travel' && sa.type !== 'lunch');
                                     const isFirstWorkActivity = workActivities.length > 0 && subActivity.id === workActivities[0].id;
                                     const isLastWorkActivity = workActivities.length > 0 && subActivity.id === workActivities[workActivities.length - 1].id;
                                     
@@ -573,20 +546,24 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                                           
                                           {/* Activity details */}
                                           <div className={`p-2 rounded ${
-                                            subActivity.type === 'pouring' 
-                                              ? 'bg-green-50 border border-green-200' 
+                                            subActivity.type === 'pouring'
+                                              ? 'bg-green-50 border border-green-200'
                                               : subActivity.type === 'travel'
                                               ? 'bg-purple-50 border border-purple-200'
+                                              : subActivity.type === 'lunch'
+                                              ? 'bg-amber-50 border border-amber-200'
                                               : 'bg-blue-50 border border-blue-200'
                                           }`}>
                                             <div className="text-xs font-semibold mb-1">
-                                              {subActivity.type === 'pouring' 
+                                              {subActivity.type === 'pouring'
                                                 ? 'Pouring Work'
                                                 : subActivity.type === 'travel'
                                                 ? 'Travel To/From'
+                                                : subActivity.type === 'lunch'
+                                                ? 'Lunch Break'
                                                 : 'Non-Pouring Work'}
                                             </div>
-                                            {subActivity.type !== 'travel' && (
+                                            {subActivity.type !== 'travel' && subActivity.type !== 'lunch' && (
                                               <div className="text-xs text-gray-700 mb-1">
                                                 {subActivity.activityType || 'Not specified'}
                                               </div>
@@ -605,8 +582,8 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
                                                   <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
                                                 )}
                                               </div>
-                                              <div className="text-blue-600 font-semibold">
-                                                {subActivityHours.toFixed(2)} hrs
+                                              <div className={subActivity.type === 'lunch' ? 'text-amber-600 font-semibold' : 'text-blue-600 font-semibold'}>
+                                                {subActivity.type === 'lunch' ? `-${subActivityHours.toFixed(2)}` : subActivityHours.toFixed(2)} hrs
                                               </div>
                                             </div>
                                           </div>
@@ -657,7 +634,7 @@ export function TimeCardSummaryModal({ entry, isOpen, onClose, onSubmit, onEdit,
               <div className="border border-rose-200 rounded-lg p-4 bg-rose-50">
                 <div className="flex justify-between items-start gap-3">
                   <div className="min-w-0">
-                    <div className="text-base font-bold text-gray-700">Non-Allocated Paid Time</div>
+                    <div className="text-sm font-medium text-gray-900">Non-Allocated Paid Time</div>
                     <div className="text-xs text-gray-600 mt-1">
                       Time not allocated to an activity, yard work or project
                     </div>

@@ -343,16 +343,6 @@ export function AddEntryModal({ isOpen, onClose, onSubmit }: AddEntryModalProps)
                     </div>
                     <div className="flex items-center gap-2">
                       <Checkbox
-                        id={`lunch-${project.id}`}
-                        checked={project.lunch}
-                        onCheckedChange={(checked) => updateProject(project.id, { lunch: checked as boolean })}
-                      />
-                      <Label htmlFor={`lunch-${project.id}`} className="text-sm cursor-pointer">
-                        Lunch
-                      </Label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Checkbox
                         id={`lunchPenalty-${project.id}`}
                         checked={project.lunchPenalty}
                         onCheckedChange={(checked) => updateProject(project.id, { lunchPenalty: checked as boolean })}

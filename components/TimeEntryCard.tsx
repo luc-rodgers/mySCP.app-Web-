@@ -2,7 +2,7 @@
 import { Clock, MoreVertical, MoreHorizontal, Plus, Trash2, X, Utensils, CloudRain, Check, CheckCircle, Briefcase, Truck, Plane, Car, Droplet, Hammer, AlertTriangle, ChevronRight, ChevronDown, ChevronUp, SprayCan, Moon, Thermometer, CalendarDays, Wallet } from 'lucide-react';
 import { TimeEntry, Project, SubActivity } from '@/lib/types';
 import { NON_POURING_WORK_OPTIONS } from '@/lib/activityOptions';
-import { diffHours, shiftMinutes } from '@/lib/timeMath';
+import { diffHours, projectPaidHours, entryTotalHours, addMinutesToTime } from '@/lib/timeMath';
 import { useState, useRef, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
@@ -14,7 +14,6 @@ import { Checkbox } from './ui/checkbox';
 import { Textarea } from './ui/textarea';
 import { FileCheck } from 'lucide-react';
 import { TimeCardSummaryModal } from './TimeCardSummaryModal';
-import { SubActivitySection } from './SubActivitySection';
 import { TimePicker } from './ui/TimePicker';
 
 type ProjectOption = { id: string; name: string };
@@ -28,7 +27,7 @@ interface TimeEntryCardProps {
   onDeleteProject: (entryId: string, projectId: string) => void;
   onUpdateProject: (entryId: string, projectId: string, updatedProject: Partial<Project>) => void;
   onUpdateEntry: (entryId: string, updatedEntry: Partial<TimeEntry>) => void;
-  onAddSubActivity: (entryId: string, projectId: string, type: 'pouring' | 'non-pouring' | 'travel') => void;
+  onAddSubActivity: (entryId: string, projectId: string, type: 'pouring' | 'non-pouring' | 'travel' | 'lunch') => void;
   onUpdateSubActivity: (entryId: string, projectId: string, subActivityId: string, updatedSubActivity: Partial<SubActivity>) => void;
   onDeleteSubActivity: (entryId: string, projectId: string, subActivityId: string) => void;
   /** Open the edit modal immediately on mount (e.g. when launched from another page) */
@@ -121,7 +120,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
     onDeleteProject(entryId, projectId);
   };
 
-  const handleAddSubActivity = (entryId: string, projectId: string, type: 'pouring' | 'non-pouring' | 'travel') => {
+  const handleAddSubActivity = (entryId: string, projectId: string, type: 'pouring' | 'non-pouring' | 'travel' | 'lunch') => {
     markAsEdited();
     onAddSubActivity(entryId, projectId, type);
   };
@@ -134,19 +133,6 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
   const handleDeleteSubActivity = (entryId: string, projectId: string, subActivityId: string) => {
     markAsEdited();
     onDeleteSubActivity(entryId, projectId, subActivityId);
-  };
-
-  const handleUpdateLunchTime = (entryId: string, projectId: string, lunchTime: string) => {
-    markAsEdited();
-    onUpdateProject(entryId, projectId, { lunchTime });
-  };
-
-  const handleDeleteLunch = (entryId: string, projectId: string) => {
-    markAsEdited();
-    onUpdateProject(entryId, projectId, { 
-      lunch: false,
-      lunchTime: undefined
-    });
   };
 
   const calculateLeaveHours = (start: string | undefined, finish: string | undefined) => {
@@ -194,63 +180,9 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
     return Math.floor(hours * 4) / 4;
   };
 
-  const totalHours = (() => {
-    // Leave-only entries: sum leave hours directly, ignore depot span
-    if (isLeaveOnly) {
-      return roundToQuarterHour(
-        entry.projects.reduce((sum, p) => sum + parseFloat((p as any).leaveTotalHours || '0'), 0)
-      );
-    }
-
-    // Pivot used by shiftMinutes to wrap night-shift times past midnight.
-    // When depotStart is missing, fall back to the earliest project time as the pivot.
-    const ns = !!entry.isNightShift;
-    const startCandidates: string[] = [];
-    entry.projects.forEach(project => {
-      if (project.siteStart) startCandidates.push(project.siteStart);
-      if (project.weather && project.weatherStart) startCandidates.push(project.weatherStart);
-    });
-    const pivot = entry.depotStart || (startCandidates.length > 0 ? startCandidates[0] : '');
-
-    // Determine effective start time
-    let effectiveStart = entry.depotStart;
-    if (!effectiveStart && startCandidates.length > 0) {
-      effectiveStart = [...startCandidates].sort((a, b) => shiftMinutes(a, pivot, ns) - shiftMinutes(b, pivot, ns))[0];
-    }
-
-    // Determine effective finish time
-    let effectiveFinish = entry.depotFinish;
-    if (!effectiveFinish) {
-      const allFinishTimes: string[] = [];
-      entry.projects.forEach(project => {
-        if (project.siteFinish) allFinishTimes.push(project.siteFinish);
-        if (project.weather && project.weatherEnd) allFinishTimes.push(project.weatherEnd);
-      });
-      if (allFinishTimes.length > 0) {
-        const sorted = [...allFinishTimes].sort((a, b) => shiftMinutes(a, pivot, ns) - shiftMinutes(b, pivot, ns));
-        effectiveFinish = sorted[sorted.length - 1];
-      }
-    }
-
-    // If we still don't have both times, return 0
-    if (!effectiveStart || !effectiveFinish) return 0;
-
-    const hours = diffHours(effectiveStart, effectiveFinish, entry.isNightShift);
-
-    // Check if any project has lunch selected
-    const hasLunch = entry.projects.some(project => project.lunch);
-
-    // Subtract 30 minutes (0.5 hours) if lunch is selected
-    const depotHours = Math.max(0, hours - (hasLunch ? 0.5 : 0));
-
-    // Add any leave hours on top of depot hours
-    const leaveHours = entry.projects
-      .filter(p => p.type === 'leave')
-      .reduce((sum, p) => sum + parseFloat((p as any).leaveTotalHours || '0'), 0);
-
-    // Round down to nearest 0.25 increment
-    return roundToQuarterHour(depotHours + leaveHours);
-  })();
+  // Paid total = on-clock span (sign-on→sign-off) minus lunch, plus leave.
+  // Single source of truth: entryTotalHours() in lib/timeMath.
+  const totalHours = roundToQuarterHour(entryTotalHours(entry));
 
   const calculateWeatherHours = (start?: string, end?: string) => {
     if (!start || !end) return 0;
@@ -487,19 +419,8 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
             {entry.projects.length > 0 && (
               <div className="space-y-2 mb-3">
                 {entry.projects.map((project) => {
-                  // Calculate hours for display
-                  let hours = 0;
-                  if (project.type === 'leave') {
-                    hours = parseFloat(project.leaveTotalHours || '0');
-                  } else if ((project.subActivities || []).length > 0) {
-                    // Sum sub-activity durations (project type)
-                    hours = (project.subActivities || []).reduce((sum, sa) => sum + diffHours(sa.start, sa.finish, entry.isNightShift), 0);
-                    if (project.lunch) hours = Math.max(0, hours - 0.5);
-                  } else if (project.siteStart && project.siteFinish) {
-                    // Yard work or legacy entries using site times
-                    hours = diffHours(project.siteStart, project.siteFinish, entry.isNightShift);
-                    if (project.lunch) hours = Math.max(0, hours - 0.5);
-                  }
+                  // Paid hours for this row — work activities minus lunch/gaps.
+                  const hours = projectPaidHours(project, !!entry.isNightShift);
 
                   const label = project.type === 'leave'
                     ? (project.leaveType || 'Leave')
@@ -894,13 +815,19 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                               {(project.subActivities || []).map((sa) => {
                                 const isTravel = sa.type === 'travel';
                                 const isPouring = sa.type === 'pouring';
+                                const isLunch = sa.type === 'lunch';
                                 const pouringOptions = ['Mobile', 'Placing Boom / Skid Pump'];
                                 const nonPouringOptions = NON_POURING_WORK_OPTIONS;
-                                const ActivityIcon = isTravel ? Car : isPouring ? Droplet : Hammer;
-                                const activityLabel = isTravel ? 'Travel' : isPouring ? 'Pouring' : 'Non-Pouring';
+                                const ActivityIcon = isLunch ? Utensils : isTravel ? Car : isPouring ? Droplet : Hammer;
+                                const activityLabel = isLunch ? 'Lunch' : isTravel ? 'Travel' : isPouring ? 'Pouring' : 'Non-Pouring';
                                 const isCollapsed = collapsedActivities.has(sa.id);
                                 const collapseActivity = () => setCollapsedActivities(prev => new Set([...prev, sa.id]));
                                 const expandActivity = () => setCollapsedActivities(prev => { const n = new Set(prev); n.delete(sa.id); return n; });
+                                // For a lunch, setting the start auto-fills the finish to 30 min later.
+                                const handleStartChange = (v: string) => handleUpdateSubActivity(
+                                  entry.id, project.id, sa.id,
+                                  isLunch ? { start: v, finish: addMinutesToTime(v, 30) } : { start: v },
+                                );
 
                                 return (
                                   <div key={sa.id} className="border border-gray-200 rounded-xl bg-gray-50 overflow-hidden md:rounded-lg">
@@ -947,42 +874,40 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                                         <span className="text-xs font-medium">{activityLabel}</span>
                                       </div>
 
-                                      {/* ── Type selector ── */}
-                                      {!isTravel ? (
-                                        isPouring ? (
-                                          <div className="flex rounded-lg border border-gray-200 overflow-hidden w-full md:flex-1 md:min-w-0">
-                                            {pouringOptions.map(o => (
-                                              <button
-                                                key={o}
-                                                type="button"
-                                                disabled={isLocked}
-                                                onClick={() => handleUpdateSubActivity(entry.id, project.id, sa.id, { activityType: sa.activityType === o ? '' : o })}
-                                                className={`flex-1 px-2 py-2.5 text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 first:border-r first:border-gray-200 ${sa.activityType === o ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                                              >
-                                                {o}
-                                              </button>
-                                            ))}
-                                          </div>
-                                        ) : (
-                                          <Select
-                                            value={sa.activityType || ''}
-                                            className="h-10 text-sm w-full md:h-8 md:text-xs md:flex-1 md:min-w-0"
-                                            onChange={(e) => handleUpdateSubActivity(entry.id, project.id, sa.id, { activityType: e.target.value })}
-                                            disabled={isLocked}
-                                          >
-                                            <option value="">Select type...</option>
-                                            {nonPouringOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                                          </Select>
-                                        )
-                                      ) : (
+                                      {/* ── Type selector — Travel and Lunch have no type, just a spacer ── */}
+                                      {isTravel || isLunch ? (
                                         <div className="hidden md:block md:flex-1" />
+                                      ) : isPouring ? (
+                                        <div className="flex rounded-lg border border-gray-200 overflow-hidden w-full md:flex-1 md:min-w-0">
+                                          {pouringOptions.map(o => (
+                                            <button
+                                              key={o}
+                                              type="button"
+                                              disabled={isLocked}
+                                              onClick={() => handleUpdateSubActivity(entry.id, project.id, sa.id, { activityType: sa.activityType === o ? '' : o })}
+                                              className={`flex-1 px-2 py-2.5 text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 first:border-r first:border-gray-200 ${sa.activityType === o ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                                            >
+                                              {o}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <Select
+                                          value={sa.activityType || ''}
+                                          className="h-10 text-sm w-full md:h-8 md:text-xs md:flex-1 md:min-w-0"
+                                          onChange={(e) => handleUpdateSubActivity(entry.id, project.id, sa.id, { activityType: e.target.value })}
+                                          disabled={isLocked}
+                                        >
+                                          <option value="">Select type...</option>
+                                          {nonPouringOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                                        </Select>
                                       )}
 
                                       {/* ── Start / Finish — mobile: 2-col grid with labels; desktop: compact inline ── */}
                                       <div className="grid grid-cols-2 gap-2 md:hidden">
                                         <div>
                                           <label className="block text-[10px] text-gray-400 mb-1 text-center">Start</label>
-                                          <TimePicker value={sa.start || ''} onChange={(v) => handleUpdateSubActivity(entry.id, project.id, sa.id, { start: v })} disabled={isLocked} className="justify-center" />
+                                          <TimePicker value={sa.start || ''} onChange={handleStartChange} disabled={isLocked} className="justify-center" />
                                         </div>
                                         <div>
                                           <label className="block text-[10px] text-gray-400 mb-1 text-center">Finish</label>
@@ -992,7 +917,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                                       <div className="hidden md:flex md:items-center md:gap-4 md:shrink-0">
                                         <div className="flex flex-col items-center gap-0.5">
                                           <span className="text-[10px] text-gray-400">Start</span>
-                                          <TimePicker value={sa.start || ''} onChange={(v) => handleUpdateSubActivity(entry.id, project.id, sa.id, { start: v })} disabled={isLocked} compact />
+                                          <TimePicker value={sa.start || ''} onChange={handleStartChange} disabled={isLocked} compact />
                                         </div>
                                         <span className="text-gray-300 text-sm mt-3">→</span>
                                         <div className="flex flex-col items-center gap-0.5">
@@ -1064,13 +989,13 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                             </div>
                           </div>
 
-                          {/* Lunch toggle */}
+                          {/* Add lunch break */}
                           <div>
                             <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">Options</p>
                             <button
-                              onClick={() => onUpdateProject(entry.id, project.id, { lunch: !project.lunch })}
+                              onClick={() => handleAddSubActivity(entry.id, project.id, 'lunch')}
                               disabled={isLocked}
-                              className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.lunch ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
+                              className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer disabled:opacity-40"
                             >
                               <Utensils className="w-4 h-4 shrink-0" />
                               <span>Lunch</span>
@@ -1134,9 +1059,17 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                           {/* Inclement Weather detail box */}
                           {project.weather && !collapsedWeather.has(project.id) && (
                             <div className="border border-gray-200 rounded-xl p-3 bg-gray-50 space-y-3">
-                              <div className="flex items-center justify-center gap-1.5 text-gray-700">
+                              <div className="relative flex items-center justify-center gap-1.5 text-gray-700">
                                 <CloudRain className="w-4 h-4" />
                                 <span className="text-sm font-medium">Inclement Weather</span>
+                                {!isLocked && (
+                                  <button
+                                    onClick={() => { onUpdateProject(entry.id, project.id, { weather: false }); setCollapsedWeather(prev => { const n = new Set(prev); n.delete(project.id); return n; }); }}
+                                    className="absolute right-0 text-red-400 hover:text-red-600 cursor-pointer"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
                               </div>
                               <Select
                                 value={project.weatherType || ''}
@@ -1224,9 +1157,9 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <button
-                        onClick={() => onUpdateProject(entry.id, project.id, { lunch: !project.lunch })}
+                        onClick={() => handleAddSubActivity(entry.id, project.id, 'lunch')}
                         disabled={isLocked}
-                        className={`flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2 px-2 md:px-3 py-3 md:py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 ${project.lunch ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
+                        className="flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2 px-2 md:px-3 py-3 md:py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer disabled:opacity-40"
                       >
                         <Utensils className="w-4 h-4 shrink-0" />
                         <span>Lunch</span>
@@ -1297,20 +1230,7 @@ export function TimeEntryCard({ entry, activeProjects, projectsByState, onDelete
                   <div className="flex-1 text-center">
                     <div className="text-xs text-gray-400 mb-0.5">Total</div>
                     <div className="text-2xl font-bold text-gray-900">
-                      {(() => {
-                        let total = 0;
-                        if (project.type === 'leave') {
-                          total = parseFloat((project as any).leaveTotalHours || '0');
-                        } else if (project.type === 'yardwork') {
-                          total = diffHours(project.siteStart, project.siteFinish, entry.isNightShift);
-                        } else {
-                          (project.subActivities || []).forEach(sa => {
-                            total += diffHours(sa.start, sa.finish, entry.isNightShift);
-                          });
-                        }
-                        if (project.lunch) total -= 0.5;
-                        return `${Math.max(0, total).toFixed(2)} hrs`;
-                      })()}
+                      {`${projectPaidHours(project, !!entry.isNightShift).toFixed(2)} hrs`}
                     </div>
                   </div>
                   <button
