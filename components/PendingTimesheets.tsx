@@ -204,17 +204,17 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
         </div>
       )}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white rounded-xl border border-gray-100 px-4 py-3">
-          <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Sign On</p>
-          <p className="text-base font-semibold text-gray-900">{entry.depotStart || "—"}</p>
+        <div className="bg-white rounded-xl border border-gray-100 px-3 py-3">
+          <p className="text-xs text-gray-400 uppercase tracking-wider mb-1 whitespace-nowrap">Sign On</p>
+          <p className="text-base font-semibold text-gray-900 whitespace-nowrap">{entry.depotStart || "—"}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 px-4 py-3">
-          <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Sign Off</p>
-          <p className="text-base font-semibold text-gray-900">{entry.depotFinish || "—"}</p>
+        <div className="bg-white rounded-xl border border-gray-100 px-3 py-3">
+          <p className="text-xs text-gray-400 uppercase tracking-wider mb-1 whitespace-nowrap">Sign Off</p>
+          <p className="text-base font-semibold text-gray-900 whitespace-nowrap">{entry.depotFinish || "—"}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 px-4 py-3">
-          <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Total Hours</p>
-          <p className="text-base font-semibold text-gray-900">{hours.toFixed(2)}</p>
+        <div className="bg-white rounded-xl border border-gray-100 px-3 py-3">
+          <p className="text-xs text-gray-400 uppercase tracking-wider mb-1 whitespace-nowrap">Total</p>
+          <p className="text-base font-semibold text-gray-900 whitespace-nowrap">{hours.toFixed(2)}<span className="text-xs font-normal text-gray-400 ml-0.5">hrs</span></p>
         </div>
       </div>
 
@@ -305,12 +305,15 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
                         const saHrs = subHrs(sa.start, sa.finish, entry.isNightShift);
                         const saIsLunch = isLunchActivity(sa);
                         return (
-                          <div key={j} className="flex items-start justify-between text-xs text-gray-500 pl-3 border-l-2 border-gray-200">
-                            <span className="capitalize">{saIsLunch ? "Lunch Break" : `${sa.type}${sa.activityType ? ` — ${sa.activityType}` : ""}`}</span>
-                            <span className="flex items-center gap-3 shrink-0 ml-2">
-                              <span className="text-gray-400">{sa.start} – {sa.finish}</span>
-                              <span className={`font-medium w-14 text-right ${saIsLunch ? "text-amber-600" : "text-gray-600"}`}>{saIsLunch ? `-${saHrs.toFixed(2)}` : saHrs.toFixed(2)} hrs</span>
-                            </span>
+                          <div key={j} className="text-xs text-gray-500 pl-3 border-l-2 border-gray-200">
+                            <div className="flex items-start justify-between">
+                              <span className="capitalize">{saIsLunch ? "Lunch Break" : sa.type}</span>
+                              <span className="flex items-center gap-3 shrink-0 ml-2">
+                                <span className="text-gray-400">{sa.start} – {sa.finish}</span>
+                                <span className={`font-medium w-14 text-right ${saIsLunch ? "text-amber-600" : "text-gray-600"}`}>{saIsLunch ? `-${saHrs.toFixed(2)}` : saHrs.toFixed(2)} hrs</span>
+                              </span>
+                            </div>
+                            {!saIsLunch && sa.activityType && <div className="text-gray-400">{sa.activityType}</div>}
                           </div>
                         );
                       })}
