@@ -272,7 +272,7 @@ function TimecardDetail({ entry }: { entry: TimeEntry }) {
                         const saIsLunch = isLunchActivity(sa);
                         return (
                           <div key={j} className="flex items-start justify-between text-xs text-gray-500 pl-3 border-l-2 border-gray-200">
-                            <span className="capitalize">{saIsLunch ? "🍽️ Lunch Break" : `${sa.type}${sa.activityType ? ` — ${sa.activityType}` : ""}`}</span>
+                            <span className="capitalize">{saIsLunch ? "Lunch Break" : `${sa.type}${sa.activityType ? ` — ${sa.activityType}` : ""}`}</span>
                             <span className="flex items-center gap-3 shrink-0 ml-2">
                               <span className="text-gray-400">{sa.start} – {sa.finish}</span>
                               <span className={`font-medium w-14 text-right ${saIsLunch ? "text-amber-600" : "text-gray-600"}`}>{saIsLunch ? `-${saHrs.toFixed(2)}` : saHrs.toFixed(2)} hrs</span>
